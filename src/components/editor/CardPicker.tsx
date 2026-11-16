@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import { ThemedBlocks } from "@/components/public";
 import { Button, cx, IconButton } from "@/components/ui";
 import { getMeta } from "@/lib/editor/block-meta";
+import { tileColor } from "./BlockCard";
 import { ALL_TYPES, CATALOG, CATEGORIES, POPULAR, searchCards, type CategoryId } from "@/lib/editor/catalog";
 import { looksPasteable } from "@/lib/editor/smart-paste";
 import { useSession } from "@/lib/session";
@@ -235,9 +236,9 @@ function Tile({ type, compact, active, onFocus, onPick }: { type: BlockType; com
         compact ? "items-center gap-3 bg-surface p-3 shadow-[0_0_0_1px_var(--line)]" : "min-h-[124px] flex-col gap-2.5 p-3.5",
         active && !compact && "shadow-[0_0_0_2px_var(--ink)]",
       )}
-      style={compact ? undefined : { background: `color-mix(in srgb, ${m.tint} 11%, var(--card))` }}
+      style={compact ? undefined : { background: tileColor(type) }}
     >
-      <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface" style={{ color: m.tint }}>
+      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-[14px] bg-surface/80 text-foreground">
         <Icon className="size-[18px]" aria-hidden />
       </span>
       <span className="min-w-0">
@@ -266,7 +267,7 @@ function PreviewPane({ type, theme, onAdd }: { type: BlockType; theme?: Theme; o
 
   return (
     <>
-      <div className="relative overflow-hidden rounded-3xl" style={{ background: `color-mix(in srgb, ${m.tint} 11%, var(--card))` }}>
+      <div className="relative overflow-hidden rounded-[26px]" style={{ background: tileColor(type) }}>
         {theme && blocks.length > 0 && (
           <div ref={box} aria-hidden className={cx("pointer-events-none max-h-[300px] overflow-hidden", !rendered && "absolute inset-0 opacity-0")} inert>
             <ThemedBlocks theme={theme} blocks={blocks} style={{ padding: 18 }} />
@@ -274,7 +275,7 @@ function PreviewPane({ type, theme, onAdd }: { type: BlockType; theme?: Theme; o
         )}
         {(!theme || !blocks.length || !rendered) && (
           <div className="flex aspect-[4/3] items-center justify-center">
-            <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-surface shadow-sm" style={{ color: m.tint }}>
+            <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-surface text-foreground shadow-card">
               <Icon className="size-7" aria-hidden />
             </span>
           </div>
