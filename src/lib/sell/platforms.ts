@@ -36,7 +36,7 @@ export const MARKETPLACES: Record<MarketplacePlatform, PlatformMeta> = {
   bukalapak: { label: "Bukalapak", hosts: ["bukalapak.com"], icon: siBukalapak, example: "https://www.bukalapak.com/u/yourshop" },
   etsy: { label: "Etsy", hosts: ["etsy.com", "etsy.me"], icon: siEtsy, example: "https://www.etsy.com/shop/YourShop" },
   amazon: { label: "Amazon", hosts: ["amazon.com", "amazon.sg", "amazon.co.uk", "amzn.to", "amzn.asia"], icon: null, example: "https://www.amazon.com/dp/…" },
-  gumroad: { label: "Gumroad", hosts: ["gumroad.com"], icon: siGumroad, example: "https://you.gumroad.com" },
+  gumroad: { label: "Gumroad", hosts: ["gumroad.com", "gum.co"], icon: siGumroad, example: "https://you.gumroad.com" },
 };
 
 export const TIPS: Record<(typeof TIP_PLATFORMS)[number], PlatformMeta> = {

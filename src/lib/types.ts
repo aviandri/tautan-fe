@@ -461,6 +461,7 @@ export const WhatsAppDataSchema = z.object({
   ...schedule,
 });
 
+/** P3-A URLs (buy, store, platform, source, ask, confirm) are http(s) only on the BE; images also accept /uploads/ paths. */
 export const PriceListItemSchema = z.object({
   name: z.string().max(80),
   desc: z.string().max(200).optional(),
@@ -721,13 +722,20 @@ export interface UploadResult {
 /** POST /unfurl (P2-5). fetched=false means the site was unreachable: fall back to a plain link. */
 export interface UnfurlResult {
   url: string;
-  suggested_type: "link" | "video" | "music" | "booking" | "image";
+  /** "marketplace" | "product" are P3-A: a store or a product page on a known marketplace */
+  suggested_type: "link" | "video" | "music" | "booking" | "image" | "marketplace" | "product";
   dest_kind?: "url" | "email" | "file" | "tab";
   fetched: boolean;
   title: string;
   description: string;
   image_url: string;
   site_name: string;
+  /** P3-A: set for marketplace hosts (incl. short links), even when the page couldn't be read */
+  kind?: "marketplace";
+  platform?: MarketplacePlatform;
+  /** P3-A: minor units, from product:price tags when the currency is supported */
+  price?: number;
+  currency?: (typeof CURRENCIES)[number];
 }
 
 /** GET /forms */
