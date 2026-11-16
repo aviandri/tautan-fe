@@ -8,11 +8,14 @@ import { z } from "zod";
 // ---------- Theme ----------
 
 export const ThemeBgSchema = z.object({
-  type: z.enum(["color", "gradient", "image"]),
+  /** split = the gradient behind the header only; none = plain page (P2-2) */
+  type: z.enum(["color", "gradient", "image", "split", "none"]),
   value: z.string(),
 });
 
 export const ButtonStyleSchema = z.enum(["fill", "outline", "shadow"]);
+
+export const ThemeColorPairSchema = z.object({ color: z.string(), text_color: z.string() });
 
 export const ThemeSchema = z.object({
   preset: z.string(),
@@ -23,10 +26,26 @@ export const ThemeSchema = z.object({
     color: z.string(),
     text_color: z.string(),
   }),
+  /** font family name, e.g. "DM Sans" (the BE rejects ids) */
   font: z.string(),
   text_color: z.string(),
+  // ---- Theme v2 (P2-2). All optional; the BE stores unknown keys untouched. ----
+  /** colour behind the page column on wide screens */
+  bg_desktop: z.string().optional(),
+  /** gap between blocks, 0–64 px */
+  spacing: z.number().optional(),
+  block: ThemeColorPairSchema.optional(),
+  label: ThemeColorPairSchema.optional(),
+  border: z.object({ width: z.number(), color: z.string() }).optional(),
+  shadow: z.object({ amount: z.number(), style: z.enum(["soft", "solid"]) }).optional(),
+  /** font family names */
+  fonts: z.object({ title: z.string().optional(), body: z.string().optional() }).optional(),
+  header: z
+    .object({ layout: z.enum(["classic", "banner", "headshot", "business"]), banner_image_url: z.string().optional() })
+    .optional(),
 });
 export type Theme = z.infer<typeof ThemeSchema>;
+export type HeaderLayout = NonNullable<Theme["header"]>["layout"];
 export type ThemeBg = z.infer<typeof ThemeBgSchema>;
 export type ButtonStyle = z.infer<typeof ButtonStyleSchema>;
 
