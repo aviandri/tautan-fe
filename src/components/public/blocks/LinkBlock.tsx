@@ -3,7 +3,7 @@ import type { BlockOf, LinkData } from "@/lib/types";
 import { safeHref, safeImageSrc } from "@/lib/safe-url";
 import { mediaFor, tabHref, track, type PageEnv } from "../env";
 import { Img } from "../Img";
-import s from "../public.module.css";
+import { s } from "../cls";
 
 type LinkBlockT = BlockOf<"link">;
 

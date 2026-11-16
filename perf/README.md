@@ -29,9 +29,14 @@ The fixture serves originals for `?w=` (no variants), so image numbers are pessi
 ## How the page stays inside the budget
 
 - `/[username]` renders as React Server Components (`PublicPageView`). Cards are hook-free and emit
-  HTML with `data-*` hooks; `PageRuntime` (one ~5 kB client island) wires them up by event delegation:
-  `data-b`/`data-a` click tracking (sendBeacon), `data-copy`, `data-embed` facades, `data-lightbox`,
-  `data-countdown`, `data-dismiss`, `data-share`, `dialog[data-popup]`.
+  HTML with `data-*` hooks. `PageRuntime` is a ~0.3 kB client stub that imports `runtime-core.ts`
+  after hydration; the core wires everything up by event delegation (`data-b`/`data-a` click
+  tracking via sendBeacon, `data-copy`, `data-embed` facades, `data-lightbox`, `data-countdown`,
+  `data-dismiss`, `data-share`, `data-open-dialog`, `dialog[data-popup]`, and `submit`/`input` on
+  `[data-x]` for the P3-C/D cards via `runtime-p3cd.ts`). Rarely used code is in `runtime-extras.ts`.
+- Styles are a global `public.css` with `tp-` prefixed classes, referenced as `s.foo` through
+  `cls.ts`. Next ships the class map of every CSS module on a route as JS, global CSS ships none.
+  New card CSS goes in `public.css` (or a global sheet with its own prefix), not a CSS module.
 - Cards that need React state are `React.lazy` islands (`islands.tsx`), outside first-load JS.
 - ISR: `revalidate = 60` plus `revalidateTag("profile:<u>")` from `POST /api/revalidate` (the BE
   webhook). `?tab=` is rewritten by `src/middleware.ts` to `/[username]/t/[tab]`.

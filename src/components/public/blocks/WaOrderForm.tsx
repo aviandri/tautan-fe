@@ -7,7 +7,7 @@ import { formatMoney } from "@/lib/sell/money";
 import { fillTemplate, waLink } from "@/lib/sell/wa";
 import { composeOrder } from "@/lib/sell/order";
 import { trackEvent } from "@/lib/track";
-import s from "../forms.module.css";
+import { s } from "../cls";
 
 type Field = "items" | "name" | "address" | "note";
 

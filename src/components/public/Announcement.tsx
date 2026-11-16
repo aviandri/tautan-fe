@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { X } from "./icons";
 import type { Announcement } from "@/lib/page-extras";
-import s from "./public.module.css";
+import { s } from "./cls";
 
 // Server-rendered. Banners and cards are in the HTML from the first byte, so they never push the
 // page down later; a visitor who dismissed one gets it hidden by a tiny inline script that runs

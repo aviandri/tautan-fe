@@ -8,7 +8,7 @@ import { DEFAULT_PRODUCT_TEMPLATE, fillTemplate, waLink } from "@/lib/sell/wa";
 import { mediaFor, track, type PageEnv } from "../env";
 import { Img } from "../Img";
 import { WaOrderIsland } from "../islands";
-import s from "../public.module.css";
+import { s } from "../cls";
 
 // P3-A sell cards, part (a): product, shop, marketplace, whatsapp. Server components (no hooks):
 // variant chips are native radios, the shop's category filter is CSS (:has), the product sheet

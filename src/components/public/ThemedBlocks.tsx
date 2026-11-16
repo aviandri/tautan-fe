@@ -6,7 +6,8 @@ import { themeFontVariables } from "@/lib/theme/fonts";
 import { BlockList } from "./BlockRenderer";
 import { PageRuntime } from "./PageRuntime";
 import { NO_ENV } from "./env";
-import s from "./public.module.css";
+import { s } from "./cls";
+import "./public.css";
 
 /**
  * A few blocks rendered with a theme, outside a full page (marketing showcases, docs).

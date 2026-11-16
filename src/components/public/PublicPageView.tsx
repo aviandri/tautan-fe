@@ -11,7 +11,8 @@ import { AnnouncementView } from "./Announcement";
 import { PageActions } from "./PageActions";
 import { PageRuntime } from "./PageRuntime";
 import type { MediaMap, PageEnv } from "./env";
-import s from "./public.module.css";
+import { s } from "./cls";
+import "./public.css";
 
 export interface PublicPageViewProps {
   profile: Profile;

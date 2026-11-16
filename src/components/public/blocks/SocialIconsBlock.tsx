@@ -19,7 +19,7 @@ import type { BlockOf } from "@/lib/types";
 import { platformLabel } from "@/lib/social";
 import { safeHref } from "@/lib/safe-url";
 import { track } from "../env";
-import s from "../public.module.css";
+import { s } from "../cls";
 
 const BRAND: Record<string, SimpleIcon> = {
   instagram: siInstagram,
