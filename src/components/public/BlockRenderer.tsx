@@ -9,6 +9,7 @@ import { FaqBlock, FolderBlock, TestimonialBlock } from "./blocks/DisclosureBloc
 import { BookingBlock, CountdownBlock, DiscountCodeBlock, DividerBlock, FileBlock, HeadingBlock, QuoteBlock } from "./blocks/P2Blocks";
 import { ContactFormIsland, EmailSignupIsland, FormIsland } from "./islands";
 import { MarketplaceBlock, ProductBlock, ShopBlock, WhatsAppBlock } from "./blocks/SellBlocksA";
+import { PaymentBlock, PriceListBlock, ReviewsBlock, StoreInfoBlock, TipJarBlock } from "./blocks/SellBlocksB";
 
 // Server-safe: no hooks, no context. On the public route every card here renders as server HTML;
 // only the form islands ship React code (lazily). In the editor preview the same tree renders on the client.
@@ -74,6 +75,17 @@ export function BlockRenderer({ block, childBlocks = [], opts }: { block: Block;
       return <MarketplaceBlock block={block} />;
     case "whatsapp":
       return <WhatsAppBlock block={block} env={env} />;
+    // P3-A sell (b)
+    case "price_list":
+      return <PriceListBlock block={block} env={env} />;
+    case "store_info":
+      return <StoreInfoBlock block={block} now={opts.now} />;
+    case "payment":
+      return <PaymentBlock block={block} env={env} />;
+    case "tip_jar":
+      return <TipJarBlock block={block} />;
+    case "reviews":
+      return <ReviewsBlock block={block} />;
     default:
       // unknown type from a newer API: skip rather than crash the page
       return null;

@@ -1,0 +1,322 @@
+/* P3-A sell (b): price list, store info, payment, tip jar, reviews. Theme tokens only (--t-*).
+   A separate module on purpose: public.module.css is imported by the client PageRuntime, so every
+   class there ships in the page's JS as a name map; these are only used by server components. */
+.sell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+.sell [data-p="sellTitle"] {
+  margin: 0;
+  font-family: var(--t-font-title);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.sell [data-p="sellNote"] {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--t-muted);
+}
+.sell [data-p="sellChips"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sell [data-p="sellChip"] {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--t-line);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.sell [data-p="priceSection"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sell [data-p="priceList"] {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sell [data-p="priceItem"] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--t-line);
+}
+.sell [data-p="priceItem"]:first-child {
+  border-top: 0;
+  padding-top: 2px;
+}
+.priceThumb {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.sell [data-p="priceText"] {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+.sell [data-p="priceName"] {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.sell [data-p="priceDesc"] {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--t-muted);
+}
+.sell [data-p="priceValue"] {
+  flex: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sell [data-p="priceFrom"] {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--t-muted);
+}
+/* store info: the badge has a fixed min width so the server value and any later correction never shift layout */
+.sell [data-p="openBadge"],
+.sell [data-p="closedBadge"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  min-width: 15.5em;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--t-btn-bg) 14%, transparent);
+}
+.sell [data-p="closedBadge"] {
+  background: color-mix(in srgb, var(--t-text) 8%, transparent);
+  color: var(--t-muted);
+}
+.sell [data-p="openDot"] {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: currentColor;
+}
+.sell [data-p="openBadge"] [data-p="openDot"] {
+  background: var(--t-btn-bg);
+}
+.sell [data-p="hoursList"] {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: 0.9rem;
+}
+.sell [data-p="hoursRow"],
+.sell [data-p="hoursToday"] {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+.sell [data-p="hoursRow"] dt,
+.sell [data-p="hoursRow"] dd,
+.sell [data-p="hoursToday"] dt,
+.sell [data-p="hoursToday"] dd {
+  margin: 0;
+}
+.sell [data-p="hoursRow"] dd {
+  color: var(--t-muted);
+  font-variant-numeric: tabular-nums;
+}
+.sell [data-p="hoursToday"] {
+  font-weight: 700;
+}
+.sell [data-p="storePlace"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.sell [data-p="storePin"] {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 2px;
+}
+/* payment */
+.sell [data-p="qris"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.sell [data-p="qrisZoom"] {
+  padding: 8px;
+  border: 1px solid var(--t-line);
+  border-radius: 16px;
+  background: #fff; /* QR codes need a light quiet zone to scan, whatever the theme */
+  cursor: zoom-in;
+}
+.qrisImg {
+  display: block;
+  width: 200px;
+  height: auto;
+  max-width: 100%;
+}
+.sell [data-p="accounts"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sell [data-p="account"] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 10px 14px;
+  border: 1px solid var(--t-line);
+  border-radius: 14px;
+}
+.sell [data-p="accountNumber"] {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+.sell [data-p="accountCopy"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  flex: none;
+  border: 0;
+  border-radius: var(--t-btn-radius);
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sell [data-p="accountCopy"] svg {
+  width: 16px;
+  height: 16px;
+}
+/* tip jar */
+.sell [data-p="tipButtons"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* reviews */
+.sell [data-p="sellStars"] {
+  display: inline-flex;
+  gap: 2px;
+}
+.sell [data-p="sellStars"] svg {
+  width: 16px;
+  height: 16px;
+}
+.sell [data-p="sellStarOn"] {
+  fill: currentColor;
+}
+.sell [data-p="sellStarOff"] {
+  opacity: 0.3;
+}
+.sell [data-p="reviewSummary"] {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sell [data-p="reviewAverage"] {
+  font-family: var(--t-font-title);
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.sell [data-p="reviewBars"] {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+}
+.sell [data-p="reviewBarRow"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sell [data-p="reviewBarLabel"],
+.sell [data-p="reviewBarCount"] {
+  width: 2.6em;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--t-muted);
+}
+.sell [data-p="reviewBarCount"] {
+  text-align: right;
+}
+.sell [data-p="reviewBar"] {
+  height: 8px;
+  flex: 1;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--t-text) 10%, transparent);
+}
+.sell [data-p="reviewBar"] span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--t-btn-bg);
+}
+.sell [data-p="reviewList"] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sell [data-p="reviewItem"] {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--t-line);
+}
+.sell [data-p="reviewList"] [data-p="reviewItem"]:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.sell [data-p="reviewQuote"] {
+  margin: 0;
+  line-height: 1.5;
+}
+.sell [data-p="reviewSource"] {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
