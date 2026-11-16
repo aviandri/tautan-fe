@@ -57,7 +57,9 @@ export const tokenStore = {
   },
   subscribe(l: (t: string | null) => void) {
     tokenListeners.add(l);
-    return () => tokenListeners.delete(l);
+    return () => {
+      tokenListeners.delete(l);
+    };
   },
 };
 
