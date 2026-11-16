@@ -86,8 +86,62 @@ export const ProfileSchema = z.object({
   // P2-2 header socials row (the BE always returns them; optional here for older fixtures)
   socials: z.array(SocialSchema).optional(),
   socials_position: z.enum(["top", "bottom"]).optional(),
+  // P2-6 / P2-7 (the BE always returns them; optional here for older fixtures)
+  onboarding: z.lazy(() => OnboardingSchema).optional(),
+  announcement: z.lazy(() => AnnouncementSchema).nullable().optional(),
+  settings: z.lazy(() => PageSettingsSchema).optional(),
 });
 export type Profile = z.infer<typeof ProfileSchema>;
+
+// ---------- P2-6 onboarding / P2-7 page extras ----------
+
+export const ONBOARDING_INTENTS = ["local", "sell", "audience", "other"] as const;
+export type OnboardingIntent = (typeof ONBOARDING_INTENTS)[number];
+
+export const OnboardingSchema = z.object({
+  completed: z.boolean(),
+  completed_at: z.string().optional(),
+  /** free-form, [a-z_]{1,30} */
+  step: z.string().optional(),
+  intent: z.enum(ONBOARDING_INTENTS).optional(),
+  source: z.enum(["import", "scratch", "instagram"]).optional(),
+  /** server-managed */
+  username_claimed: z.boolean(),
+  /** server-managed */
+  suggested_username: z.string().optional(),
+});
+export type Onboarding = z.infer<typeof OnboardingSchema>;
+/** PATCH /profile {onboarding}: merged server-side; username_claimed/suggested_username are read-only. */
+export type OnboardingPatch = Partial<Pick<Onboarding, "step" | "intent" | "source" | "completed">>;
+
+export const AnnouncementSchema = z.object({
+  /** server-assigned; stable across edits (key dismissals on it) */
+  id: z.string().optional(),
+  layout: z.enum(["banner", "popup", "card"]).optional(),
+  title: z.string().max(100),
+  description: z.string().max(204).optional(),
+  image_url: z.string().optional(),
+  cta: z.object({ label: z.string().max(40), url: z.string().optional(), form_block_id: z.string().optional() }).optional(),
+  bg_color: z.string().optional(),
+  text_color: z.string().optional(),
+  schedule: z.object({ start_at: z.string().optional(), end_at: z.string().optional() }).optional(),
+});
+export type Announcement = z.infer<typeof AnnouncementSchema>;
+
+/** Replaced wholesale on PATCH; unknown keys are dropped by the BE. */
+export const PageSettingsSchema = z.object({
+  ga4_id: z.string().optional(),
+  meta_pixel_id: z.string().optional(),
+  language: z.string().optional(),
+  show_share: z.boolean().optional(),
+  show_save_contact: z.boolean().optional(),
+  contact_email: z.string().optional(),
+  contact_phone: z.string().optional(),
+});
+export type PageSettings = z.infer<typeof PageSettingsSchema>;
+
+/** Temporary usernames from username-less signup; can never be claimed. */
+export const isTempUsername = (u: string) => u.startsWith("tmp.");
 
 export const USERNAME_RE = /^[a-z0-9_.]{3,30}$/;
 export const UsernameSchema = z
@@ -447,8 +501,12 @@ export type ProfilePatch = Partial<
     | "seo"
     | "is_published"
     | "username"
+    | "socials"
+    | "socials_position"
+    | "announcement"
+    | "settings"
   >
->;
+> & { onboarding?: OnboardingPatch };
 
 export type CreateBlockInput = {
   [K in BlockType]: {
