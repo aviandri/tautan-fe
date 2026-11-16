@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import type { BlockOf } from "@/lib/types";
 import { ApiError, api } from "@/lib/api";
+import { trackEvent } from "@/lib/track";
 import { checkContact, type ContactErrors, type ContactFields } from "@/lib/contact-validate";
 import { s } from "../cls";
 
@@ -44,6 +45,8 @@ export function ContactFormBlock({ block, username, preview }: { block: BlockOf<
     setStatus({ kind: "sending" });
     try {
       await api.public.contact(username, { block_id: block.id, ...parsed.data });
+      // a sent message counts as a tap on this card (Insights → Top cards, Taps)
+      trackEvent(username, { kind: "click", block_id: block.id, action: "form_submit" });
       form.reset();
       setStatus({ kind: "sent" });
     } catch (err) {

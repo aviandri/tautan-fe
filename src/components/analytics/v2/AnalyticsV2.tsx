@@ -147,12 +147,18 @@ function RangeControl({ q, onChange }: { q: AnalyticsQuery; onChange: (q: Analyt
             {SEG_LABEL[r]}
           </button>
         ))}
-        <label className="relative shrink-0">
-          <span className="sr-only">More ranges</span>
+        {/* the visible chip sizes to its text; the native select sits on top, transparent, so the
+            ▾ stays next to the label (a select is as wide as its longest option) */}
+        <label className={`relative inline-flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-full px-4 text-sm font-semibold ${inMore ? "bg-surface text-foreground shadow-[0_1px_2px_rgba(0,0,0,.08)]" : "text-ink-2"}`}>
+          <span>{inMore ? RANGE_LABELS[q.range] : "More"}</span>
+          <span aria-hidden className="text-xs text-muted">
+            ▾
+          </span>
           <select
+            aria-label="More ranges"
             value={inMore ? q.range : ""}
             onChange={(e) => e.target.value && set(e.target.value as AnalyticsQuery["range"])}
-            className={`h-9 cursor-pointer appearance-none rounded-full bg-transparent pl-4 pr-8 text-sm font-semibold ${inMore ? "bg-surface text-foreground shadow-[0_1px_2px_rgba(0,0,0,.08)]" : "text-ink-2"}`}
+            className="absolute inset-0 cursor-pointer appearance-none opacity-0"
           >
             <option value="">More</option>
             {more.map((r) => (
@@ -161,9 +167,6 @@ function RangeControl({ q, onChange }: { q: AnalyticsQuery; onChange: (q: Analyt
               </option>
             ))}
           </select>
-          <span aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
-            ▾
-          </span>
         </label>
       </div>
       {q.range === "custom" ? (

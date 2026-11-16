@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import type { BlockOf, FormField } from "@/lib/types";
 import { validateAnswers, type RawAnswers } from "@/lib/form-validate";
 import { api, ApiError } from "@/lib/api";
+import { trackEvent } from "@/lib/track";
 import { formErrorMessage } from "@/lib/form-validate";
 import { s } from "../cls";
 
@@ -41,6 +42,7 @@ export function EmailSignupBlock({ block, username, preview }: { block: BlockOf<
     setStatus({ kind: "sending" });
     try {
       const r = await api.public.subscribe(username, { block_id: block.id, email: String(answers.email) });
+      trackEvent(username, { kind: "click", block_id: block.id, action: "subscribe" });
       setStatus({ kind: "sent", message: r.success_message || d.success_message || "You're on the list." });
     } catch (err) {
       setStatus({ kind: "error", message: err instanceof ApiError && err.details?.email ? err.details.email : formErrorMessage(err) });
@@ -133,6 +135,7 @@ export function FormBlock({ block, username, preview }: { block: BlockOf<"form">
         answers: v.answers,
         subscribe: d.subscribe === "ask" ? fd.get("__subscribe") === "on" : undefined,
       });
+      trackEvent(username, { kind: "click", block_id: block.id, action: "form_submit" });
       form.reset();
       setStatus({ kind: "sent", message: r.success_message || ok });
     } catch (err) {

@@ -68,7 +68,7 @@ export function SeriesChart({
             tick={{ fill: "var(--ink-3)", fontSize: 11, fontFamily: "var(--font-dm-mono)" }}
             tickMargin={8}
           />
-          <YAxis tickFormatter={fmtCompact} allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: "var(--ink-3)", fontSize: 11, fontFamily: "var(--font-dm-mono)" }} width={44} />
+          <YAxis domain={[0, "auto"]} tickFormatter={fmtCompact} allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: "var(--ink-3)", fontSize: 11, fontFamily: "var(--font-dm-mono)" }} width={44} />
           <Tooltip
             content={(props) => <Tip {...(props as TooltipContentProps<number, string>)} />}
             cursor={{ stroke: "var(--ink)", strokeWidth: 1, strokeDasharray: "3 4" }}
@@ -77,14 +77,16 @@ export function SeriesChart({
           {keys.map((k) => (
             <Line
               key={k}
-              type="monotone"
+              // smoothing needs ≥3 points; fewer get straight segments (and a dot when alone), and the
+              // y-domain starts at 0, so a line can never dip below the axis
+              type={data.length < 3 ? "linear" : "monotone"}
               dataKey={k}
               name={SERIES_V2[k].label}
               stroke={SERIES_V2[k].color}
               strokeWidth={3}
               strokeLinecap="round"
               strokeDasharray={SERIES_V2[k].dash}
-              dot={false}
+              dot={data.length === 1 ? { r: 4, fill: SERIES_V2[k].color, stroke: "var(--card)", strokeWidth: 2 } : false}
               activeDot={{ r: 6, stroke: "var(--card)", strokeWidth: 3 }}
               isAnimationActive={false}
               label={endLabel(k)}
