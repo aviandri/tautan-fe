@@ -26,81 +26,15 @@ import {
   Quote,
   Tag,
   Timer,
-  Clock,
-  HandCoins,
-  MessageCircle,
-  ReceiptText,
-  ShoppingBag,
-  ShoppingCart,
-  Star,
-  Store,
-  Wallet,
 } from "lucide-react";
-import type { BlockDataMap, BlockType, FormField, Schedule } from "../types";
+import type { BlockDataMap, BlockType, FormField } from "../types";
+import { compact, keep, maxLen, plural, put, required, withSchedule, type BlockMeta, type FieldErrors } from "./meta-core";
+import { SELL_META } from "./sell-meta";
 import { prettyUrl, urlError } from "../url";
 
-export type FieldErrors = Record<string, string>;
+export type { BlockMeta, FieldErrors } from "./meta-core";
+export { validateSchedule } from "./meta-core";
 
-export interface BlockMeta<K extends BlockType> {
-  type: K;
-  label: string;
-  description: string;
-  icon: LucideIcon;
-  /** Accent for the type chip (editor only; public page colours come from the theme). */
-  tint: string;
-  defaultData: () => BlockDataMap[K];
-  /** The server rejects the default data (a URL is required), so collect it before POSTing. */
-  needsInputFirst: boolean;
-  /** Hidden from the "Add block" picker (still editable if present). */
-  hidden?: boolean;
-  summary: (d: BlockDataMap[K]) => string;
-  /** Returns field errors and the data to send. */
-  validate: (d: BlockDataMap[K]) => { errors: FieldErrors; data: BlockDataMap[K] };
-}
-
-const put = (e: FieldErrors, k: string, v: string | null | undefined) => {
-  if (v) e[k] = v;
-};
-const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
-const maxLen = (v: string | undefined, n: number) => ((v ?? "").length > n ? `At most ${n} characters` : null);
-const required = (v: string | undefined) => ((v ?? "").trim() ? null : "Required");
-
-/** Drop optional keys that are "", undefined or null, so we don't store noise. */
-function compact<T extends object>(d: T, keys: (keyof T)[]): T {
-  const out = { ...d };
-  for (const k of keys) {
-    const v = out[k];
-    if (v === undefined || v === null || v === "") delete out[k];
-  }
-  return out;
-}
-
-/** schedule: drop when empty; end must be after start (mirrors checkSchedule). */
-export function validateSchedule(s: Schedule | undefined): { error: string | null; value: Schedule | undefined } {
-  if (!s) return { error: null, value: undefined };
-  const value = compact(s, ["start_at", "end_at"]);
-  if (!value.start_at && !value.end_at) return { error: null, value: undefined };
-  if (value.start_at && value.end_at && Date.parse(value.end_at) <= Date.parse(value.start_at))
-    return { error: "End must be after start", value };
-  return { error: null, value };
-}
-
-/** Wrap a type's validator with shared schedule handling. */
-function withSchedule<K extends BlockType>(
-  fn: (d: BlockDataMap[K]) => { errors: FieldErrors; data: BlockDataMap[K] },
-) {
-  return (d: BlockDataMap[K]) => {
-    const r = fn(d);
-    const sched = validateSchedule((d as { schedule?: Schedule }).schedule);
-    const data = { ...r.data } as BlockDataMap[K] & { schedule?: Schedule };
-    if (sched.value) data.schedule = sched.value;
-    else delete data.schedule;
-    if (sched.error) r.errors.schedule = sched.error;
-    return { errors: r.errors, data: data as BlockDataMap[K] };
-  };
-}
-
-const keep = <T>(d: T) => ({ errors: {} as FieldErrors, data: d });
 
 const EMOJI_MAX = 8;
 function iconError(icon: string | undefined): string | null {
@@ -111,19 +45,6 @@ function iconError(icon: string | undefined): string | null {
 }
 
 const EMAIL_RE = /^[^\s@<>()]+@[^\s@<>()]+\.[^\s@<>()]+$/;
-/** Placeholder meta for a P3 type whose editor form isn't built yet: hidden, validates nothing. */
-function sellStub<K extends BlockType>(
-  type: K,
-  label: string,
-  description: string,
-  icon: LucideIcon,
-  tint: string,
-  defaultData: () => BlockDataMap[K],
-  summary: (d: BlockDataMap[K]) => string,
-): BlockMeta<K> {
-  return { type, label, description, icon, tint, defaultData, needsInputFirst: true, hidden: true, summary, validate: keep };
-}
-
 export const BOOKING_HOSTS = ["calendly.com", "cal.com", "app.cal.com"];
 
 export const BLOCK_META: { [K in BlockType]: BlockMeta<K> } = {
@@ -496,27 +417,7 @@ export const BLOCK_META: { [K in BlockType]: BlockMeta<K> } = {
       return { errors: e, data };
     }),
   },
-  // ----- P3-A Sell (editor forms land in feat/p3-sell-forms; hidden from the picker until then) -----
-  product: sellStub("product", "Product", "One item with photos, price and a buy button", ShoppingBag, "#c2410c",
-    () => ({ images: [], name: "", currency: "IDR", action: { kind: "whatsapp" } }), (d) => d.name || "Product"),
-  shop: sellStub("shop", "Shop", "A grid of products with categories", Store, "#c2410c", () => ({ items: [] }),
-    (d) => plural(d.items.length, "product")),
-  marketplace: sellStub("marketplace", "Marketplace", "Your Shopee, Tokopedia and other stores", ShoppingCart, "#c2410c",
-    () => ({ stores: [] }), (d) => plural(d.stores.length, "store")),
-  whatsapp: sellStub("whatsapp", "WhatsApp order", "A chat button or an order form sent to WhatsApp", MessageCircle, "#1d7a4a",
-    () => ({ label: "Order on WhatsApp", number: "", message_template: "Hi! I'd like to order:\n{items}\n\nName: {name}\nAddress: {address}" }),
-    (d) => d.label),
-  price_list: sellStub("price_list", "Price list", "Services or a menu with prices", ReceiptText, "#c2410c",
-    () => ({ sections: [{ title: "", items: [] }], currency: "IDR" }),
-    (d) => plural(d.sections.reduce((n, x) => n + x.items.length, 0), "item")),
-  store_info: sellStub("store_info", "Store info", "Opening hours, address and delivery", Clock, "#1d7a4a",
-    () => ({ hours: [], tz: "Asia/Jakarta" }), (d) => d.area || d.address || "Opening hours"),
-  payment: sellStub("payment", "Payment", "QRIS and bank or e-wallet accounts", Wallet, "#1d7a4a",
-    () => ({ accounts: [] }), (d) => (d.qris_image_url ? "QRIS" : plural(d.accounts.length, "account"))),
-  tip_jar: sellStub("tip_jar", "Tip jar", "Support links: Saweria, Trakteer, Ko-fi", HandCoins, "#c2410c",
-    () => ({ title: "Support my work", platforms: [] }), (d) => d.title),
-  reviews: sellStub("reviews", "Reviews", "Star rating and customer quotes", Star, "#c2410c",
-    () => ({ items: [] }), (d) => (d.average != null ? `${d.average} ★` : plural(d.items.length, "review"))),
+  ...SELL_META,
 };
 
 export function getMeta<K extends BlockType>(type: K): BlockMeta<K> {
