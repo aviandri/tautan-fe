@@ -214,7 +214,7 @@ function DraftForm({ block, tabs, autoFocus }: { block: Block; tabs: Tab[]; auto
       <div className="absolute -top-2.5 right-0 flex h-4 items-center">
         <SaveIndicator state={d.state} />
       </div>
-      <BlockForm type={block.type} data={d.draft} onChange={d.onChange} errors={d.errors} autoFocus={autoFocus} ctx={{ tabs, currentTabId: block.tab_id }} />
+      <BlockForm type={block.type} data={d.draft} onChange={d.onChange} errors={d.errors} autoFocus={autoFocus} ctx={{ tabs, currentTabId: block.tab_id, blockId: block.id }} />
     </div>
   );
 }

@@ -30,6 +30,7 @@ import {
   TipJarForm,
   WhatsAppForm,
 } from "./sell/SellForms";
+import { LatestVideoForm, PodcastForm, PostGridForm, ShopTheLookForm } from "./creator/FetchedForms";
 import { BrandsForm, CommunityForm, EventsForm, GalleryForm, MediaKitForm, RateCardForm } from "./creator/CreatorForms";
 import { SOCIAL_PLATFORMS } from "@/lib/social";
 
@@ -38,6 +39,8 @@ export interface FormContext {
   tabs: Tab[];
   /** The tab the block lives in (not offered as a link destination). */
   currentTabId?: string;
+  /** Saved blocks only: lets forms read server-resolved data (P3-B). */
+  blockId?: string;
 }
 
 export interface FormProps<K extends BlockType> {
@@ -464,11 +467,6 @@ function FormForm({ data, onChange, errors, autoFocus }: FormProps<"form">) {
   return <FormBuilder data={data} onChange={onChange} errors={errors} autoFocus={autoFocus} />;
 }
 
-/** Card types whose forms haven't landed yet: still listed, deletable and reorderable. */
-function PendingForm() {
-  return <p className="text-[13px] text-muted">This card can&apos;t be edited here yet.</p>;
-}
-
 const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   link: LinkForm,
   heading: HeadingForm,
@@ -501,12 +499,12 @@ const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   media_kit: MediaKitForm,
   rate_card: RateCardForm,
   brands: BrandsForm,
-  post_grid: PendingForm,
-  latest_video: PendingForm,
-  shop_the_look: PendingForm,
+  post_grid: PostGridForm,
+  latest_video: LatestVideoForm,
+  shop_the_look: ShopTheLookForm,
   gallery: GalleryForm,
   events: EventsForm,
-  podcast: PendingForm,
+  podcast: PodcastForm,
   community: CommunityForm,
 };
 

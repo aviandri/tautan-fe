@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { communityUrlError, detectCommunity, formatCount, parseCount } from "./creator";
+import { channelIdFrom, communityUrlError, detectCommunity, formatCount, parseCount, postPlatform } from "./creator";
 
 describe("parseCount", () => {
   it.each([
@@ -28,5 +28,19 @@ describe("community links", () => {
     expect(communityUrlError("https://t.me/x", "telegram")).toBeNull();
     expect(communityUrlError("http://t.me/x", "telegram")).toMatch(/https/);
     expect(communityUrlError("https://t.me/x", "discord")).toMatch(/Discord/);
+  });
+});
+
+describe("post and channel urls", () => {
+  it.each([
+    ["https://www.instagram.com/p/Cx1/", "instagram"], ["https://instagram.com/reel/Cx1", "instagram"],
+    ["https://www.tiktok.com/@sekar/video/7312", "tiktok"], ["https://vt.tiktok.com/ZS8x/", "tiktok"],
+    ["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "youtube"], ["https://youtube.com/shorts/abc", "youtube"], ["https://youtu.be/abc", "youtube"],
+    ["https://www.instagram.com/sekar/", null], ["https://www.tiktok.com/@sekar", null], ["https://www.youtube.com/@sekar", null], ["https://example.com/p/1", null],
+  ] as const)("%s → %s", (u, want) => expect(postPlatform(u)).toBe(want));
+  it("channel ids", () => {
+    expect(channelIdFrom("UCabcdefghijklmnopqrstuv")).toBe("UCabcdefghijklmnopqrstuv");
+    expect(channelIdFrom("https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv/videos")).toBe("UCabcdefghijklmnopqrstuv");
+    expect(channelIdFrom("https://www.youtube.com/@sekar")).toBeNull();
   });
 });
