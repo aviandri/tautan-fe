@@ -940,6 +940,8 @@ textarea.input {
   outline-offset: 3px;
 }
 .lightbox {
+  /* Tailwind's preflight zeroes margins, which un-centres modal dialogs */
+  margin: auto;
   padding: 0;
   border: 0;
   background: transparent;
