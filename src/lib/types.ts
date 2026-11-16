@@ -888,10 +888,15 @@ export interface MeResponse {
   user: User;
   profile: Profile;
 }
+/** BE "Performance: implemented" 2b: per upload pathname, its size and the ready ?w= variants. */
+export type MediaMap = Record<string, { width: number; height: number; widths: number[] }>;
+
 export interface PageResponse {
   profile: Profile;
   tabs: Tab[];
   blocks: Block[];
+  /** every uploaded image the page references (GET /public/{u} and GET /profile/editor) */
+  media?: MediaMap;
 }
 /** GET /profile/editor — includes hidden blocks. */
 export type EditorResponse = PageResponse;

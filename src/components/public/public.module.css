@@ -1312,3 +1312,104 @@ textarea.input {
   font-size: 0.85rem;
   opacity: 0.8;
 }
+
+/* ---- click-to-load embed facades (perf: no third-party iframe before interaction) ---- */
+.facade {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--t-text);
+  background: var(--t-block-bg, var(--t-surface));
+}
+.facadePoster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.facadePlay {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.72);
+  color: #fff;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.25);
+  transition: transform 0.15s ease;
+}
+.facadePlay svg {
+  width: 26px;
+  height: 26px;
+  margin-left: 3px;
+  fill: currentColor;
+}
+.facade:hover .facadePlay,
+.audioFacade:hover .facadePlay {
+  transform: scale(1.06);
+}
+.facade:focus-visible,
+.audioFacade:focus-visible {
+  outline: 3px solid var(--t-text);
+  outline-offset: -3px;
+}
+.facadeLabel {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.6);
+  color: #fff;
+}
+.audioFacadeBox {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.audioFacade {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  height: 100%;
+  padding: 0 18px;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--t-block-text, var(--t-text));
+  background: var(--t-block-bg, var(--t-surface));
+}
+.audioFacade .facadePlay {
+  width: 52px;
+  height: 52px;
+  flex: none;
+}
+.audioFacadeText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* PageRuntime toggles the hidden attribute; author display rules would otherwise override it */
+.page [hidden] {
+  display: none !important;
+}
+.audioCover {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 8px;
+  object-fit: cover;
+}

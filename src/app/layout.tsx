@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Providers } from "./providers";
-import "./globals.css";
+// No global CSS here: the app areas import ./globals.css (Tailwind + tokens) from their own layouts,
+// and /[username] gets only a reset (its layout), so visitors never download the dashboard's utilities.
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+// preload:false: public pages render in their theme font and must not fetch these (perf budget);
+// the dashboard still gets them, just without the high-priority preload.
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"], display: "swap", preload: false });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap", preload: false });
 
 export const metadata: Metadata = {
   title: { default: "Tautan", template: "%s · Tautan" },
@@ -15,7 +17,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        <Providers>{children}</Providers>
+        {children}
       </body>
     </html>
   );

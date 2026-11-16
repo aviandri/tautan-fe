@@ -1,0 +1,8 @@
+/* The public page's only global CSS: Tailwind's preflight reset (what public.module.css is written
+   against), without the app's utilities and tokens (globals.css), which the page never uses. */
+@import "tailwindcss/preflight.css";
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

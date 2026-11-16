@@ -7,6 +7,7 @@ import { EditorWindow } from "@/components/landing/EditorWindow";
 import { BlocksBento, QrPoster, ThemesStrip } from "@/components/landing/Showcase";
 import { AnalyticsPanelLazy } from "@/components/landing/AnalyticsPanelLazy";
 import s from "@/components/landing/landing.module.css";
+import "./globals.css";
 
 /*
   tasteskill deal (design-taste-frontend): kind software · hero centred (one window) · nav-centre ·
