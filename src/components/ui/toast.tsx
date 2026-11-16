@@ -4,18 +4,20 @@ import { CircleAlert, CircleCheck, X } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import { cx } from "./index";
 
-type Toast = { id: number; tone: "error" | "success"; message: string };
+type ToastAction = { label: string; onClick: () => void };
+type Toast = { id: number; tone: "error" | "success"; message: string; action?: ToastAction };
 
 let toasts: Toast[] = [];
 let seq = 0;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
-function push(tone: Toast["tone"], message: string) {
+function push(tone: Toast["tone"], message: string, action?: ToastAction) {
   const id = ++seq;
-  toasts = [...toasts.filter((t) => t.message !== message), { id, tone, message }].slice(-3);
+  toasts = [...toasts.filter((t) => t.message !== message), { id, tone, message, action }].slice(-3);
   emit();
-  setTimeout(() => dismiss(id), tone === "error" ? 5000 : 2500);
+  setTimeout(() => dismiss(id), action ? 7000 : tone === "error" ? 5000 : 2500);
+  return id;
 }
 function dismiss(id: number) {
   toasts = toasts.filter((t) => t.id !== id);
@@ -24,7 +26,8 @@ function dismiss(id: number) {
 
 export const toast = {
   error: (m: string) => push("error", m),
-  success: (m: string) => push("success", m),
+  success: (m: string, action?: ToastAction) => push("success", m, action),
+  dismiss,
 };
 
 export function Toaster() {
@@ -57,6 +60,17 @@ export function Toaster() {
             <CircleCheck className="size-4 shrink-0 text-[#7fd1b0]" aria-hidden />
           )}
           <span>{t.message}</span>
+          {t.action && (
+            <button
+              onClick={() => {
+                t.action!.onClick();
+                dismiss(t.id);
+              }}
+              className="ml-1 rounded-md px-1.5 py-0.5 font-semibold text-[#9fe0c4] underline-offset-2 hover:underline"
+            >
+              {t.action.label}
+            </button>
+          )}
           <button onClick={() => dismiss(t.id)} aria-label="Dismiss" className="ml-1 opacity-60 hover:opacity-100">
             <X className="size-3.5" />
           </button>

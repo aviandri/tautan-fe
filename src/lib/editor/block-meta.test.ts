@@ -82,3 +82,60 @@ describe("block meta", () => {
     expect(BLOCK_META.testimonial.validate({ items: [{ quote: "", author: "" }] }).data.items).toHaveLength(0);
   });
 });
+
+describe("P2-1 validators", () => {
+  const sched = { start_at: "2026-12-01T00:00:00.000Z", end_at: "2026-12-31T00:00:00.000Z" };
+
+  it("preserve schedule and fields they don't own", () => {
+    const d = { title: "Shop", url: "https://x.io", layout: "grid2" as const, label: "New", schedule: sched, future_field: 1 };
+    const v = BLOCK_META.link.validate(d as never);
+    expect(v.errors).toEqual({});
+    expect(v.data).toMatchObject({ layout: "grid2", label: "New", schedule: sched, future_field: 1 });
+  });
+
+  it("drop empty optionals and the default button layout", () => {
+    const v = BLOCK_META.link.validate({ title: "a", url: "https://x.io", layout: "button", label: "", description: "" });
+    expect(v.data).toEqual({ title: "a", url: "https://x.io" });
+  });
+
+  it("schedule: end must be after start; empty schedule removed", () => {
+    const bad = BLOCK_META.text.validate({ content: "x", schedule: { start_at: sched.end_at, end_at: sched.start_at } });
+    expect(bad.errors.schedule).toBeTruthy();
+    const empty = BLOCK_META.text.validate({ content: "x", schedule: { start_at: "", end_at: "" } } as never);
+    expect(empty.data).toEqual({ content: "x" });
+  });
+
+  it("link dest_kind email stores mailto:, tab needs tab_id", () => {
+    const e = BLOCK_META.link.validate({ title: "Mail", url: "me@x.io", dest_kind: "email" });
+    expect(e.errors).toEqual({});
+    expect(e.data.url).toBe("mailto:me@x.io");
+    expect(BLOCK_META.link.validate({ title: "", url: "nope", dest_kind: "email" }).errors.url).toBeTruthy();
+    expect(BLOCK_META.link.validate({ title: "T", url: "", dest_kind: "tab" }).errors.tab_id).toBeTruthy();
+    const t = BLOCK_META.link.validate({ title: "T", url: "", dest_kind: "tab", tab_id: "abc" });
+    expect(t.errors).toEqual({});
+  });
+
+  it("link icon: one emoji or an image URL", () => {
+    expect(BLOCK_META.link.validate({ title: "a", url: "https://x.io", icon: "🔥" }).errors).toEqual({});
+    expect(BLOCK_META.link.validate({ title: "a", url: "https://x.io", icon: "toolongtext" }).errors.icon).toBeTruthy();
+  });
+
+  it("booking only allows https calendly/cal.com", () => {
+    expect(BLOCK_META.booking.validate({ url: "https://calendly.com/me/30min" }).errors).toEqual({});
+    expect(BLOCK_META.booking.validate({ url: "https://app.cal.com/me" }).errors).toEqual({});
+    expect(BLOCK_META.booking.validate({ url: "http://calendly.com/me" }).errors.url).toBeTruthy();
+    expect(BLOCK_META.booking.validate({ url: "https://evil.com/calendly.com" }).errors.url).toBeTruthy();
+  });
+
+  it("file needs an upload and a title; quote needs text; countdown needs a date", () => {
+    expect(Object.keys(BLOCK_META.file.validate({ title: "", url: "" }).errors).sort()).toEqual(["title", "url"]);
+    expect(BLOCK_META.quote.validate({ quote: "  " }).errors.quote).toBe("Required");
+    expect(BLOCK_META.countdown.validate({ ends_at: "" }).errors.ends_at).toBeTruthy();
+  });
+
+  it("discount_code keeps an empty code (no code needed)", () => {
+    const v = BLOCK_META.discount_code.validate({ code: "", discount: "20% off" });
+    expect(v.errors).toEqual({});
+    expect(v.data).toEqual({ code: "", discount: "20% off" });
+  });
+});

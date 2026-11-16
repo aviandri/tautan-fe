@@ -239,7 +239,7 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       return ok({
         profile: prof,
         tabs: d.tabs.filter((t) => t.profile_id === prof.id).sort((a, b) => a.position - b.position),
-        blocks: d.blocks.filter((b) => b.profile_id === prof.id && b.is_visible),
+        blocks: d.blocks.filter((b) => b.profile_id === prof.id && b.is_visible && !b.deleted_at),
       });
     }
 
@@ -248,6 +248,8 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     if (!user) return err(401, "unauthorized", "Missing or invalid token.");
     const profile = d.profiles.find((x) => x.user_id === user.id)!;
     const mine = <T extends { profile_id: string }>(xs: T[]) => xs.filter((x) => x.profile_id === profile.id);
+    /** live (not soft-deleted) blocks of this profile */
+    const live = () => mine(d.blocks).filter((b) => !b.deleted_at);
     const { password: _pw, ...pubUser } = user;
     void _pw;
 
@@ -263,7 +265,7 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       return ok({
         profile,
         tabs: mine(d.tabs).sort((a, b) => a.position - b.position),
-        blocks: mine(d.blocks),
+        blocks: live(),
       });
     }
 
@@ -305,7 +307,7 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
 
     if (p === "/blocks" && method === "POST") {
       const parent_id = (B.parent_id as string | null) ?? null;
-      const siblings = mine(d.blocks).filter((b) => b.tab_id === B.tab_id && b.parent_id === parent_id);
+      const siblings = live().filter((b) => b.tab_id === B.tab_id && b.parent_id === parent_id);
       const block = {
         id: uid(), profile_id: profile.id, tab_id: String(B.tab_id), parent_id, type: B.type,
         data: B.data, position: siblings.length, is_visible: true, created_at: now(), updated_at: now(),
@@ -315,8 +317,8 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     }
     if (p === "/blocks/order" && method === "PUT") {
       const ids = B.ids as string[];
-      const first = mine(d.blocks).find((b) => b.id === ids[0]);
-      const group = first ? mine(d.blocks).filter((b) => b.tab_id === B.tab_id && b.parent_id === first.parent_id) : [];
+      const first = live().find((b) => b.id === ids[0]);
+      const group = first ? live().filter((b) => b.tab_id === B.tab_id && b.parent_id === first.parent_id) : [];
       if (!first || !sameSet(ids, group.map((b) => b.id)))
         return err(400, "order_mismatch", "ids must list the whole sibling group exactly once");
       ids.forEach((id, i) => {
@@ -325,9 +327,30 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       });
       return ok(null, 204);
     }
+    if (p === "/blocks/deleted") {
+      const blocks = mine(d.blocks)
+        .filter((b) => b.deleted_at && (b as { deleted_with?: string }).deleted_with === b.id)
+        .sort((a, b) => (b.deleted_at ?? "").localeCompare(a.deleted_at ?? ""));
+      return ok({ blocks });
+    }
+    const restM = p.match(/^\/blocks\/([^/]+)\/restore$/);
+    if (restM && method === "POST") {
+      const block = mine(d.blocks).find((b) => b.id === restM[1] && b.deleted_at);
+      if (!block) return err(404, "not_found", "Block not found.");
+      const parentLive = block.parent_id && live().some((b) => b.id === block.parent_id);
+      if (block.parent_id && !parentLive) block.parent_id = null;
+      block.position = live().filter((b) => b.tab_id === block.tab_id && b.parent_id === block.parent_id).length;
+      d.blocks.forEach((b) => {
+        if ((b as { deleted_with?: string }).deleted_with === block.id) {
+          delete b.deleted_at;
+          delete (b as { deleted_with?: string }).deleted_with;
+        }
+      });
+      return ok(block);
+    }
     const blkM = p.match(/^\/blocks\/([^/]+)$/);
     if (blkM) {
-      const block = mine(d.blocks).find((b) => b.id === blkM[1]);
+      const block = live().find((b) => b.id === blkM[1]);
       if (!block) return err(404, "not_found", "Block not found.");
       if (method === "PATCH") {
         Object.assign(block, B, { updated_at: now() });
@@ -336,7 +359,11 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
         return ok(block);
       }
       if (method === "DELETE") {
-        d.blocks = d.blocks.filter((b) => b.id !== block.id && b.parent_id !== block.id);
+        // P2-1 soft delete; live children go with their folder.
+        const at = now();
+        d.blocks.forEach((b) => {
+          if (b.id === block.id || (b.parent_id === block.id && !b.deleted_at)) Object.assign(b, { deleted_at: at, deleted_with: block.id });
+        });
         return ok(null, 204);
       }
     }
@@ -344,8 +371,11 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     if (p === "/uploads" && method === "POST") {
       const file = body instanceof FormData ? body.get("file") : null;
       if (!(file instanceof Blob)) return err(400, "no_file", "No file uploaded.");
-      // The mock can't store files; return a stable placeholder image URL that passes URL validation.
-      return ok({ url: `https://picsum.photos/seed/${uid().slice(0, 8)}/600/600` }, 201);
+      // The mock can't store files; return a stable placeholder URL that passes URL validation.
+      const name = (file as File).name ?? "file";
+      if (url.searchParams.get("kind") === "file")
+        return ok({ url: `https://example.com/files/${encodeURIComponent(name)}`, file_name: name, size: file.size, content_type: file.type }, 201);
+      return ok({ url: `https://picsum.photos/seed/${uid().slice(0, 8)}/600/600`, file_name: name, size: file.size, content_type: file.type }, 201);
     }
 
     if (p === "/analytics/summary") {
@@ -357,7 +387,7 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       });
       const views = series.reduce((s, x) => s + x.views, 0);
       const clicks = series.reduce((s, x) => s + x.clicks, 0);
-      const links = mine(d.blocks).filter((b) => b.type === "link");
+      const links = live().filter((b) => b.type === "link");
       const summary: AnalyticsSummary = {
         views, clicks, ctr: views ? clicks / views : 0, series,
         top_links: links.slice(0, 5).map((b, i) => ({

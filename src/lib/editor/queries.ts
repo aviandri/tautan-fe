@@ -112,14 +112,42 @@ export function useUpdateBlock() {
   });
 }
 
-export function useDeleteBlock() {
+export const deletedKey = ["blocks", "deleted"] as const;
+
+export function useDeletedBlocks(enabled = true) {
+  return useQuery({ queryKey: deletedKey, queryFn: () => api.blocks.deleted().then((r) => r.blocks), enabled });
+}
+
+/** POST /blocks/{id}/restore. A folder brings its children back, so resync the editor. */
+export function useRestoreBlock() {
   const qc = useQueryClient();
   return useMutation({
+    mutationFn: (id: string) => api.blocks.restore(id),
+    onSuccess: (block) => {
+      edit(qc, (e) => ({ ...e, blocks: [...e.blocks.filter((b) => b.id !== block.id), block] }));
+      qc.invalidateQueries({ queryKey: qk.editor });
+      qc.invalidateQueries({ queryKey: deletedKey });
+      toast.success("Block restored");
+    },
+    onError: (err) => toast.error(errorMessage(err)),
+  });
+}
+
+/** Soft delete (P2-1) with an Undo toast. */
+export function useDeleteBlock() {
+  const qc = useQueryClient();
+  const restore = useRestoreBlock();
+  const opt = optimistic(qc, (id: string) => (e) => ({
+    ...e,
+    blocks: e.blocks.filter((b) => b.id !== id && b.parent_id !== id),
+  }));
+  return useMutation({
     mutationFn: (id: string) => api.blocks.remove(id),
-    ...optimistic(qc, (id: string) => (e) => ({
-      ...e,
-      blocks: e.blocks.filter((b) => b.id !== id && b.parent_id !== id),
-    })),
+    ...opt,
+    onSuccess: (_r, id) => {
+      qc.invalidateQueries({ queryKey: deletedKey });
+      toast.success("Block deleted", { label: "Undo", onClick: () => restore.mutate(id) });
+    },
   });
 }
 

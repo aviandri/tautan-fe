@@ -1,13 +1,14 @@
 "use client";
 
-import { Check, ChevronDown, EyeOff, GripVertical, Loader2, MoreHorizontal, Trash2, ArrowRightLeft } from "lucide-react";
+import { Check, ChevronDown, Clock, EyeOff, GripVertical, Loader2, MoreHorizontal, Trash2, ArrowRightLeft } from "lucide-react";
 import { useState } from "react";
 import { cx, IconButton, Switch } from "@/components/ui";
 import { Menu, MenuItem, MenuLabel } from "@/components/ui/menu";
 import { getMeta } from "@/lib/editor/block-meta";
 import { useDeleteBlock, useMoveBlock, useUpdateBlock } from "@/lib/editor/queries";
 import { useBlockDraft, type SaveState } from "@/lib/editor/use-block-draft";
-import type { Block, BlockType, Tab } from "@/lib/types";
+import type { Block, BlockType, Schedule, Tab } from "@/lib/types";
+import { scheduleState } from "./fields-extra";
 import { BlockForm } from "./BlockForm";
 
 export interface DragHandleProps {
@@ -66,6 +67,7 @@ export function BlockCard({
   const [confirming, setConfirming] = useState(false);
   const otherTabs = tabs.filter((t) => t.id !== block.tab_id);
   const summary = (meta.summary as (d: Block["data"]) => string)(block.data);
+  const sched = scheduleState((block.data as { schedule?: Schedule }).schedule);
 
   return (
     <div
@@ -105,6 +107,12 @@ export function BlockCard({
               {!block.is_visible && (
                 <span className="inline-flex items-center gap-1">
                   · <EyeOff className="size-3" aria-hidden /> Hidden
+                </span>
+              )}
+              {sched && (
+                <span className={cx("inline-flex items-center gap-1", sched === "ended" ? "text-danger" : "text-[#9a4a1d]")}>
+                  · <Clock className="size-3" aria-hidden />
+                  {sched === "scheduled" ? "Scheduled" : sched === "ended" ? "Schedule ended" : "Scheduled, live now"}
                 </span>
               )}
             </span>
@@ -191,7 +199,7 @@ export function BlockCard({
 
       {expanded && (
         <div className="border-t border-line px-4 pb-4 pt-4 sm:px-5">
-          <DraftForm key={block.id} block={block} autoFocus={autoFocus} />
+          <DraftForm key={block.id} block={block} tabs={tabs} autoFocus={autoFocus} />
           {children}
         </div>
       )}
@@ -199,14 +207,14 @@ export function BlockCard({
   );
 }
 
-function DraftForm({ block, autoFocus }: { block: Block; autoFocus?: boolean }) {
+function DraftForm({ block, tabs, autoFocus }: { block: Block; tabs: Tab[]; autoFocus?: boolean }) {
   const d = useBlockDraft(block);
   return (
     <div onBlur={d.flush} className="relative">
       <div className="absolute -top-2.5 right-0 flex h-4 items-center">
         <SaveIndicator state={d.state} />
       </div>
-      <BlockForm type={block.type} data={d.draft} onChange={d.onChange} errors={d.errors} autoFocus={autoFocus} />
+      <BlockForm type={block.type} data={d.draft} onChange={d.onChange} errors={d.errors} autoFocus={autoFocus} ctx={{ tabs, currentTabId: block.tab_id }} />
     </div>
   );
 }
