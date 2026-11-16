@@ -19,7 +19,7 @@ import {
   ToggleRow,
 } from "./fields-extra";
 import { FormBuilder } from "./FormBuilder";
-import { SOCIAL_PLATFORMS } from "./social-platforms";
+import { SOCIAL_PLATFORMS } from "@/lib/social";
 
 export interface FormContext {
   /** All tabs (link → tab destination). */
