@@ -8,11 +8,13 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { ImageField, TextField } from "@/components/editor/fields";
 import { Button, Card, Field, PrefixInput, Spinner, Switch } from "@/components/ui";
 import { toast } from "@/components/ui/toast";
-import { ApiError, assetUrl } from "@/lib/api";
+import { API_BASE, ApiError, assetUrl } from "@/lib/api";
 import { useUpdateProfile } from "@/lib/profile";
 import { useLogout, useSession } from "@/lib/session";
-import type { Profile, ProfilePatch } from "@/lib/types";
+import type { PageSettings, Profile, ProfilePatch } from "@/lib/types";
 import { urlError } from "@/lib/url";
+import { compactSettings, LANGUAGES, settingsErrors } from "@/lib/settings";
+import { ToggleRow } from "@/components/editor/fields-extra";
 import { useUsernameCheck } from "@/lib/use-username-check";
 
 const BIO_MAX = 160;
@@ -30,6 +32,10 @@ function profileError(err: unknown): string {
         return "That avatar image URL isn't allowed.";
       case "invalid_seo":
         return "Check the share image URL.";
+      case "invalid_settings":
+        return err.message.replace(/^\w/, (c) => c.toUpperCase());
+      case "username_not_claimed":
+        return "Pick your page address before publishing.";
       default:
         return err.message;
     }
@@ -121,6 +127,22 @@ function SettingsInner({ profile, email }: { profile: Profile; email: string }) 
     image_url: profile.seo.image_url ?? "",
   });
   const check = useUsernameCheck(addr.v.username, { current: profile.username });
+  const st = profile.settings ?? {};
+  const pageOpts = useSection({
+    language: st.language ?? "",
+    show_share: !!st.show_share,
+    show_save_contact: !!st.show_save_contact,
+    contact_email: st.contact_email ?? "",
+    contact_phone: st.contact_phone ?? "",
+  });
+  const tracking = useSection({ ga4_id: st.ga4_id ?? "", meta_pixel_id: st.meta_pixel_id ?? "" });
+  const optErr = settingsErrors({ ...pageOpts.v, ...tracking.v });
+  /**
+   * settings is replaced wholesale on PATCH: send the saved object with only this
+   * section's values on top (other sections' unsaved edits stay local).
+   */
+  const saveSettings = (section: string, part: Partial<PageSettings>, msg: string) =>
+    save(section, { settings: compactSettings({ ...st, ...part }) }, msg);
 
   function save(section: string, patch: ProfilePatch, msg: string) {
     setSaving(section);
@@ -211,7 +233,10 @@ function SettingsInner({ profile, email }: { profile: Profile; email: string }) 
         {addr.dirty && (
           <p className="flex items-start gap-2 rounded-xl bg-accent/10 px-3.5 py-2.5 text-[13px] text-[#8a3f17]">
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-            Links and QR codes that point to {PUBLIC_HOST}/{profile.username} will stop working.
+            <span>
+              {PUBLIC_HOST}/{profile.username} will keep working: it redirects to your new address, and no one else can take it.
+              We keep your last 5 old names. Update links where you can, since printed QR codes and bios will go through the redirect.
+            </span>
           </p>
         )}
       </Section>
@@ -295,6 +320,96 @@ function SettingsInner({ profile, email }: { profile: Profile; email: string }) 
             </div>
           </div>
         </div>
+      </Section>
+
+      <Section
+        title="Page options"
+        description="Language and the buttons visitors see on your page."
+        dirty={pageOpts.dirty}
+        saving={saving === "opts"}
+        canSave={!optErr.contact_email && !optErr.contact_phone && !optErr.language}
+        onReset={pageOpts.reset}
+        onSave={() => saveSettings("opts", pageOpts.v, "Page options saved")}
+      >
+        <Field label="Page language" hint="Sets the language for screen readers, translation and search engines.">
+          {(p) => (
+            <select
+              {...p}
+              value={pageOpts.v.language}
+              onChange={(e) => pageOpts.set({ language: e.target.value })}
+              className="h-11 w-full rounded-xl border border-line bg-surface px-3 text-[15px] focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10"
+            >
+              <option value="">Automatic</option>
+              {LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+        <ToggleRow
+          label="Share button"
+          hint="Lets visitors copy or share your page link."
+          checked={pageOpts.v.show_share}
+          onChange={(show_share) => pageOpts.set({ show_share })}
+        />
+        <ToggleRow
+          label="Save contact button"
+          hint="Visitors can add you to their phone contacts (vCard) with your name, photo, link and socials."
+          checked={pageOpts.v.show_save_contact}
+          onChange={(show_save_contact) => pageOpts.set({ show_save_contact })}
+        />
+        {pageOpts.v.show_save_contact && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              label="Contact email (optional)"
+              value={pageOpts.v.contact_email}
+              onChange={(contact_email) => pageOpts.set({ contact_email })}
+              placeholder="you@example.com"
+              error={optErr.contact_email}
+            />
+            <TextField
+              label="Contact phone (optional)"
+              value={pageOpts.v.contact_phone}
+              onChange={(contact_phone) => pageOpts.set({ contact_phone })}
+              placeholder="+62 812 3456 7890"
+              error={optErr.contact_phone}
+            />
+          </div>
+        )}
+        {profile.is_published && st.show_save_contact && (
+          <a href={`${API_BASE}/public/${profile.username}/vcard`} className="w-fit text-[13px] font-medium text-brand underline-offset-2 hover:underline">
+            Download your contact card to check it
+          </a>
+        )}
+      </Section>
+
+      <Section
+        title="Tracking"
+        description="Send page views to your own analytics. Tautan's built-in Analytics keeps working either way."
+        dirty={tracking.dirty}
+        saving={saving === "tracking"}
+        canSave={!optErr.ga4_id && !optErr.meta_pixel_id}
+        onReset={tracking.reset}
+        onSave={() => saveSettings("tracking", tracking.v, "Tracking saved")}
+      >
+        <TextField
+          label="Google Analytics 4 measurement ID"
+          value={tracking.v.ga4_id}
+          onChange={(ga4_id) => tracking.set({ ga4_id: ga4_id.toUpperCase().trim() })}
+          placeholder="G-XXXXXXXXXX"
+          error={optErr.ga4_id}
+          hint="In GA4: Admin → Data streams → your web stream."
+        />
+        <TextField
+          label="Meta Pixel ID"
+          value={tracking.v.meta_pixel_id}
+          onChange={(meta_pixel_id) => tracking.set({ meta_pixel_id: meta_pixel_id.replace(/\s/g, "") })}
+          placeholder="123456789012345"
+          error={optErr.meta_pixel_id}
+          hint="In Meta Events Manager: Data sources → your pixel."
+        />
       </Section>
 
       <Section title="Account">
