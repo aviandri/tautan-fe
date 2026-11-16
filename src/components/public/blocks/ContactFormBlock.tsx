@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import type { BlockOf } from "@/lib/types";
 import { ApiError, api } from "@/lib/api";
@@ -28,7 +28,8 @@ type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent" } | { kind
 
 export function ContactFormBlock({ block }: { block: BlockOf<"contact_form"> }) {
   const { username, preview } = usePublic();
-  const uid = useId();
+  // ids from the block id: unique per page, identical on server and client
+  const uid = `contact-${block.id}`;
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
