@@ -10,6 +10,7 @@ export interface Preset extends ResolvedTheme {
 }
 
 // Eight original presets, named in Indonesian to match the product name.
+// `font` is a font family name and radius is 0–100 (100 = pill): the BE validates both.
 export const PRESETS: Preset[] = [
   {
     preset: "kertas",
@@ -17,7 +18,7 @@ export const PRESETS: Preset[] = [
     blurb: "Warm paper, ink outlines, a serif voice",
     bg: { type: "color", value: "#f5efe3" },
     button: { style: "outline", radius: 6, color: "#1c1a17", text_color: "#1c1a17" },
-    font: "fraunces",
+    font: "Fraunces",
     text_color: "#1c1a17",
   },
   {
@@ -26,7 +27,7 @@ export const PRESETS: Preset[] = [
     blurb: "Midnight navy with amber buttons",
     bg: { type: "color", value: "#0f172a" },
     button: { style: "fill", radius: 12, color: "#f2b544", text_color: "#0f172a" },
-    font: "manrope",
+    font: "Manrope",
     text_color: "#f3ead8",
   },
   {
@@ -34,8 +35,8 @@ export const PRESETS: Preset[] = [
     name: "Sawah",
     blurb: "Soft rice-field green, pill buttons",
     bg: { type: "color", value: "#dde7d3" },
-    button: { style: "fill", radius: 999, color: "#2f5d3a", text_color: "#f4f1e6" },
-    font: "dm-sans",
+    button: { style: "fill", radius: 100, color: "#2f5d3a", text_color: "#f4f1e6" },
+    font: "DM Sans",
     text_color: "#1f3324",
   },
   {
@@ -44,7 +45,7 @@ export const PRESETS: Preset[] = [
     blurb: "Sunset coral fading into apricot",
     bg: { type: "gradient", value: "linear-gradient(160deg, #ff7a59 0%, #ffb35c 100%)" },
     button: { style: "fill", radius: 16, color: "#fff7ee", text_color: "#3a1608" },
-    font: "outfit",
+    font: "Outfit",
     text_color: "#2a1208",
   },
   {
@@ -52,8 +53,8 @@ export const PRESETS: Preset[] = [
     name: "Laut",
     blurb: "Deep sea teal, light outlines",
     bg: { type: "gradient", value: "linear-gradient(180deg, #0f4c5c 0%, #0a2540 100%)" },
-    button: { style: "outline", radius: 999, color: "#e6f6f4", text_color: "#e6f6f4" },
-    font: "space-grotesk",
+    button: { style: "outline", radius: 100, color: "#e6f6f4", text_color: "#e6f6f4" },
+    font: "Space Grotesk",
     text_color: "#e6f6f4",
   },
   {
@@ -62,7 +63,7 @@ export const PRESETS: Preset[] = [
     blurb: "Charcoal, square edges, monospace",
     bg: { type: "color", value: "#121212" },
     button: { style: "fill", radius: 0, color: "#f2f2f2", text_color: "#121212" },
-    font: "jetbrains-mono",
+    font: "JetBrains Mono",
     text_color: "#f2f2f2",
   },
   {
@@ -71,7 +72,7 @@ export const PRESETS: Preset[] = [
     blurb: "Turmeric yellow with hard shadows",
     bg: { type: "color", value: "#ffd23f" },
     button: { style: "shadow", radius: 4, color: "#ffffff", text_color: "#111111" },
-    font: "bricolage",
+    font: "Bricolage Grotesque",
     text_color: "#111111",
   },
   {
@@ -80,7 +81,7 @@ export const PRESETS: Preset[] = [
     blurb: "Quiet stone grey, white cards",
     bg: { type: "color", value: "#ebebe8" },
     button: { style: "fill", radius: 14, color: "#ffffff", text_color: "#222222" },
-    font: "inter",
+    font: "Inter",
     text_color: "#222222",
   },
 ];
