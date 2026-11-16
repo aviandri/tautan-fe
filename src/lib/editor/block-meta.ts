@@ -27,7 +27,7 @@ import {
   Tag,
   Timer,
 } from "lucide-react";
-import type { BlockDataMap, BlockType, Schedule } from "../types";
+import type { BlockDataMap, BlockType, FormField, Schedule } from "../types";
 import { prettyUrl, urlError } from "../url";
 
 export type FieldErrors = Record<string, string>;
@@ -434,23 +434,45 @@ export const BLOCK_META: { [K in BlockType]: BlockMeta<K> } = {
     validate: withSchedule<"divider">(keep),
   },
   form: {
-    // Full form builder lands with P2-3; until then forms are editable but not addable.
     type: "form",
     label: "Form",
-    description: "A form with your own fields",
+    description: "Your own fields: questions, choices, dates",
     icon: ClipboardList,
     tint: "#be123c",
-    defaultData: () => ({
-      title: "Get in touch",
-      fields: [
-        { id: "name", type: "text", label: "Name", required: true },
-        { id: "email", type: "email", label: "Email", required: true },
-      ],
-    }),
+    defaultData: () => FORM_PRESETS.contact.data(),
     needsInputFirst: false,
-    hidden: true,
     summary: (d) => `${d.title || "Form"} · ${plural(d.fields.length, "field")}`,
-    validate: withSchedule<"form">(keep),
+    validate: withSchedule<"form">((d) => {
+      const e: FieldErrors = {};
+      if (d.fields.length === 0) e.fields = "Add at least one field";
+      if (d.fields.length > 30) e.fields = "At most 30 fields";
+      put(e, "title", maxLen(d.title, 120));
+      put(e, "description", maxLen(d.description, 500));
+      put(e, "success_message", maxLen(d.success_message, 300));
+      const seen = new Set<string>();
+      const fields = d.fields.map((f, i) => {
+        if (!FIELD_ID_RE.test(f.id) || seen.has(f.id)) e[`fields.${i}.id`] = "Use a unique id: a-z, 0-9, _ or -";
+        seen.add(f.id);
+        put(e, `fields.${i}.label`, required(f.label) ?? maxLen(f.label, 200));
+        put(e, `fields.${i}.placeholder`, maxLen(f.placeholder, 200));
+        if (f.type === "select") {
+          const opts = (f.options ?? []).map((o) => o.trim()).filter(Boolean);
+          if (opts.length === 0 || opts.length > 50) e[`fields.${i}.options`] = "Add 1 to 50 choices";
+          else if (opts.some((o) => o.length > 100)) e[`fields.${i}.options`] = "Choices can be up to 100 characters";
+          return compact({ ...f, label: f.label.trim(), options: opts }, ["placeholder"]);
+        }
+        const { options: _o, ...rest } = f;
+        void _o;
+        const out = compact({ ...rest, label: f.label.trim() }, ["placeholder"]);
+        if (!out.required) delete out.required;
+        return out;
+      });
+      const data = compact({ ...d, fields }, ["title", "description", "button_label", "success_message"]);
+      if (!data.hide_labels) delete data.hide_labels;
+      if (data.create_contacts !== false) delete data.create_contacts;
+      if (!data.subscribe || data.subscribe === "none") delete data.subscribe;
+      return { errors: e, data };
+    }),
   },
 };
 
@@ -480,7 +502,83 @@ export const PICKER_GROUPS: { title: string; types: BlockType[] }[] = [
   { title: "Links", types: ["link", "folder", "file", "social_icons"] },
   { title: "Content", types: ["heading", "text", "image", "quote", "divider", "faq", "testimonial"] },
   { title: "Media", types: ["video", "music"] },
-  { title: "Grow", types: ["email_signup", "contact_form", "booking", "discount_code", "countdown"] },
+  { title: "Grow", types: ["form", "email_signup", "contact_form", "booking", "discount_code", "countdown"] },
 ];
 
 export const PICKER_ORDER: BlockType[] = PICKER_GROUPS.flatMap((g) => g.types);
+
+// ---------- forms (P2-3) ----------
+
+export const FIELD_ID_RE = /^[a-z0-9_-]{1,40}$/;
+
+/** A stable id for a new field: from its label/type, unique among existing ids. Never changes afterwards. */
+export function newFieldId(base: string, taken: string[]): string {
+  const slug =
+    base
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 32) || "field";
+  let id = slug;
+  for (let n = 2; taken.includes(id); n++) id = `${slug}_${n}`;
+  return id;
+}
+
+type FormPreset = { label: string; description: string; data: () => BlockDataMap["form"] };
+const f = (id: string, type: FormField["type"], label: string, extra: Partial<FormField> = {}): FormField => ({ id, type, label, ...extra });
+
+export const FORM_PRESETS: Record<"contact" | "waitlist" | "booking" | "feedback", FormPreset> = {
+  contact: {
+    label: "Contact",
+    description: "Name, email and a message",
+    data: () => ({
+      title: "Get in touch",
+      button_label: "Send",
+      success_message: "Thanks! I'll get back to you soon.",
+      fields: [f("name", "text", "Name", { required: true }), f("email", "email", "Email", { required: true }), f("message", "textarea", "Message", { required: true })],
+    }),
+  },
+  waitlist: {
+    label: "Waitlist",
+    description: "Collect emails and subscribe them",
+    data: () => ({
+      title: "Join the waitlist",
+      button_label: "Join",
+      success_message: "You're on the list.",
+      subscribe: "everyone",
+      fields: [f("name", "text", "Name"), f("email", "email", "Email", { required: true })],
+    }),
+  },
+  booking: {
+    label: "Booking request",
+    description: "Date, service and contact details",
+    data: () => ({
+      title: "Request a booking",
+      button_label: "Send request",
+      success_message: "Request received. I'll confirm by email.",
+      fields: [
+        f("name", "text", "Name", { required: true }),
+        f("email", "email", "Email", { required: true }),
+        f("phone", "phone", "Phone"),
+        f("date", "date", "Preferred date", { required: true }),
+        f("service", "select", "Service", { options: ["Consultation", "Session", "Other"], required: true }),
+        f("notes", "textarea", "Anything else?"),
+      ],
+    }),
+  },
+  feedback: {
+    label: "Feedback",
+    description: "A quick survey with a rating",
+    data: () => ({
+      title: "How did we do?",
+      button_label: "Submit",
+      success_message: "Thank you for the feedback!",
+      fields: [
+        f("rating", "select", "Rating", { options: ["5 – Great", "4", "3", "2", "1 – Poor"], required: true }),
+        f("comments", "textarea", "Comments"),
+        f("email", "email", "Email (if you'd like a reply)"),
+      ],
+    }),
+  },
+};

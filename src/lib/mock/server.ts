@@ -403,6 +403,15 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       return ok(summary);
     }
 
+    // P2-3 (minimal): forms list from blocks, no stored submissions/contacts in the mock.
+    if (p === "/forms") {
+      const items = live()
+        .filter((b) => b.type === "form" || b.type === "email_signup")
+        .map((b) => ({ block_id: b.id, type: b.type, title: (b.data as { title?: string }).title ?? "", tab_id: b.tab_id, is_visible: b.is_visible, responses: 0, last_response_at: null }));
+      return ok({ items });
+    }
+    if (/^\/forms\/[^/]+\/submissions$/.test(p)) return ok({ items: [], next_cursor: null });
+    if (p === "/audience") return ok({ items: [], next_cursor: null, counts: { all: 0, subscribed: 0, unsubscribed: 0 } });
     if (p === "/contact-submissions") {
       const all = mine(d.submissions).sort((a, b) => b.created_at.localeCompare(a.created_at));
       const start = Number(url.searchParams.get("cursor") ?? 0);
