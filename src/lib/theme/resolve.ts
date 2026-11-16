@@ -54,7 +54,7 @@ export function resolveTheme(theme: DeepPartial<Theme> | null | undefined): Reso
 
   const b = t.button ?? {};
   const radius =
-    typeof b.radius === "number" && Number.isFinite(b.radius) ? Math.min(Math.max(Math.round(b.radius), 0), 999) : p.button.radius;
+    typeof b.radius === "number" && Number.isFinite(b.radius) ? Math.min(Math.max(Math.round(b.radius), 0), 100) : p.button.radius;
 
   return {
     // keep the stored preset id (e.g. a legacy "default") so the picker shows what was saved
@@ -66,7 +66,8 @@ export function resolveTheme(theme: DeepPartial<Theme> | null | undefined): Reso
       color: isColor(b.color) ? b.color : p.button.color,
       text_color: isColor(b.text_color) ? b.text_color : p.button.text_color,
     },
-    font: findFont(t.font)?.id ?? p.font,
+    // stored as the family name (the BE rejects ids like "dm-sans"); older ids still resolve
+    font: findFont(t.font)?.label ?? p.font,
     text_color: isColor(t.text_color) ? t.text_color : p.text_color,
   };
 }
