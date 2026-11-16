@@ -1,36 +1,56 @@
 @import "tailwindcss";
 
-/* Tautan app tokens (dashboard / marketing chrome).
-   Public pages get their colours from profile.theme via CSS vars (see src/lib/theme). */
+@import "../styles/kartu.css";
+
+/* App-only extras on top of the Kartu tokens (src/styles/kartu.css). */
 :root {
-  --background: #f7f6f2;
-  --surface: #ffffff;
-  --foreground: #16150f;
-  --muted: #6b6858;
-  --line: #e6e3d8;
-  --brand: #1f5c4a;
-  --brand-ink: #ffffff;
-  --accent: #e8743b;
   --danger: #b4321f;
+  --warn: #9a4a1d;
+  --notice-ink: #7a3612;
 }
 
+/* Tailwind names for the Kartu tokens. Semantic on purpose: `surface` is the white card (--card),
+   `sunken` the grey surface (--surface), `brand` the magenta accent, `accent` the peach notice. */
 @theme inline {
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
+  --color-background: var(--bg);
+  --color-surface: var(--card);
+  --color-sunken: var(--surface);
+  --color-foreground: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--ink-3);
   --color-line: var(--line);
-  --color-brand: var(--brand);
-  --color-brand-ink: var(--brand-ink);
-  --color-accent: var(--accent);
+  --color-line-2: var(--line-2);
+  --color-brand: var(--accent);
+  --color-brand-hover: var(--accent-hover);
+  --color-brand-soft: var(--accent-soft);
+  --color-brand-ink: #fff;
+  --color-accent: var(--peach);
+  --color-accent-ink: var(--notice-ink);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
   --color-danger: var(--danger);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-mint: var(--mint);
+  --color-sky: var(--sky);
+  --color-butter: var(--butter);
+  --color-blush: var(--blush);
+  --color-peach: var(--peach);
+  /* rounded-k-s/m/l/xl (namespaced: Tailwind already has rounded-xl, and rounded-s is logical-start) */
+  --radius-k-s: var(--r-s);
+  --radius-k-m: var(--r-m);
+  --radius-k-l: var(--r-l);
+  --radius-k-xl: var(--r-xl);
+  --shadow-card: var(--sh-1);
+  --shadow-lift: var(--sh-2);
+  --ease-k: var(--ease);
+  --font-sans: var(--font-urbanist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-dm-mono), ui-monospace, monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--ink);
+  font-feature-settings: "ss01";
 }
 
 @keyframes toast-in {

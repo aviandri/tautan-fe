@@ -304,7 +304,7 @@ function SliderField({
           step={1}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full accent-[var(--brand)]"
+          className="w-full accent-[var(--accent)]"
         />
         <span className="w-12 text-right font-mono text-xs text-muted">
           {value}
@@ -339,7 +339,7 @@ function RadiusField({ radius, onChange }: { radius: number; onChange: (r: numbe
           value={pill ? 32 : radius}
           disabled={pill}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full accent-[var(--brand)] disabled:opacity-40"
+          className="w-full accent-[var(--accent)] disabled:opacity-40"
         />
         <span className="w-12 text-right font-mono text-xs text-muted">{pill ? "pill" : `${radius}px`}</span>
       </div>
@@ -467,7 +467,7 @@ function GradientEditor({ value, onChange }: { value: string; onChange: (css: st
             step={5}
             value={g.angle}
             onChange={(e) => update({ angle: Number(e.target.value) })}
-            className="w-full accent-[var(--brand)]"
+            className="w-full accent-[var(--accent)]"
           />
           <span className="w-12 text-right font-mono text-xs text-muted">{g.angle}°</span>
         </div>

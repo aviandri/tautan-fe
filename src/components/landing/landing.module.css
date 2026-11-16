@@ -41,8 +41,8 @@
   padding-bottom: 0;
   overflow: hidden;
   background:
-    radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--brand) 16%, transparent) 0%, transparent 70%),
-    var(--background);
+    radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--accent) 16%, transparent) 0%, transparent 70%),
+    var(--bg);
 }
 @media (max-width: 639px) {
   .hero {
@@ -102,34 +102,34 @@
   transform: translateY(0) scale(0.98);
 }
 .btn:focus-visible {
-  outline: 3px solid var(--accent);
+  outline: 3px solid var(--peach);
   outline-offset: 3px;
 }
 .btnPrimary {
   composes: btn;
-  background: var(--brand);
-  color: var(--brand-ink);
+  background: var(--accent);
+  color: #fff;
 }
 .btnPrimary:hover {
-  box-shadow: 0 10px 24px -12px var(--brand);
+  box-shadow: 0 10px 24px -12px var(--accent);
 }
 .btnSecondary {
   composes: btn;
-  background: var(--surface);
-  color: var(--foreground);
+  background: var(--card);
+  color: var(--ink);
   border: 1px solid var(--line);
 }
 .btnOnDark {
   composes: btn;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--ink);
 }
 
 /* cards lift 2px */
 .card {
   border-radius: 20px;
   border: 1px solid var(--line);
-  background: var(--surface);
+  background: var(--card);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .card:hover {
@@ -174,7 +174,7 @@
       position: absolute;
       inset: 16px;
       border-radius: 24px;
-      background: var(--background);
+      background: var(--bg);
       z-index: 2;
       pointer-events: none;
       animation: panelClear linear both;
@@ -188,7 +188,7 @@
       left: 16px;
       right: 16px;
       height: 1px;
-      background: var(--accent);
+      background: var(--peach);
       z-index: 3;
       pointer-events: none;
       animation: lineClimb linear both;
@@ -241,14 +241,14 @@
   letter-spacing: -0.05em;
   line-height: 0.8;
   font-size: clamp(88px, 21vw, 300px);
-  color: var(--brand);
+  color: var(--accent);
   user-select: none;
 }
 
 .footer {
   background:
-    radial-gradient(70% 90% at 15% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
-    radial-gradient(60% 80% at 90% 20%, color-mix(in srgb, var(--brand) 30%, transparent), transparent 70%),
+    radial-gradient(70% 90% at 15% 0%, color-mix(in srgb, var(--peach) 22%, transparent), transparent 70%),
+    radial-gradient(60% 80% at 90% 20%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%),
     #16150f;
   color: #f7f6f2;
 }

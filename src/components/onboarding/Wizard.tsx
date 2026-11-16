@@ -372,7 +372,7 @@ function SectionsStep({ profile, tabId, onNext, onBack }: { profile: Profile; ta
               <label className={cx("flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition-colors", on ? "border-brand bg-brand/[.04]" : "border-line bg-surface hover:border-[#cfcbbd]")}>
                 <input
                   type="checkbox"
-                  className="size-4 accent-[var(--brand)]"
+                  className="size-4 accent-[var(--accent)]"
                   checked={on}
                   onChange={(e) =>
                     setPicked((p) => {

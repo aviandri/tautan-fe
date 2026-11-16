@@ -39,7 +39,7 @@ export function TimeSeriesChart({ series }: { series: Point[] }) {
       if (props.index !== n - 1 || props.x == null || props.y == null) return null;
       const above = (k === "views") === viewsOnTop;
       return (
-        <text x={Number(props.x) + 6} y={Number(props.y) + (above ? -6 : 14)} fontSize={12} fill="var(--foreground)">
+        <text x={Number(props.x) + 6} y={Number(props.y) + (above ? -6 : 14)} fontSize={12} fill="var(--ink)">
           {SERIES[k].label}
         </text>
       );
@@ -56,7 +56,7 @@ export function TimeSeriesChart({ series }: { series: Point[] }) {
             interval="preserveStartEnd"
             tickLine={false}
             axisLine={{ stroke: "var(--line)" }}
-            tick={{ fill: "var(--muted)", fontSize: 12 }}
+            tick={{ fill: "var(--ink-3)", fontSize: 12 }}
             tickMargin={8}
             minTickGap={28}
           />
@@ -65,12 +65,12 @@ export function TimeSeriesChart({ series }: { series: Point[] }) {
             allowDecimals={false}
             tickLine={false}
             axisLine={false}
-            tick={{ fill: "var(--muted)", fontSize: 12 }}
+            tick={{ fill: "var(--ink-3)", fontSize: 12 }}
             width={44}
           />
           <Tooltip
             content={(props) => <ChartTooltip {...(props as TooltipContentProps<number, string>)} />}
-            cursor={{ stroke: "var(--muted)", strokeWidth: 1, strokeDasharray: "3 3" }}
+            cursor={{ stroke: "var(--ink-3)", strokeWidth: 1, strokeDasharray: "3 3" }}
             isAnimationActive={false}
           />
           {(["views", "clicks"] as const).map((k) => (
@@ -82,7 +82,7 @@ export function TimeSeriesChart({ series }: { series: Point[] }) {
               stroke={SERIES[k].color}
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 5, stroke: "var(--surface)", strokeWidth: 2 }}
+              activeDot={{ r: 5, stroke: "var(--card)", strokeWidth: 2 }}
               isAnimationActive={false}
               label={endLabel(k)}
             />
