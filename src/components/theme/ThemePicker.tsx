@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import type { Theme } from "@/lib/types";
 import { PRESETS, themeFromPreset, type Preset } from "@/lib/theme/presets";
-import { backgroundValue, themeToCssVars } from "@/lib/theme/resolve";
+import { backgroundValue } from "@/lib/theme/resolve";
 import { fontStack } from "@/lib/theme/fonts-meta";
 import { themeFontVariables } from "@/lib/theme/fonts";
 
@@ -15,25 +15,24 @@ export interface ThemePickerProps {
   variant?: "cards" | "row";
 }
 
+/** Tall preview: the preset's ground with three cards in different palette surfaces and the accent button. */
 function Swatch({ p }: { p: Preset }) {
-  const vars = themeToCssVars(p);
-  const btn = {
-    background: "var(--t-btn-bg)",
-    border: "1.5px solid var(--t-btn-border)",
-    borderRadius: `min(var(--t-btn-radius), 8px)`,
-    boxShadow: p.button.style === "shadow" ? `2px 2px 0 ${p.text_color}` : "none",
-  };
+  const surfaces = p.palette?.surfaces ?? [p.button.color, p.button.color, p.button.color];
+  const accent = p.palette?.accents[0] ?? p.button.color;
+  const radius = `min(${p.button.radius}px, 8px)`;
+  const bar = (bg: string) => ({ background: bg, borderRadius: radius });
   return (
     <div
       className="flex aspect-[3/4] w-full flex-col items-center gap-1.5 px-3 pt-4"
-      style={{ ...vars, background: backgroundValue(p.bg), color: p.text_color, fontFamily: fontStack(p.font) }}
+      style={{ background: backgroundValue(p.bg), color: p.text_color, fontFamily: fontStack(p.font) }}
       aria-hidden
     >
-      <div className="mb-1 h-6 w-6 rounded-full" style={{ background: p.text_color, opacity: 0.85 }} />
+      <div className="mb-1 h-6 w-6 rounded-full" style={{ background: surfaces[1] ?? surfaces[0] }} />
       <div className="text-[11px] font-bold leading-none">{p.name}</div>
-      <div className="mt-1 h-4 w-full" style={btn} />
-      <div className="h-4 w-full" style={btn} />
-      <div className="h-4 w-full" style={btn} />
+      <div className="mt-1 h-4 w-full" style={bar(accent)} />
+      <div className="h-4 w-full" style={bar(surfaces[0])} />
+      <div className="h-4 w-full" style={bar(surfaces[2] ?? surfaces[0])} />
+      <div className="h-4 w-full" style={bar(surfaces[3] ?? surfaces[0])} />
     </div>
   );
 }
@@ -58,7 +57,16 @@ export function ThemePicker({ value, onChange, variant = "cards" }: ThemePickerP
               }`}
               style={{ background: backgroundValue(p.bg), color: p.text_color, fontFamily: fontStack(p.font) }}
             >
-              {p.name}
+              <span className="flex w-full flex-col gap-1.5">
+                {/* the palette at a glance: four card surfaces and the accent */}
+                <span className="flex gap-1" aria-hidden>
+                  {(p.palette?.surfaces ?? []).slice(0, 4).map((c) => (
+                    <i key={c} className="h-3.5 flex-1 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,.06)]" style={{ background: c }} />
+                  ))}
+                  <i className="h-3.5 w-3.5 rounded-full" style={{ background: p.palette?.accents[0] ?? p.button.color }} />
+                </span>
+                {p.name}
+              </span>
               <span className="sr-only">{`: ${p.blurb}`}</span>
             </button>
           );

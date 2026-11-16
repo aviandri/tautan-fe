@@ -107,6 +107,21 @@ function resolveV2(t: DeepPartial<Theme>): Partial<Theme> {
     const banner = isImageUrl(t.header?.banner_image_url) ? t.header!.banner_image_url : undefined;
     out.header = { layout, ...(banner ? { banner_image_url: banner } : {}) };
   }
+  // themes v3: a multi-colour palette (kept only when it has 4+ valid surfaces and an accent)
+  const pal = t.palette;
+  if (pal && Array.isArray(pal.surfaces) && Array.isArray(pal.accents)) {
+    const surfaces = pal.surfaces.filter(isColor).slice(0, 6);
+    const accents = pal.accents.filter(isColor).slice(0, 2);
+    if (surfaces.length >= 4 && accents.length >= 1) {
+      out.palette = {
+        surfaces,
+        accents,
+        ink: isColor(pal.ink) ? pal.ink : (isColor(t.text_color) ? t.text_color : "#111111"),
+        ink_on_accent: isColor(pal.ink_on_accent) ? pal.ink_on_accent : textOn(accents[0]),
+      };
+    }
+  }
+  if (t.palette_mode === "cycle" || t.palette_mode === "by_type" || t.palette_mode === "mono") out.palette_mode = t.palette_mode;
   return out;
 }
 
@@ -169,6 +184,17 @@ export function themeToCssVars(r: ResolvedTheme): CSSProperties {
   }
   if (r.spacing !== undefined) vars["--t-gap"] = `${r.spacing}px`;
   if (r.bg_desktop) vars["--t-bg-desktop"] = r.bg_desktop;
+  // ---- Themes v3: palette. Cards pick a surface through a wrapper class (BlockList); buttons inside
+  // cards use the accent, so they never vanish into a same-coloured card.
+  const pal = resolvePalette(r);
+  if (pal) {
+    Object.assign(vars, paletteCssVars(pal));
+    vars["--t-block-bg"] = pal.surfaces[0].bg;
+    vars["--t-block-text"] = pal.surfaces[0].text;
+    vars["--t-btn-bg"] = pal.accent.bg;
+    vars["--t-btn-text"] = pal.accent.text;
+    if (!r.border) vars["--t-btn-border"] = "transparent";
+  }
   return vars as CSSProperties;
 }
 

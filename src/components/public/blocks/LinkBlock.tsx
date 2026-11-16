@@ -160,13 +160,35 @@ export function LinkTile({ block, env }: { block: LinkBlockT; env: PageEnv }) {
 }
 
 /** Adjacent links that share grid2 / grid3 / carousel render as one group. */
-export function LinkGroup({ layout, blocks, env }: { layout: "grid2" | "grid3" | "carousel"; blocks: LinkBlockT[]; env: PageEnv }) {
+export function LinkGroup({
+  layout,
+  blocks,
+  env,
+  tileClass,
+}: {
+  layout: "grid2" | "grid3" | "carousel";
+  blocks: LinkBlockT[];
+  env: PageEnv;
+  /** themes v3: a palette surface wrapper class per tile */
+  tileClass?: (b: LinkBlockT) => string | undefined;
+}) {
+  const tile = (b: LinkBlockT) => {
+    const t = <LinkTile key={b.id} block={b} env={env} />;
+    const cls = tileClass?.(b);
+    return cls ? (
+      <div key={b.id} className={cls}>
+        {t}
+      </div>
+    ) : (
+      t
+    );
+  };
   if (layout === "carousel") {
     return (
       <div className={s.carousel} role="list">
         {blocks.map((b) => (
           <div key={b.id} role="listitem" className={s.carouselItem}>
-            <LinkTile block={b} env={env} />
+            {tile(b)}
           </div>
         ))}
       </div>
@@ -174,9 +196,7 @@ export function LinkGroup({ layout, blocks, env }: { layout: "grid2" | "grid3" |
   }
   return (
     <div className={layout === "grid3" ? s.grid3 : s.grid2}>
-      {blocks.map((b) => (
-        <LinkTile key={b.id} block={b} env={env} />
-      ))}
+      {blocks.map(tile)}
     </div>
   );
 }
