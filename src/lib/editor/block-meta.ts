@@ -26,6 +26,15 @@ import {
   Quote,
   Tag,
   Timer,
+  Clock,
+  HandCoins,
+  MessageCircle,
+  ReceiptText,
+  ShoppingBag,
+  ShoppingCart,
+  Star,
+  Store,
+  Wallet,
 } from "lucide-react";
 import type { BlockDataMap, BlockType, FormField, Schedule } from "../types";
 import { prettyUrl, urlError } from "../url";
@@ -102,6 +111,19 @@ function iconError(icon: string | undefined): string | null {
 }
 
 const EMAIL_RE = /^[^\s@<>()]+@[^\s@<>()]+\.[^\s@<>()]+$/;
+/** Placeholder meta for a P3 type whose editor form isn't built yet: hidden, validates nothing. */
+function sellStub<K extends BlockType>(
+  type: K,
+  label: string,
+  description: string,
+  icon: LucideIcon,
+  tint: string,
+  defaultData: () => BlockDataMap[K],
+  summary: (d: BlockDataMap[K]) => string,
+): BlockMeta<K> {
+  return { type, label, description, icon, tint, defaultData, needsInputFirst: true, hidden: true, summary, validate: keep };
+}
+
 export const BOOKING_HOSTS = ["calendly.com", "cal.com", "app.cal.com"];
 
 export const BLOCK_META: { [K in BlockType]: BlockMeta<K> } = {
@@ -474,6 +496,27 @@ export const BLOCK_META: { [K in BlockType]: BlockMeta<K> } = {
       return { errors: e, data };
     }),
   },
+  // ----- P3-A Sell (editor forms land in feat/p3-sell-forms; hidden from the picker until then) -----
+  product: sellStub("product", "Product", "One item with photos, price and a buy button", ShoppingBag, "#c2410c",
+    () => ({ images: [], name: "", currency: "IDR", action: { kind: "whatsapp" } }), (d) => d.name || "Product"),
+  shop: sellStub("shop", "Shop", "A grid of products with categories", Store, "#c2410c", () => ({ items: [] }),
+    (d) => plural(d.items.length, "product")),
+  marketplace: sellStub("marketplace", "Marketplace", "Your Shopee, Tokopedia and other stores", ShoppingCart, "#c2410c",
+    () => ({ stores: [] }), (d) => plural(d.stores.length, "store")),
+  whatsapp: sellStub("whatsapp", "WhatsApp order", "A chat button or an order form sent to WhatsApp", MessageCircle, "#1d7a4a",
+    () => ({ label: "Order on WhatsApp", number: "", message_template: "Hi! I'd like to order:\n{items}\n\nName: {name}\nAddress: {address}" }),
+    (d) => d.label),
+  price_list: sellStub("price_list", "Price list", "Services or a menu with prices", ReceiptText, "#c2410c",
+    () => ({ sections: [{ title: "", items: [] }], currency: "IDR" }),
+    (d) => plural(d.sections.reduce((n, x) => n + x.items.length, 0), "item")),
+  store_info: sellStub("store_info", "Store info", "Opening hours, address and delivery", Clock, "#1d7a4a",
+    () => ({ hours: [], tz: "Asia/Jakarta" }), (d) => d.area || d.address || "Opening hours"),
+  payment: sellStub("payment", "Payment", "QRIS and bank or e-wallet accounts", Wallet, "#1d7a4a",
+    () => ({ accounts: [] }), (d) => (d.qris_image_url ? "QRIS" : plural(d.accounts.length, "account"))),
+  tip_jar: sellStub("tip_jar", "Tip jar", "Support links: Saweria, Trakteer, Ko-fi", HandCoins, "#c2410c",
+    () => ({ title: "Support my work", platforms: [] }), (d) => d.title),
+  reviews: sellStub("reviews", "Reviews", "Star rating and customer quotes", Star, "#c2410c",
+    () => ({ items: [] }), (d) => (d.average != null ? `${d.average} ★` : plural(d.items.length, "review"))),
 };
 
 export function getMeta<K extends BlockType>(type: K): BlockMeta<K> {

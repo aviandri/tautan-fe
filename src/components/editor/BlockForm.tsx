@@ -452,6 +452,11 @@ function FormForm({ data, onChange, errors, autoFocus }: FormProps<"form">) {
   return <FormBuilder data={data} onChange={onChange} errors={errors} autoFocus={autoFocus} />;
 }
 
+/** P3 types before their forms land: still listed, deletable and reorderable. */
+function PendingForm() {
+  return <p className="text-[13px] text-muted">This card can&apos;t be edited here yet.</p>;
+}
+
 const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   link: LinkForm,
   heading: HeadingForm,
@@ -472,6 +477,15 @@ const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   contact_form: ContactFormForm,
   divider: DividerForm,
   form: FormForm,
+  product: PendingForm,
+  shop: PendingForm,
+  marketplace: PendingForm,
+  whatsapp: PendingForm,
+  price_list: PendingForm,
+  store_info: PendingForm,
+  payment: PendingForm,
+  tip_jar: PendingForm,
+  reviews: PendingForm,
 };
 
 export function BlockForm<K extends BlockType>({ type, ...props }: FormProps<K> & { type: K }) {
