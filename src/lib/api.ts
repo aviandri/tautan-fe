@@ -31,6 +31,9 @@ import type {
   PublicPageResponse,
   Tab,
   UpdateBlockInput,
+  GiveawayState,
+  PollResults,
+  Question,
 } from "./types";
 
 export const API_URL = (
@@ -262,6 +265,22 @@ export const api = {
       request<AudienceList>(`/audience${qs({ status: p.status, q: p.q, cursor: p.cursor })}`),
     get: (id: string) => request<ContactDetail>(`/audience/${id}`),
     csvPath: (p: { status?: AudienceStatus; q?: string } = {}) => `/audience.csv${qs(p)}`,
+  },
+
+  /** P3-C owner endpoints */
+  polls: {
+    results: (blockId: string) => request<PollResults>(`/polls/${blockId}/results`),
+  },
+  questions: {
+    list: (p: { status?: "unanswered" | "answered" | "all"; block_id?: string } = {}) =>
+      request<{ items: Question[] }>(`/questions${qs(p)}`),
+    update: (id: string, b: { answer?: string; pinned?: boolean }) =>
+      request<Question>(`/questions/${id}`, { method: "PATCH", body: b }),
+    remove: (id: string) => request<void>(`/questions/${id}`, { method: "DELETE" }),
+  },
+  giveaways: {
+    get: (blockId: string) => request<GiveawayState>(`/giveaways/${blockId}`),
+    draw: (blockId: string) => request<GiveawayState>(`/giveaways/${blockId}/draw`, { method: "POST" }),
   },
 
   uploads: {
