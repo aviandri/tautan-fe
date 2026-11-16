@@ -73,3 +73,12 @@ describe("sellSuggestion", () => {
     expect(sellSuggestion(null, "https://youtube.com/watch?v=x")).toBeNull();
   });
 });
+
+describe("P3-B paste", () => {
+  it("a YouTube channel URL becomes a latest video card", () => {
+    const b = blockFromUnfurl(r({ url: "https://www.youtube.com/@sekar", suggested_type: "latest_video", youtube_channel_id: "UCabcdefghijklmnopqrstuv", channel_title: "Sekar" }), "t1");
+    expect(b).toMatchObject({ type: "latest_video", data: { channel_id: "UCabcdefghijklmnopqrstuv", show: { count: 1 } } });
+    // inside a folder it stays a link
+    expect(blockFromUnfurl(r({ suggested_type: "latest_video", youtube_channel_id: "UCabcdefghijklmnopqrstuv" }), "t1", "f1").type).toBe("link");
+  });
+});

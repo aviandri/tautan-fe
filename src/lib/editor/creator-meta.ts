@@ -1,13 +1,12 @@
 /**
- * P3-B Creator cards: editor metadata. Stubs (hidden, no validation) until
- * their forms land; see SPEC "P3-B: implemented (BE)".
+ * P3-B Creator cards: editor metadata and validation mirroring SPEC "P3-B: implemented (BE)".
  */
-import { BadgePercent, CalendarDays, Clapperboard, Handshake, Images, LayoutGrid, MessagesSquare, Mic, ScanSearch, Sparkles, type LucideIcon } from "lucide-react";
+import { BadgePercent, CalendarDays, Clapperboard, Handshake, Images, LayoutGrid, MessagesSquare, Mic, ScanSearch, Sparkles } from "lucide-react";
 import type { BlockDataMap, BlockType } from "../types";
 import { COMMUNITY_PLATFORMS, EVENT_STATUSES, LIVE_PLATFORMS, MEDIA_KIT_PLATFORMS, WEEKDAYS } from "../types";
-import { communityUrlError } from "../creator/creator";
+import { CHANNEL_ID_RE, communityUrlError, postPlatform } from "../creator/creator";
 import { moneyError } from "../sell/money";
-import { compact, keep, maxLen, plural, put, required, withSchedule, type BlockMeta, type FieldErrors } from "./meta-core";
+import { compact, maxLen, plural, put, required, withSchedule, type BlockMeta, type FieldErrors } from "./meta-core";
 import { browserTz, httpUrlError, imageUrlError, validTz } from "./sell-meta";
 
 export const CREATOR_LIMITS = {
@@ -31,9 +30,6 @@ function stripReadOnly<T extends object>(d: T): T {
 
 export type CreatorType = "media_kit" | "rate_card" | "brands" | "post_grid" | "latest_video" | "shop_the_look" | "gallery" | "events" | "podcast" | "community";
 
-function stub<K extends CreatorType>(type: K, label: string, description: string, icon: LucideIcon, tint: string, defaultData: () => BlockDataMap[K], summary: (d: BlockDataMap[K]) => string): BlockMeta<K> {
-  return { type, label, description, icon, tint, defaultData, needsInputFirst: true, hidden: true, summary, validate: keep };
-}
 
 /** Local calendar date, YYYY-MM-DD. */
 export const today = () => {
@@ -147,9 +143,82 @@ export const CREATOR_META: { [K in CreatorType]: BlockMeta<K> } = {
       return { errors: e, data: compact({ ...d, title, logos }, ["title"]) };
     }),
   },
-  post_grid: stub("post_grid", "Post grid", "Pinned Instagram, TikTok or YouTube posts", LayoutGrid, "#db2777", () => ({ posts: [] }), (d) => plural(d.posts.length, "post")),
-  latest_video: stub("latest_video", "Latest video", "Your newest YouTube upload, always up to date", Clapperboard, "#db2777", () => ({ channel_id: "", show: { count: 1 } }), (d) => d.resolved?.channel_title || "YouTube channel"),
-  shop_the_look: stub("shop_the_look", "Shop the look", "A photo with tappable product tags", ScanSearch, "#db2777", () => ({ image_url: "", spots: [] }), (d) => plural(d.spots.length, "tag")),
+  post_grid: {
+    type: "post_grid",
+    label: "Post grid",
+    description: "Pinned Instagram, TikTok or YouTube posts",
+    icon: LayoutGrid,
+    tint: "#db2777",
+    defaultData: () => ({ posts: [{ url: "" }] }),
+    needsInputFirst: true,
+    summary: (d) => plural(d.posts.length, "post"),
+    validate: withSchedule<"post_grid">((d) => {
+      const e: FieldErrors = {};
+      const title = trim(d.title);
+      put(e, "title", maxLen(title, 60));
+      if (!d.posts.length) put(e, "posts", "Add at least one post");
+      if (d.posts.length > CREATOR_LIMITS.posts) put(e, "posts", `Up to ${CREATOR_LIMITS.posts} posts`);
+      const posts = d.posts.map((p, i) => {
+        const url = trim(p.url);
+        const caption = trim(p.caption);
+        const platform = postPlatform(url);
+        const ue = httpUrlError(url, true);
+        put(e, `posts.${i}.url`, ue ?? (platform ? null : "Use an Instagram post or reel, a TikTok video or a YouTube video link"));
+        put(e, `posts.${i}.caption`, maxLen(caption, 200));
+        return compact({ url, caption, ...(platform ? { platform } : {}) }, ["caption"]);
+      });
+      return { errors: e, data: compact({ ...d, title, posts }, ["title"]) };
+    }),
+  },
+  latest_video: {
+    type: "latest_video",
+    label: "Latest video",
+    description: "Your newest YouTube upload, always up to date",
+    icon: Clapperboard,
+    tint: "#db2777",
+    defaultData: () => ({ channel_id: "", show: { count: 1 } }),
+    needsInputFirst: true,
+    summary: (d) => d.resolved?.channel_title || d.title || "YouTube channel",
+    validate: withSchedule<"latest_video">((d) => {
+      const e: FieldErrors = {};
+      const title = trim(d.title);
+      const channel_id = trim(d.channel_id);
+      put(e, "title", maxLen(title, 60));
+      put(e, "channel_id", !channel_id ? "Add your channel" : CHANNEL_ID_RE.test(channel_id) ? null : "That isn't a YouTube channel id");
+      const count = d.show?.count ?? 1;
+      if (!Number.isInteger(count) || count < 1 || count > 3) put(e, "show.count", "1 to 3 videos");
+      return { errors: e, data: compact({ ...d, title, channel_id, show: { count } }, ["title"]) };
+    }),
+  },
+  shop_the_look: {
+    type: "shop_the_look",
+    label: "Shop the look",
+    description: "A photo with tappable product tags",
+    icon: ScanSearch,
+    tint: "#db2777",
+    defaultData: () => ({ image_url: "", spots: [], currency: "IDR" }),
+    needsInputFirst: true,
+    summary: (d) => plural(d.spots.length, "tag"),
+    validate: withSchedule<"shop_the_look">((d) => {
+      const e: FieldErrors = {};
+      const image_url = trim(d.image_url);
+      const alt = trim(d.alt);
+      put(e, "image_url", image_url ? imageUrlError(image_url) : "Upload a photo");
+      put(e, "alt", maxLen(alt, 200));
+      if (image_url && !d.spots.length) put(e, "spots", "Tap the photo to add a tag");
+      if (d.spots.length > CREATOR_LIMITS.spots) put(e, "spots", `Up to ${CREATOR_LIMITS.spots} tags`);
+      const clamp = (n: number) => Math.min(100, Math.max(0, Math.round(n * 10) / 10));
+      const spots = d.spots.map((sp, i) => {
+        const o = { ...sp, x: clamp(sp.x), y: clamp(sp.y), title: trim(sp.title), url: trim(sp.url), code: trim(sp.code) };
+        put(e, `spots.${i}.title`, required(o.title) ? "Name this item" : maxLen(o.title, 80));
+        put(e, `spots.${i}.price`, moneyError(o.price));
+        put(e, `spots.${i}.url`, httpUrlError(o.url, true));
+        put(e, `spots.${i}.code`, maxLen(o.code, 40));
+        return compact(o, ["price", "code"]);
+      });
+      return { errors: e, data: compact({ ...d, image_url, alt, spots }, ["alt"]) };
+    }),
+  },
   gallery: {
     type: "gallery",
     label: "Gallery",
@@ -226,7 +295,27 @@ export const CREATOR_META: { [K in CreatorType]: BlockMeta<K> } = {
       return { errors: e, data: compact(out, ["title"]) };
     }),
   },
-  podcast: stub("podcast", "Podcast", "Latest episodes from your RSS feed", Mic, "#db2777", () => ({ feed_url: "", count: 3 }), (d) => d.resolved?.title || "Podcast feed"),
+  podcast: {
+    type: "podcast",
+    label: "Podcast",
+    description: "Latest episodes from your RSS feed",
+    icon: Mic,
+    tint: "#db2777",
+    defaultData: () => ({ feed_url: "", count: 3 }),
+    needsInputFirst: true,
+    summary: (d) => d.resolved?.title || d.title || "Podcast feed",
+    validate: withSchedule<"podcast">((d) => {
+      const e: FieldErrors = {};
+      const title = trim(d.title);
+      const feed_url = trim(d.feed_url);
+      put(e, "title", maxLen(title, 60));
+      const fe = httpUrlError(feed_url, true);
+      put(e, "feed_url", fe === "Add the link" ? "Add your RSS feed link" : fe);
+      const count = d.count ?? 3;
+      if (!Number.isInteger(count) || count < 1 || count > 10) put(e, "count", "1 to 10 episodes");
+      return { errors: e, data: compact({ ...d, title, feed_url, count }, ["title"]) };
+    }),
+  },
   community: {
     type: "community",
     label: "Community",

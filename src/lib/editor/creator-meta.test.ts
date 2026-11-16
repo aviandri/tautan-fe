@@ -46,3 +46,26 @@ describe("creator validators", () => {
     });
   });
 });
+
+describe("fetched cards and shop the look", () => {
+  it("post grid: recognised URLs only; resolved stripped; platform set", () => {
+    const r = v("post_grid", { posts: [{ url: "https://www.instagram.com/p/Cx1/", caption: "" }, { url: "https://example.com/x" }], resolved: { posts: [] } });
+    expect(r.errors).toEqual({ "posts.1.url": expect.stringMatching(/Instagram/) });
+    expect(r.data.posts[0]).toEqual({ url: "https://www.instagram.com/p/Cx1/", platform: "instagram" });
+    expect("resolved" in r.data).toBe(false);
+  });
+  it("latest video + podcast", () => {
+    expect(v("latest_video", { channel_id: "" }).errors.channel_id).toBeDefined();
+    const ok = v("latest_video", { channel_id: "UCabcdefghijklmnopqrstuv", resolved: { status: "pending" } });
+    expect(ok.errors).toEqual({});
+    expect(ok.data).toEqual({ channel_id: "UCabcdefghijklmnopqrstuv", show: { count: 1 } });
+    expect(v("podcast", { feed_url: "", count: 3 }).errors.feed_url).toMatch(/RSS/);
+    expect(v("podcast", { feed_url: "https://anchor.fm/s/x/podcast/rss", count: 11 }).errors.count).toBeDefined();
+  });
+  it("shop the look: needs a tag, clamps coordinates", () => {
+    expect(v("shop_the_look", { image_url: "/uploads/a.png", spots: [] }).errors.spots).toBeDefined();
+    const r = v("shop_the_look", { image_url: "/uploads/a.png", spots: [{ x: 120.04, y: 33.333, title: "Top", url: "https://x.io/top", code: "" }] });
+    expect(r.errors).toEqual({});
+    expect(r.data.spots[0]).toEqual({ x: 100, y: 33.3, title: "Top", url: "https://x.io/top" });
+  });
+});

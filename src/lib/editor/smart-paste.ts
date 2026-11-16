@@ -25,6 +25,8 @@ export function blockFromUnfurl(r: UnfurlResult, tabId: string, parentId: string
   const title = clip(r.title || r.site_name, 120);
   // Inside a folder only links are allowed.
   const type = parentId ? "link" : r.suggested_type;
+  if (type === "latest_video" && r.youtube_channel_id)
+    return { ...base, type: "latest_video", data: { channel_id: r.youtube_channel_id, show: { count: 1 } } };
   switch (type) {
     case "video":
     case "music":

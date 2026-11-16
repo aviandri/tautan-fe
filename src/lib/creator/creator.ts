@@ -61,3 +61,30 @@ export function communityUrlError(url: string, platform: Community): string | nu
   if (!u || !/^https:\/\//i.test(s)) return "Use the https:// invite link";
   return COMMUNITY_META[platform].test(u) ? null : `That isn't a ${COMMUNITY_META[platform].label} link`;
 }
+
+/**
+ * Post URL → platform, mirroring the BE: instagram /p/, /reel/, /tv/; tiktok /@user/video/…
+ * or vm./vt.tiktok.com; youtube watch?v=, /shorts/, youtu.be. Anything else → null.
+ */
+export function postPlatform(raw: string): "instagram" | "tiktok" | "youtube" | null {
+  const u = parse(raw.trim());
+  if (!u) return null;
+  const h = u.hostname.replace(/^(www|m)\./, "");
+  const p = u.pathname;
+  if (h === "instagram.com" && /^\/(p|reel|reels|tv)\/[^/]+/.test(p)) return "instagram";
+  if (h === "tiktok.com" && /^\/@[^/]+\/video\/\d+/.test(p)) return "tiktok";
+  if ((h === "vm.tiktok.com" || h === "vt.tiktok.com") && p.length > 1) return "tiktok";
+  if (h === "youtube.com" && ((p === "/watch" && u.searchParams.get("v")) || /^\/shorts\/[^/]+/.test(p))) return "youtube";
+  if (h === "youtu.be" && p.length > 1) return "youtube";
+  return null;
+}
+
+export const CHANNEL_ID_RE = /^UC[A-Za-z0-9_-]{22}$/;
+
+/** A raw UC… id or a youtube.com/channel/UC… URL → the id; anything else (e.g. @handle) → null. */
+export function channelIdFrom(raw: string): string | null {
+  const s = raw.trim();
+  if (CHANNEL_ID_RE.test(s)) return s;
+  const m = s.match(/youtube\.com\/channel\/(UC[A-Za-z0-9_-]{22})/);
+  return m ? m[1] : null;
+}
