@@ -10,6 +10,7 @@ import { useBlockDraft, type SaveState } from "@/lib/editor/use-block-draft";
 import type { Block, BlockType, Schedule, Tab } from "@/lib/types";
 import { scheduleState } from "./fields-extra";
 import { BlockForm } from "./BlockForm";
+import { GateBadge, GateEditor } from "./GateEditor";
 
 export interface DragHandleProps {
   attributes: React.HTMLAttributes<HTMLElement>;
@@ -109,6 +110,7 @@ export function BlockCard({
                   · <EyeOff className="size-3" aria-hidden /> Hidden
                 </span>
               )}
+              <GateBadge gate={block.gate} />
               {sched && (
                 <span className={cx("inline-flex items-center gap-1", sched === "ended" ? "text-danger" : "text-[#9a4a1d]")}>
                   · <Clock className="size-3" aria-hidden />
@@ -200,6 +202,9 @@ export function BlockCard({
       {expanded && (
         <div className="border-t border-line px-4 pb-4 pt-4 sm:px-5">
           <DraftForm key={block.id} block={block} tabs={tabs} autoFocus={autoFocus} />
+          <div className="mt-4">
+            <GateEditor key={block.id} block={block} />
+          </div>
           {children}
         </div>
       )}
