@@ -11,6 +11,8 @@ export interface FontOption {
 
 export const FONT_OPTIONS: FontOption[] = [
   { id: "inter", label: "Inter", cssVar: "--font-inter", fallback: "system-ui, sans-serif", category: "sans" },
+  // Kartu's own face; its variable is set on <html> by the root layout (src/app/fonts.ts)
+  { id: "urbanist", label: "Urbanist", cssVar: "--font-urbanist", fallback: "system-ui, sans-serif", category: "sans" },
   { id: "dm-sans", label: "DM Sans", cssVar: "--font-dm-sans", fallback: "system-ui, sans-serif", category: "sans" },
   { id: "manrope", label: "Manrope", cssVar: "--font-manrope", fallback: "system-ui, sans-serif", category: "sans" },
   { id: "outfit", label: "Outfit", cssVar: "--font-outfit", fallback: "system-ui, sans-serif", category: "sans" },
