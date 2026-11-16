@@ -5,10 +5,10 @@ import { useRef, useState } from "react";
 import { cx } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { useCreateBlock } from "@/lib/editor/queries";
-import { blockFromUnfurl, looksPasteable } from "@/lib/editor/smart-paste";
-import type { Block } from "@/lib/types";
+import { blockFromUnfurl, looksPasteable, marketplaceBlock, sellSuggestion, type SellSuggestion } from "@/lib/editor/smart-paste";
+import type { Block, UnfurlResult } from "@/lib/types";
 
-function pasteError(e: unknown): string {
+export function pasteError(e: unknown): string {
   if (e instanceof ApiError) {
     if (e.code === "invalid_url") return "That doesn't look like a link or email address.";
     if (e.code === "blocked_url") return "That address can't be added.";
@@ -22,29 +22,62 @@ function pasteError(e: unknown): string {
  * "Paste a link" input: unfurls the URL and creates the suggested block
  * (link with title/description/thumbnail, video, music, booking, image, email).
  */
-export function SmartPaste({ tabId, onCreated }: { tabId: string; onCreated: (b: Block) => void }) {
-  const [value, setValue] = useState("");
+export type PasteOutcome = { kind: "created"; block: Block } | { kind: "sell"; suggestion: SellSuggestion };
+
+/**
+ * Unfurl a pasted link and create the suggested block. Marketplace links (P3-A) aren't
+ * created straight away: they come back as a suggestion so the editor can ask
+ * product, marketplace card or plain link. Throws on other failures.
+ */
+export function usePasteToBlock(tabId: string) {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const create = useCreateBlock();
+  return {
+    busy,
+    run: async (text: string): Promise<PasteOutcome> => {
+      setBusy(true);
+      try {
+        let r: UnfurlResult;
+        try {
+          r = await api.unfurl(text.trim());
+        } catch (e) {
+          // the server couldn't read it: still recognise marketplace hosts
+          const s = sellSuggestion(null, text);
+          if (s && !(e instanceof ApiError && (e.code === "invalid_url" || e.code === "blocked_url"))) return { kind: "sell", suggestion: s };
+          throw e;
+        }
+        const s = sellSuggestion(r, text);
+        if (s) return { kind: "sell", suggestion: s };
+        return { kind: "created", block: await create.mutateAsync(blockFromUnfurl(r, tabId)) };
+      } finally {
+        setBusy(false);
+      }
+    },
+  };
+}
+
+/** `onSell` lets the editor ask what a marketplace link should become; without it a "Buy on" card is made. */
+export function SmartPaste({ tabId, onCreated, onSell }: { tabId: string; onCreated: (b: Block) => void; onSell?: (s: SellSuggestion) => void }) {
+  const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const paste = usePasteToBlock(tabId);
+  const create = useCreateBlock();
+  const busy = paste.busy || create.isPending;
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function run(text: string) {
     const s = text.trim();
     if (!s || busy) return;
     setError(null);
-    setBusy(true);
     try {
-      const r = await api.unfurl(s);
-      const input = blockFromUnfurl(r, tabId);
-      const block = await create.mutateAsync(input);
+      const out = await paste.run(s);
       setValue("");
-      onCreated(block);
+      if (out.kind === "created") onCreated(out.block);
+      else if (onSell) onSell(out.suggestion);
+      else onCreated(await create.mutateAsync(marketplaceBlock(out.suggestion, tabId)));
     } catch (e) {
       setError(pasteError(e));
       inputRef.current?.focus();
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -97,7 +130,7 @@ export function SmartPaste({ tabId, onCreated }: { tabId: string; onCreated: (b:
         </button>
       </form>
       <p id="smart-paste-hint" className={cx("mt-1.5 text-[12px]", error ? "text-danger" : "text-muted")} role={error ? "alert" : undefined}>
-        {error ?? "Links, YouTube, Spotify, Calendly, images and emails each become the right block."}
+        {error ?? "Links, YouTube, Spotify, Calendly, Shopee or Tokopedia, images and emails each become the right card."}
       </p>
     </div>
   );

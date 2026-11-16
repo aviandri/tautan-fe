@@ -19,6 +19,19 @@ import {
   ToggleRow,
 } from "./fields-extra";
 import { FormBuilder } from "./FormBuilder";
+import {
+  MarketplaceForm,
+  PaymentForm,
+  PriceListForm,
+  ProductForm,
+  ReviewsForm,
+  ShopForm,
+  StoreInfoForm,
+  TipJarForm,
+  WhatsAppForm,
+} from "./sell/SellForms";
+import { LatestVideoForm, PodcastForm, PostGridForm, ShopTheLookForm } from "./creator/FetchedForms";
+import { BrandsForm, CommunityForm, EventsForm, GalleryForm, MediaKitForm, RateCardForm } from "./creator/CreatorForms";
 import { SOCIAL_PLATFORMS } from "@/lib/social";
 
 export interface FormContext {
@@ -26,6 +39,8 @@ export interface FormContext {
   tabs: Tab[];
   /** The tab the block lives in (not offered as a link destination). */
   currentTabId?: string;
+  /** Saved blocks only: lets forms read server-resolved data (P3-B). */
+  blockId?: string;
 }
 
 export interface FormProps<K extends BlockType> {
@@ -472,6 +487,25 @@ const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   contact_form: ContactFormForm,
   divider: DividerForm,
   form: FormForm,
+  product: ProductForm,
+  shop: ShopForm,
+  marketplace: MarketplaceForm,
+  whatsapp: WhatsAppForm,
+  price_list: PriceListForm,
+  store_info: StoreInfoForm,
+  payment: PaymentForm,
+  tip_jar: TipJarForm,
+  reviews: ReviewsForm,
+  media_kit: MediaKitForm,
+  rate_card: RateCardForm,
+  brands: BrandsForm,
+  post_grid: PostGridForm,
+  latest_video: LatestVideoForm,
+  shop_the_look: ShopTheLookForm,
+  gallery: GalleryForm,
+  events: EventsForm,
+  podcast: PodcastForm,
+  community: CommunityForm,
 };
 
 export function BlockForm<K extends BlockType>({ type, ...props }: FormProps<K> & { type: K }) {

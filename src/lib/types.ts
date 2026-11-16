@@ -183,6 +183,27 @@ export const BLOCK_TYPES = [
   "email_signup",
   // Phase 2 (P2-3)
   "form",
+  // Phase 3 (P3-A Sell)
+  "product",
+  "shop",
+  "marketplace",
+  "whatsapp",
+  "price_list",
+  "store_info",
+  "payment",
+  "tip_jar",
+  "reviews",
+  // Phase 3 (P3-B Creators)
+  "media_kit",
+  "rate_card",
+  "brands",
+  "post_grid",
+  "latest_video",
+  "shop_the_look",
+  "gallery",
+  "events",
+  "podcast",
+  "community",
 ] as const;
 export type BlockType = (typeof BLOCK_TYPES)[number];
 
@@ -233,8 +254,12 @@ export const ImageDataSchema = z.object({
   lightbox: z.boolean().optional(),
   ...schedule,
 });
-export const VideoDataSchema = z.object({ url: z.string(), ...schedule });
-export const MusicDataSchema = z.object({ url: z.string(), ...schedule });
+/** Read only (BE #23): oEmbed facts for the click-to-load facade. Never sent back. */
+const mediaResolved = z
+  .object({ provider: z.string().optional(), title: z.string().optional(), author: z.string().optional(), poster: z.string().optional(), video_id: z.string().optional() })
+  .optional();
+export const VideoDataSchema = z.object({ url: z.string(), resolved: mediaResolved, ...schedule });
+export const MusicDataSchema = z.object({ url: z.string(), resolved: mediaResolved, ...schedule });
 export const SocialIconsDataSchema = z.object({
   items: z.array(z.object({ platform: z.string(), url: z.string() })),
   ...schedule,
@@ -350,6 +375,381 @@ export const EmailSignupDataSchema = z.object({
   ...schedule,
 });
 
+
+// ---------- Phase 3 (P3-A Sell) ----------
+// Money is an integer in minor units of `currency` (ISO 4217, default "IDR"): Rp 85.000 → 8500000.
+// Phone numbers for WhatsApp are E.164 with the plus ("+6281234567890").
+
+export const CURRENCIES = ["IDR", "USD", "SGD", "MYR"] as const;
+const money = z.number().int().nonnegative();
+const currency = z.enum(CURRENCIES).optional();
+/** E.164: + then 8–15 digits */
+export const E164_RE = /^\+[1-9][0-9]{7,14}$/;
+
+export const MARKETPLACE_PLATFORMS = ["shopee", "tokopedia", "tiktok_shop", "lazada", "blibli", "bukalapak", "etsy", "amazon", "gumroad"] as const;
+export type MarketplacePlatform = (typeof MARKETPLACE_PLATFORMS)[number];
+
+export const PRODUCT_BADGES = ["new", "best_seller", "pre_order", "sold_out"] as const;
+
+export const ProductActionSchema = z.object({
+  kind: z.enum(["url", "whatsapp", "marketplace"]),
+  /** kind=url, and kind=marketplace (the listing URL) */
+  url: z.string().optional(),
+  /** kind=whatsapp: E.164 */
+  wa_number: z.string().optional(),
+  /** kind=whatsapp: placeholders {name} (product), {variant}, {price} */
+  wa_template: z.string().max(500).optional(),
+  /** kind=marketplace */
+  marketplace: z.enum(MARKETPLACE_PLATFORMS).optional(),
+  /** button text; renderer default per kind ("Order on WhatsApp", "Buy on Shopee", "Buy") */
+  label: z.string().max(40).optional(),
+});
+export type ProductAction = z.infer<typeof ProductActionSchema>;
+
+export const ProductVariantSchema = z.object({
+  /** "Size", "Flavour" ≤30 */
+  name: z.string().max(30),
+  /** 1–20 options, each ≤30 */
+  options: z.array(z.string().max(30)),
+});
+
+export const ProductDataSchema = z.object({
+  /** 0–8 image URLs (uploads), first is the cover */
+  images: z.array(z.string()),
+  name: z.string().max(100),
+  description: z.string().max(1000).optional(),
+  price: money.optional(),
+  currency,
+  /** shown struck through; must be > price */
+  compare_at: money.optional(),
+  badge: z.enum(PRODUCT_BADGES).optional(),
+  /** 0–3 variant groups */
+  variants: z.array(ProductVariantSchema).optional(),
+  /** "12 left", "Ships in 3 days" ≤60 */
+  stock_note: z.string().max(60).optional(),
+  action: ProductActionSchema,
+  ...schedule,
+});
+export type ProductData = z.infer<typeof ProductDataSchema>;
+
+/** A product inside a shop: product data plus a stable id and an optional category. */
+export const ShopItemSchema = ProductDataSchema.omit({ schedule: true }).extend({
+  /** client-generated, [a-z0-9_-]{1,40}; stable across edits */
+  id: z.string(),
+  /** one of shop.categories */
+  category: z.string().optional(),
+});
+export type ShopItem = z.infer<typeof ShopItemSchema>;
+
+export const ShopDataSchema = z.object({
+  title: z.string().max(100).optional(),
+  /** 0–12 category names ≤30 */
+  categories: z.array(z.string().max(30)).optional(),
+  /** 1–60 */
+  items: z.array(ShopItemSchema),
+  ...schedule,
+});
+
+export const MarketplaceDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** 1–9, one per platform */
+  stores: z.array(z.object({ platform: z.enum(MARKETPLACE_PLATFORMS), url: z.string() })),
+  ...schedule,
+});
+
+export const WA_ORDER_FIELDS = ["items", "name", "address", "note"] as const;
+export const WhatsAppDataSchema = z.object({
+  label: z.string().max(40),
+  /** E.164 */
+  number: z.string(),
+  /** placeholders {items} (one line per item with qty), {name}, {address}, {note}, {total}; ≤1000 */
+  message_template: z.string().max(1000),
+  order_form: z
+    .object({
+      /** which inputs the visitor fills, in order */
+      fields: z.array(z.enum(WA_ORDER_FIELDS)),
+      /** the menu for the "items" field (qty steppers), 1–30 */
+      items: z.array(z.object({ name: z.string().max(80), price: money.optional() })).optional(),
+      currency,
+    })
+    .optional(),
+  ...schedule,
+});
+
+/** P3-A URLs (buy, store, platform, source, ask, confirm) are http(s) only on the BE; images also accept /uploads/ paths. */
+export const PriceListItemSchema = z.object({
+  name: z.string().max(80),
+  desc: z.string().max(200).optional(),
+  price: money.optional(),
+  /** shows "from Rp …" */
+  price_from: z.boolean().optional(),
+  image_url: z.string().optional(),
+});
+export const PriceListDataSchema = z.object({
+  /** 1–10 sections, each 1–40 items */
+  sections: z.array(z.object({ title: z.string().max(60), items: z.array(PriceListItemSchema) })),
+  currency,
+  note: z.string().max(300).optional(),
+  /** optional "ask" button under the list */
+  ask: z.object({ label: z.string().max(40), kind: z.enum(["whatsapp", "url"]), target: z.string() }).optional(),
+  ...schedule,
+});
+
+export const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+export type Weekday = (typeof WEEKDAYS)[number];
+export const COURIERS = ["gosend", "grabexpress", "jne", "jnt", "sicepat", "anteraja", "pos", "shopee_express", "lalamove", "paxel", "pickup"] as const;
+export const StoreInfoDataSchema = z.object({
+  /** 0–21 slots; several per day allowed; close < open means past midnight. Days not listed are closed. */
+  hours: z.array(z.object({ day: z.enum(WEEKDAYS), open: z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/), close: z.string().regex(/^([01][0-9]|2[0-4]):[0-5][0-9]$/) })),
+  /** IANA zone, e.g. "Asia/Jakarta" */
+  tz: z.string(),
+  address: z.string().max(200).optional(),
+  /** "Sumur Bandung, Bandung" ≤100 */
+  area: z.string().max(100).optional(),
+  couriers: z.array(z.enum(COURIERS)).optional(),
+  delivery_note: z.string().max(300).optional(),
+  ...schedule,
+});
+export type StoreInfoData = z.infer<typeof StoreInfoDataSchema>;
+
+export const PaymentDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  qris_image_url: z.string().optional(),
+  /** 0–6; bank or e-wallet name ≤40, holder ≤60, number ≤40 */
+  accounts: z.array(z.object({ bank: z.string().max(40), name: z.string().max(60), number: z.string().max(40) })),
+  note: z.string().max(300).optional(),
+  /** "I've paid" button: whatsapp → E.164, url → https, form → a form block id */
+  confirm: z.object({ kind: z.enum(["whatsapp", "url", "form"]), target: z.string(), label: z.string().max(40).optional() }).optional(),
+  ...schedule,
+});
+
+export const TIP_PLATFORMS = ["saweria", "trakteer", "kofi", "paypal", "buymeacoffee"] as const;
+export const TipJarDataSchema = z.object({
+  title: z.string().max(100),
+  description: z.string().max(300).optional(),
+  /** 0–4 suggested amounts (display only, no checkout) */
+  amounts: z.array(money).optional(),
+  currency,
+  /** 1–5 */
+  platforms: z.array(z.object({ platform: z.enum(TIP_PLATFORMS), url: z.string() })),
+  ...schedule,
+});
+
+export const ReviewsDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** 0–5, one decimal */
+  average: z.number().min(0).max(5).optional(),
+  count: z.number().int().nonnegative().optional(),
+  /** counts for 5★,4★,3★,2★,1★ */
+  distribution: z.array(z.number().int().nonnegative()).length(5).optional(),
+  /** "Shopee", "Google" ≤40, shown as "from 312 Shopee reviews" */
+  source: z.string().max(40).optional(),
+  /** 0–20 */
+  items: z.array(z.object({ stars: z.number().int().min(1).max(5), quote: z.string().max(500), author: z.string().max(60), source_url: z.string().optional() })),
+  ...schedule,
+});
+
+
+// ---------- Phase 3 (P3-B Creators) ----------
+// Shapes from SPEC "P3-B: implemented (BE)". `resolved` / `computed` are read-only server
+// additions: never send them back (the editor validators strip them).
+
+export const MEDIA_KIT_PLATFORMS = ["instagram", "tiktok", "youtube", "x", "facebook", "threads", "twitch", "linkedin", "spotify", "podcast", "blog"] as const;
+const slice = z.object({ label: z.string().max(40), pct: z.number().min(0).max(100) });
+export const MediaKitDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** 1–8 */
+  platforms: z.array(
+    z.object({
+      platform: z.enum(MEDIA_KIT_PLATFORMS),
+      handle: z.string().max(60),
+      followers: z.number().int().nonnegative(),
+      avg_views: z.number().int().nonnegative().optional(),
+      /** percent 0–100 */
+      engagement: z.number().min(0).max(100).optional(),
+      url: z.string().optional(),
+    }),
+  ),
+  /** each list's pct sums ≤ 100; age ≤8, gender ≤4, cities ≤10 */
+  audience: z.object({ age: z.array(slice).optional(), gender: z.array(slice).optional(), cities: z.array(slice).optional() }).optional(),
+  /** YYYY-MM-DD */
+  updated_at: z.string(),
+  pdf_url: z.string().optional(),
+  ...schedule,
+});
+
+export const RateCardDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** 1–12 */
+  packages: z.array(
+    z.object({
+      name: z.string().max(80),
+      price_from: money.optional(),
+      /** 1–10, each 1–100 */
+      deliverables: z.array(z.string().max(100)),
+      turnaround: z.string().max(40).optional(),
+    }),
+  ),
+  currency,
+  note: z.string().max(300).optional(),
+  button_label: z.string().max(40).optional(),
+  /** a live form / contact_form / email_signup block on the same page */
+  form_block_id: z.string().optional(),
+  ...schedule,
+});
+
+export const BrandsDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** 1–30 */
+  logos: z.array(z.object({ image_url: z.string(), name: z.string().max(60), url: z.string().optional() })),
+  ...schedule,
+});
+
+export const POST_PLATFORMS = ["instagram", "tiktok", "youtube"] as const;
+export const PostGridDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** 1–12; platform is set by the server from url */
+  posts: z.array(z.object({ url: z.string(), caption: z.string().max(200).optional(), platform: z.enum(POST_PLATFORMS).optional() })),
+  /** read only */
+  resolved: z
+    .object({
+      posts: z.array(
+        z.object({
+          status: z.enum(["ok", "link_only", "pending"]),
+          url: z.string(),
+          platform: z.enum(POST_PLATFORMS).optional(),
+          title: z.string().optional(),
+          author: z.string().optional(),
+          thumb_url: z.string().optional(),
+        }),
+      ),
+    })
+    .optional(),
+  ...schedule,
+});
+
+export const LatestVideoDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** "UC" + 22 chars */
+  channel_id: z.string(),
+  show: z.object({ count: z.number().int().min(1).max(3) }).optional(),
+  /** read only */
+  resolved: z
+    .object({
+      status: z.enum(["ok", "pending"]),
+      fetched_at: z.string().optional(),
+      channel_title: z.string().optional(),
+      videos: z.array(z.object({ video_id: z.string(), title: z.string(), url: z.string(), published_at: z.string(), thumb_url: z.string() })).optional(),
+    })
+    .optional(),
+  ...schedule,
+});
+
+export const ShopTheLookDataSchema = z.object({
+  image_url: z.string(),
+  alt: z.string().max(200).optional(),
+  currency,
+  /** 1–12; x/y are percent of the image box from the top left */
+  spots: z.array(
+    z.object({
+      x: z.number().min(0).max(100),
+      y: z.number().min(0).max(100),
+      title: z.string().max(80),
+      price: money.optional(),
+      url: z.string(),
+      code: z.string().max(40).optional(),
+    }),
+  ),
+  ...schedule,
+});
+
+export const GalleryDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** 1–30 */
+  images: z.array(z.object({ url: z.string(), alt: z.string().max(200).optional(), link_url: z.string().optional() })),
+  /** default grid */
+  layout: z.enum(["carousel", "grid"]).optional(),
+  ...schedule,
+});
+
+export const EVENT_STATUSES = ["sold_out", "few_left", "cancelled"] as const;
+export const LIVE_PLATFORMS = ["tiktok", "instagram", "youtube", "twitch", "facebook", "shopee", "other"] as const;
+const eventWindow = z.object({ index: z.number().int(), starts_at: z.string(), ends_at: z.string() });
+export const EventsDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** IANA zone */
+  tz: z.string(),
+  mode: z.enum(["dates", "weekly"]),
+  /** dates mode: 1–50 */
+  dates: z
+    .array(
+      z.object({
+        /** YYYY-MM-DD */
+        date: z.string(),
+        /** HH:MM */
+        time: z.string().optional(),
+        title: z.string().max(80).optional(),
+        city: z.string().max(60).optional(),
+        venue: z.string().max(100).optional(),
+        url: z.string().optional(),
+        status: z.enum(EVENT_STATUSES).optional(),
+      }),
+    )
+    .optional(),
+  /** weekly mode: 1–20 */
+  weekly: z
+    .array(
+      z.object({
+        /** 1–7 unique */
+        days: z.array(z.enum(WEEKDAYS)),
+        /** HH:MM */
+        start: z.string(),
+        /** 5–720 */
+        duration_min: z.number().int().min(5).max(720),
+        title: z.string().max(80).optional(),
+        platform: z.enum(LIVE_PLATFORMS).optional(),
+        url: z.string().optional(),
+      }),
+    )
+    .optional(),
+  /** read only, public reads */
+  computed: z
+    .object({ computed_at: z.string(), live: eventWindow.nullable().optional(), next: eventWindow.nullable().optional(), past_hidden: z.number().optional(), today: z.string().optional() })
+    .optional(),
+  ...schedule,
+});
+
+export const PodcastDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  feed_url: z.string(),
+  /** 1–10, default 3 */
+  count: z.number().int().min(1).max(10).optional(),
+  /** read only */
+  resolved: z
+    .object({
+      status: z.enum(["ok", "pending"]),
+      fetched_at: z.string().optional(),
+      title: z.string().optional(),
+      image_url: z.string().optional(),
+      episodes: z
+        .array(z.object({ title: z.string(), published_at: z.string().optional(), audio_url: z.string(), audio_type: z.string().optional(), duration_sec: z.number().optional(), link: z.string().optional() }))
+        .optional(),
+    })
+    .optional(),
+  ...schedule,
+});
+
+export const COMMUNITY_PLATFORMS = ["whatsapp_group", "whatsapp_channel", "telegram", "discord", "line"] as const;
+export const CommunityDataSchema = z.object({
+  platform: z.enum(COMMUNITY_PLATFORMS),
+  /** https on the platform's host */
+  url: z.string(),
+  title: z.string().max(80),
+  members_note: z.string().max(60).optional(),
+  button_label: z.string().max(40).optional(),
+  ...schedule,
+});
+
 export const BlockDataSchemas = {
   link: LinkDataSchema,
   text: TextDataSchema,
@@ -370,6 +770,25 @@ export const BlockDataSchemas = {
   quote: QuoteDataSchema,
   email_signup: EmailSignupDataSchema,
   form: FormDataSchema,
+  product: ProductDataSchema,
+  shop: ShopDataSchema,
+  marketplace: MarketplaceDataSchema,
+  whatsapp: WhatsAppDataSchema,
+  price_list: PriceListDataSchema,
+  store_info: StoreInfoDataSchema,
+  payment: PaymentDataSchema,
+  tip_jar: TipJarDataSchema,
+  reviews: ReviewsDataSchema,
+  media_kit: MediaKitDataSchema,
+  rate_card: RateCardDataSchema,
+  brands: BrandsDataSchema,
+  post_grid: PostGridDataSchema,
+  latest_video: LatestVideoDataSchema,
+  shop_the_look: ShopTheLookDataSchema,
+  gallery: GalleryDataSchema,
+  events: EventsDataSchema,
+  podcast: PodcastDataSchema,
+  community: CommunityDataSchema,
 } satisfies Record<BlockType, z.ZodType>;
 
 export type BlockDataMap = {
@@ -534,13 +953,23 @@ export interface UploadResult {
 /** POST /unfurl (P2-5). fetched=false means the site was unreachable: fall back to a plain link. */
 export interface UnfurlResult {
   url: string;
-  suggested_type: "link" | "video" | "music" | "booking" | "image";
+  /** "marketplace" | "product" are P3-A; "latest_video" is a YouTube channel URL (P3-B) */
+  suggested_type: "link" | "video" | "music" | "booking" | "image" | "marketplace" | "product" | "latest_video";
   dest_kind?: "url" | "email" | "file" | "tab";
   fetched: boolean;
   title: string;
   description: string;
   image_url: string;
   site_name: string;
+  /** P3-A: set for marketplace hosts (incl. short links), even when the page couldn't be read */
+  kind?: "marketplace";
+  platform?: MarketplacePlatform;
+  /** P3-B: YouTube channel URLs (@handle, /c/, /user/, /channel/UC…) */
+  youtube_channel_id?: string;
+  channel_title?: string;
+  /** P3-A: minor units, from product:price tags when the currency is supported */
+  price?: number;
+  currency?: (typeof CURRENCIES)[number];
 }
 
 /** GET /forms */

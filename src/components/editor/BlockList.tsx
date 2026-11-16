@@ -4,20 +4,37 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui";
 import { getMeta } from "@/lib/editor/block-meta";
-import { siblings, useReorderBlocks } from "@/lib/editor/queries";
-import type { Block, BlockType, Tab } from "@/lib/types";
-import { BlockPicker, NewBlockDraft, useQuickCreate } from "./AddBlock";
+import { errorMessage, siblings, useCreateBlock, useReorderBlocks, useUpdateBlock } from "@/lib/editor/queries";
+import type { Block, BlockDataMap, BlockOf, BlockType, CreateBlockInput, Tab } from "@/lib/types";
+import { linkBlock, marketplaceBlock, type SellSuggestion } from "@/lib/editor/smart-paste";
+import { SellPasteChoice } from "./SellPasteChoice";
+import { MARKETPLACES } from "@/lib/sell/platforms";
+import { NewBlockDraft, useQuickCreate } from "./AddBlock";
+import { CardPicker } from "./CardPicker";
 import { BlockCard } from "./BlockCard";
 import { DeletedBlocks } from "./DeletedBlocks";
-import { SmartPaste } from "./SmartPaste";
+import { pasteError, SmartPaste, usePasteToBlock } from "./SmartPaste";
+import { toast } from "@/components/ui/toast";
 import { SortableItem, SortableList } from "./Sortable";
 
-type Adding = { type: BlockType; parentId: string | null } | null;
+type Adding = { type: BlockType; parentId: string | null; initialData?: Partial<BlockDataMap[BlockType]> } | null;
 
 export function BlockList({ blocks, tab, tabs }: { blocks: Block[]; tab: Tab; tabs: Tab[] }) {
   const top = siblings(blocks, tab.id, null);
   const reorder = useReorderBlocks();
   const quick = useQuickCreate();
+  const paste = usePasteToBlock(tab.id);
+  const create = useCreateBlock();
+  const update = useUpdateBlock();
+  const [sell, setSell] = useState<SellSuggestion | null>(null);
+  const sellTarget = sell
+    ? (top.find((b) => b.type === "marketplace" && !b.data.stores.some((x) => x.platform === sell.platform)) as BlockOf<"marketplace"> | undefined)
+    : undefined;
+
+  function createFromPaste(input: CreateBlockInput) {
+    create.mutate(input, { onSuccess: onCreated, onError: (e) => toast.error(errorMessage(e)) });
+    setSell(null);
+  }
   const [expanded, setExpanded] = useState<string | null>(null);
   const [fresh, setFresh] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
@@ -50,12 +67,41 @@ export function BlockList({ blocks, tab, tabs }: { blocks: Block[]; tab: Tab; ta
 
   return (
     <div className="flex flex-col gap-3">
-      {!picking && !adding && <SmartPaste tabId={tab.id} onCreated={onCreated} />}
-      {picking ? (
-        <BlockPicker onPick={(t) => pick(t)} onClose={() => setPicking(false)} />
-      ) : adding && !adding.parentId ? null : (
-        <Button size="lg" onClick={() => setPicking(true)} loading={quick.pending} className="w-full">
-          <Plus className="size-4" /> Add block
+      {!adding && !sell && <SmartPaste tabId={tab.id} onCreated={onCreated} onSell={setSell} />}
+      {sell && (
+        <SellPasteChoice
+          suggestion={sell}
+          existing={sellTarget}
+          busy={create.isPending}
+          onProduct={() => {
+            setAdding({ type: "product", parentId: null, initialData: sell.product });
+            setSell(null);
+          }}
+          onMarketplace={() => createFromPaste(marketplaceBlock(sell, tab.id))}
+          onAppend={() => {
+            if (!sellTarget) return;
+            update.mutate({ id: sellTarget.id, patch: { data: { ...sellTarget.data, stores: [...sellTarget.data.stores, { platform: sell.platform, url: sell.url }] } } });
+            toast.success(`Added ${MARKETPLACES[sell.platform].label} to your marketplace card`);
+            setExpanded(sellTarget.id);
+            setSell(null);
+          }}
+          onLink={() => createFromPaste(linkBlock(sell, tab.id))}
+          onCancel={() => setSell(null)}
+        />
+      )}
+      {picking && (
+        <CardPicker
+          onPick={(t) => pick(t)}
+          onPaste={(text) => {
+            setPicking(false);
+            paste.run(text).then((out) => (out.kind === "created" ? onCreated(out.block) : setSell(out.suggestion)), (e) => toast.error(pasteError(e)));
+          }}
+          onClose={() => setPicking(false)}
+        />
+      )}
+      {!(adding && !adding.parentId) && (
+        <Button size="lg" onClick={() => setPicking(true)} loading={quick.pending || paste.busy} className="w-full">
+          <Plus className="size-4" /> Add card
         </Button>
       )}
 
@@ -64,6 +110,7 @@ export function BlockList({ blocks, tab, tabs }: { blocks: Block[]; tab: Tab; ta
           type={adding.type}
           tabId={tab.id}
           tabs={tabs}
+          initialData={adding.initialData}
           onDone={(b) => (b ? onCreated(b) : setAdding(null))}
         />
       )}

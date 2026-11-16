@@ -47,6 +47,7 @@ describe("block meta", () => {
   it("types whose defaults the server rejects are flagged needsInputFirst", () => {
     for (const t of BLOCK_TYPES) {
       const meta = BLOCK_META[t] as (typeof BLOCK_META)["link"];
+      if (meta.hidden) continue; // P3 stubs: no validator yet
       const invalid = Object.keys(meta.validate(meta.defaultData() as never).errors).length > 0;
       expect(meta.needsInputFirst, t).toBe(invalid);
     }
