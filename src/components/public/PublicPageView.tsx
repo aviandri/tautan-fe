@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Block, Profile, Tab } from "@/lib/types";
-import { resolveTheme, themeToCssVars } from "@/lib/theme/resolve";
+import { isDarkColor, resolveTheme, themeToCssVars } from "@/lib/theme/resolve";
 import { buildTabTree, selectTab, sortTabs, tabQuery } from "@/lib/page-structure";
 import { themeFontVariables } from "@/lib/theme/fonts";
 import { readAnnouncement, readSettings } from "@/lib/page-extras";
@@ -47,13 +47,15 @@ export function PublicPageView({ profile, tabs, blocks, media, activeTabSlug, pr
   const env: PageEnv = { username: profile.username, preview, tabs: sortedTabs, media };
   const opts = { env, now: Date.now(), priorityId: firstImageId(tree.top) };
   const basePath = `/${profile.username}`;
+  // dark themes tint the desktop sheet the other way (and the popup CTA flips to light)
+  const dark = !isDarkColor(theme.text_color);
   // the editor mounts this inside its own <main>
   const Main = preview ? "div" : "main";
 
   return (
     <div
       data-tpage=""
-      className={[s.page, themeFontVariables, fullHeight && s.fullHeight, theme.bg_desktop && s.desktopBg, className].filter(Boolean).join(" ")}
+      className={[s.page, themeFontVariables, fullHeight && s.fullHeight, theme.bg_desktop && s.desktopBg, dark && s.dark, className].filter(Boolean).join(" ")}
       style={{ ...themeToCssVars(theme), ...style }}
       lang={settings.language}
     >
@@ -86,8 +88,12 @@ export function PublicPageView({ profile, tabs, blocks, media, activeTabSlug, pr
         <footer className={s.footer}>
           {/* plain <a>: next/link would add its router client code to the public page */}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a href="/" target={preview ? "_blank" : undefined} rel="noopener">
-            Made with Tautan
+          <a href="/" target={preview ? "_blank" : undefined} rel="noopener" className={s.madeWith}>
+            <svg viewBox="0 0 28 28" aria-hidden="true">
+              <rect x="2" y="2" width="15" height="15" rx="7.5" fill="#d0106f" />
+              <rect x="11" y="11" width="15" height="15" rx="7.5" fill="currentColor" />
+            </svg>
+            Make your own page with Tautan
           </a>
         </footer>
       </div>

@@ -122,8 +122,13 @@ export function start(root: HTMLElement, { username, preview, onTab, ga4, pixel 
     if (preview) popup.show();
     else popup.showModal();
     const onClose = () => !preview && remember(popup.dataset.popup!);
+    const onBackdrop = (ev: MouseEvent) => ev.target === popup && popup.close();
     popup.addEventListener("close", onClose);
-    cleanups.push(() => popup.removeEventListener("close", onClose));
+    popup.addEventListener("click", onBackdrop);
+    cleanups.push(() => {
+      popup.removeEventListener("close", onClose);
+      popup.removeEventListener("click", onBackdrop);
+    });
   }
 
 
