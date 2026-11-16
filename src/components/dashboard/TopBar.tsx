@@ -6,6 +6,7 @@ import { PUBLIC_HOST } from "@/components/brand";
 import { cx, IconButton, Switch } from "@/components/ui";
 import { useUpdateProfile } from "@/lib/profile";
 import type { Profile } from "@/lib/types";
+import { SharePopover } from "./SharePopover";
 
 export function TopBar({ profile }: { profile: Profile }) {
   const update = useUpdateProfile();
@@ -45,6 +46,7 @@ export function TopBar({ profile }: { profile: Profile }) {
       </div>
 
       <div className="ml-auto flex items-center gap-2.5">
+        <SharePopover profile={profile} />
         <span
           className={cx(
             "hidden items-center gap-1.5 text-[13px] font-medium sm:inline-flex",

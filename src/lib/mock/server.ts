@@ -228,7 +228,7 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     }
 
     // ----- public -----
-    const pub = p.match(/^\/public\/([^/]+)(\/events|\/contact)?$/);
+    const pub = p.match(/^\/public\/([^/]+)(\/events|\/contact|\/form|\/subscribe)?$/);
     if (pub) {
       const prof = d.profiles.find((x) => x.username === decodeURIComponent(pub[1]).toLowerCase());
       if (!prof || !prof.is_published) return err(404, "not_found", "Page not found.");
@@ -239,6 +239,16 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
           email: String(B.email), message: String(B.message), created_at: now(),
         });
         return ok(null, 201);
+      }
+      if (pub[2] === "/form" || pub[2] === "/subscribe") {
+        // minimal: accept and answer like the BE; nothing is stored (Forms/Audience stay empty in the mock)
+        const want = pub[2] === "/form" ? "form" : "email_signup";
+        const blk = d.blocks.find((b) => b.id === B.block_id && b.profile_id === prof.id && !b.deleted_at);
+        if (!blk || blk.type !== want) return err(400, "invalid_block", "form not found on this page");
+        if (want === "email_signup" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(B.email ?? "")))
+          return err(400, "invalid_email", "email address is invalid");
+        const msg = (blk.data as { success_message?: string }).success_message ?? "";
+        return ok(want === "form" ? { id: uid(), success_message: msg } : { success_message: msg }, 201);
       }
       return ok({
         profile: prof,
