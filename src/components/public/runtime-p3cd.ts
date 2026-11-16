@@ -231,7 +231,7 @@ async function enter(form: HTMLFormElement, ctx: P3cdContext) {
   busy(form, true);
   const r = await post(cardPath(ctx, form, form.dataset.block!, "enter"), c);
   busy(form, false);
-  if (r.ok) tap(ctx, form.dataset.block, "enter");
+  if (r.ok && !r.body?.already_entered) tap(ctx, form.dataset.block, "enter"); // a repeat entry is not a new tap
   if (r.ok) return done(form, r.body?.already_entered ? "You're already entered with that email. Good luck!" : "You're in. Good luck!");
   setStatus(form, errMsg(r));
 }
