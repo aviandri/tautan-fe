@@ -12,7 +12,9 @@ import { useBlockDraft, type SaveState } from "@/lib/editor/use-block-draft";
 import type { Block, Tab } from "@/lib/types";
 import { TypeChip } from "./BlockCard";
 import { BlockForm } from "./BlockForm";
-import { GateEditor } from "./GateEditor";
+import dynamic from "next/dynamic";
+
+const GateEditor = dynamic(() => import("./GateEditor").then((m) => m.GateEditor), { ssr: false });
 
 /** Card types visitors can't tap: no tap stats for these. */
 const NO_TAPS = new Set(["text", "heading", "divider", "quote", "image", "faq", "testimonial", "reviews", "store_info", "gallery"]);
@@ -132,7 +134,7 @@ function TapStats({ blockId }: { blockId: string }) {
       </div>
       {d && week > 0 && (
         <svg width="110" height="40" viewBox="0 0 110 40" role="img" aria-label={`Daily taps over the last two weeks${change !== null ? `, ${change >= 0 ? "up" : "down"} ${Math.abs(change)}% on last week` : ""}`}>
-          <path d={d} fill="none" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={d} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}
     </div>

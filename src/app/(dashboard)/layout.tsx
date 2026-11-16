@@ -1,7 +1,6 @@
 "use client";
 
 import { TopNav } from "@/components/dashboard/TopNav";
-import { kartuClass } from "@/lib/kartu-fonts";
 import { Spinner } from "@/components/ui";
 import { Toaster } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
@@ -30,14 +29,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   if (!session.data || needsOnboarding) {
     return (
-      <div className={`grid min-h-dvh place-items-center ${kartuClass}`}>
+      <div className={`grid min-h-dvh place-items-center`}>
         <Spinner />
       </div>
     );
   }
 
   return (
-    <div className={`flex min-h-dvh flex-col ${kartuClass}`} data-kartu-root>
+    <div className={`flex min-h-dvh flex-col`} data-kartu-root>
       <TopNav profile={session.data.profile} />
       <main className="flex min-w-0 flex-1 flex-col">{children}</main>
       <Toaster />

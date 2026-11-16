@@ -469,7 +469,7 @@ export function PriceListForm({ data, onChange, errors, autoFocus }: FormProps<"
                     </div>
                     <TextField label="Description (optional)" value={it.desc ?? ""} onChange={(desc) => upd({ desc })} maxLength={200} error={errors[`${p}.desc`]} />
                     <label className="flex items-center gap-2 text-[13px]">
-                      <input type="checkbox" checked={!!it.price_from} onChange={(e) => upd({ price_from: e.target.checked || undefined })} className="size-4 accent-[var(--color-brand)]" />
+                      <input type="checkbox" checked={!!it.price_from} onChange={(e) => upd({ price_from: e.target.checked || undefined })} className="size-4 accent-[var(--accent)]" />
                       Show as “from” price
                     </label>
                     <ImageField label="Photo (optional)" shape="square" allowUrl={false} value={it.image_url} onChange={(image_url) => upd({ image_url })} error={errors[`${p}.image_url`]} />

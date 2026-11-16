@@ -49,7 +49,7 @@ export function NewBlockDraft<K extends BlockType>({
   }
 
   return (
-    <form onSubmit={submit} className={bare ? "flex flex-col" : "rounded-[28px] bg-surface p-5 shadow-[0_0_0_2px_var(--brand)]"}>
+    <form onSubmit={submit} className={bare ? "flex flex-col" : "rounded-[28px] bg-surface p-5 shadow-[0_0_0_2px_var(--accent)]"}>
       <div className="mb-5 flex items-center gap-3">
         <TypeChip type={type} size="lg" />
         <div className="min-w-0">

@@ -50,7 +50,7 @@ export function Toaster() {
           role={t.tone === "error" ? "alert" : "status"}
           className={cx(
             "pointer-events-auto flex max-w-md items-center gap-2.5 rounded-full py-2 pl-4 pr-2 text-sm font-semibold shadow-[0_18px_36px_-16px_rgba(0,0,0,.5)]",
-            "animate-[k-pop_.35s_var(--k-ease)_both]",
+            "animate-[k-pop_.35s_var(--ease)_both]",
             t.tone === "error" ? "bg-danger text-white" : "bg-foreground text-background",
           )}
         >

@@ -222,7 +222,7 @@ export function AnnouncementSection({ profile }: { profile: Profile }) {
                     value={d.form_block_id}
                     onChange={(e) => set({ form_block_id: e.target.value })}
                     disabled={!targets?.length}
-                    className="h-12 w-full rounded-2xl border-0 bg-background px-4 text-[15px] font-medium shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-[inset_0_0_0_1px_var(--line-2)] focus:bg-surface focus:shadow-[inset_0_0_0_2px_var(--foreground)] focus:outline-none disabled:opacity-60"
+                    className="h-12 w-full rounded-2xl border-0 bg-background px-4 text-[15px] font-medium shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-[inset_0_0_0_1px_var(--line-2)] focus:bg-surface focus:shadow-[inset_0_0_0_2px_var(--ink)] focus:outline-none disabled:opacity-60"
                   >
                     <option value="">{targets ? "Choose a block" : "Loading…"}</option>
                     {d.form_block_id && targets && !targets.some((b) => b.id === d.form_block_id) && (
@@ -267,7 +267,7 @@ function ColorField({ label, value, onChange, error }: { label: string; value: s
         <div className="flex items-center gap-2">
           <label className="relative size-11 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-line" title={`Pick ${label.toLowerCase()} colour`}>
             <span
-              className={cx("absolute inset-0", !value && "bg-[repeating-conic-gradient(var(--color-line)_0_25%,transparent_0_50%)] bg-[length:12px_12px]")}
+              className={cx("absolute inset-0", !value && "bg-[repeating-conic-gradient(var(--line)_0_25%,transparent_0_50%)] bg-[length:12px_12px]")}
               style={value && !error ? { background: value } : undefined}
             />
             <input

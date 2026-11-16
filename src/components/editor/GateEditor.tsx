@@ -5,7 +5,6 @@
  * autosaved, so a half-typed password is never stored. The password is
  * write-only: the server only tells us has_password.
  */
-import { Lock } from "lucide-react";
 import { useState } from "react";
 import { Button, Field, Input } from "@/components/ui";
 import { toast } from "@/components/ui/toast";
@@ -13,17 +12,14 @@ import { ApiError } from "@/lib/api";
 import { errorMessage, useUpdateBlock } from "@/lib/editor/queries";
 import { validateGate, type GateFormState, type Kind } from "@/lib/editor/gate";
 import { SOCIAL_PLATFORMS } from "@/lib/social";
-import type { Block, GateKind, GateView, SubscribeMode } from "@/lib/types";
+import type { Block, GateView, SubscribeMode } from "@/lib/types";
 import { UrlField } from "./fields";
 import { MoreOptions, Segmented } from "./fields-extra";
-import { selectCls } from "./sell/sell-fields";
+import { selectCls } from "@/components/ui/select";
+import { GATE_LABEL } from "./gate-badge";
 
-export const GATE_LABEL: Record<GateKind, string> = {
-  password: "Password",
-  email: "Email",
-  age_18: "18+",
-  follow: "Follow",
-};
+export { GATE_LABEL, GateBadge } from "./gate-badge";
+
 
 const HINT: Record<Kind, string> = {
   none: "Anyone can see this card.",
@@ -43,15 +39,6 @@ function initial(g: GateView | undefined): GateFormState {
   };
 }
 
-/** The lock badge shown on a card row. */
-export function GateBadge({ gate }: { gate?: GateView }) {
-  if (!gate) return null;
-  return (
-    <span className="inline-flex items-center gap-1 text-[#6d28d9]">
-      · <Lock className="size-3" aria-hidden /> {GATE_LABEL[gate.kind]}
-    </span>
-  );
-}
 
 export function GateEditor({ block }: { block: Block }) {
   const current = block.gate;

@@ -90,7 +90,7 @@ export function SmartPaste({ tabId, onCreated, onSell }: { tabId: string; onCrea
         }}
         className={cx(
           "flex h-[50px] items-center gap-2 rounded-full bg-surface pl-4 pr-1.5 transition-[box-shadow]",
-          "focus-within:shadow-[inset_0_0_0_2px_var(--foreground)]",
+          "focus-within:shadow-[inset_0_0_0_2px_var(--ink)]",
           error ? "shadow-[inset_0_0_0_2px_var(--danger)]" : "shadow-[inset_0_0_0_1px_var(--line-2)]",
         )}
       >

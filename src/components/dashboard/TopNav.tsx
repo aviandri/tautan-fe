@@ -4,7 +4,7 @@
 import { ChevronDown, ExternalLink, LogOut, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { KartuLogo } from "@/components/brand";
+import { Logo } from "@/components/brand";
 import { Button, cx } from "@/components/ui";
 import { Menu, MenuItem, MenuLabel } from "@/components/ui/menu";
 import { toast } from "@/components/ui/toast";
@@ -163,7 +163,7 @@ export function TopNav({ profile }: { profile: Profile }) {
     <header className="sticky top-0 z-30 bg-background/90 backdrop-blur">
       <div className="flex items-center gap-3 px-4 py-3 sm:px-7 sm:py-3.5">
         <Link href="/dashboard" aria-label="Tautan dashboard" className="shrink-0">
-          <KartuLogo />
+          <Logo />
         </Link>
         <PillNav className="mx-auto hidden md:flex" />
         <div className="ml-auto flex items-center gap-2 md:ml-0">

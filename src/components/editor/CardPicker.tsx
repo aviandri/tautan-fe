@@ -232,10 +232,10 @@ function Tile({ type, compact, active, onFocus, onPick }: { type: BlockType; com
       aria-label={`${m.label}: ${m.description}`}
       className={cx(
         "flex rounded-2xl text-left transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-18px_rgba(0,0,0,.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground",
-        compact ? "items-center gap-3 bg-surface p-3 shadow-[0_0_0_1px_var(--color-line)]" : "min-h-[124px] flex-col gap-2.5 p-3.5",
-        active && !compact && "shadow-[0_0_0_2px_var(--color-foreground)]",
+        compact ? "items-center gap-3 bg-surface p-3 shadow-[0_0_0_1px_var(--line)]" : "min-h-[124px] flex-col gap-2.5 p-3.5",
+        active && !compact && "shadow-[0_0_0_2px_var(--ink)]",
       )}
-      style={compact ? undefined : { background: `color-mix(in srgb, ${m.tint} 11%, var(--color-surface))` }}
+      style={compact ? undefined : { background: `color-mix(in srgb, ${m.tint} 11%, var(--card))` }}
     >
       <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface" style={{ color: m.tint }}>
         <Icon className="size-[18px]" aria-hidden />
@@ -266,7 +266,7 @@ function PreviewPane({ type, theme, onAdd }: { type: BlockType; theme?: Theme; o
 
   return (
     <>
-      <div className="relative overflow-hidden rounded-3xl" style={{ background: `color-mix(in srgb, ${m.tint} 11%, var(--color-surface))` }}>
+      <div className="relative overflow-hidden rounded-3xl" style={{ background: `color-mix(in srgb, ${m.tint} 11%, var(--card))` }}>
         {theme && blocks.length > 0 && (
           <div ref={box} aria-hidden className={cx("pointer-events-none max-h-[300px] overflow-hidden", !rendered && "absolute inset-0 opacity-0")} inert>
             <ThemedBlocks theme={theme} blocks={blocks} style={{ padding: 18 }} />

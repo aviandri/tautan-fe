@@ -11,7 +11,7 @@ import type { Block, Schedule, Tab } from "@/lib/types";
 import { TypeChip, type DragHandleProps } from "./BlockCard";
 import { DeletedBlocks } from "./DeletedBlocks";
 import { scheduleState } from "./fields-extra";
-import { GateBadge } from "./GateEditor";
+import { GateBadge } from "./gate-badge";
 import { SmartPaste } from "./SmartPaste";
 import { SortableItem, SortableList } from "./Sortable";
 import { TabsBar } from "./TabsBar";
@@ -71,7 +71,7 @@ export function CardRow({
         "flex items-center gap-2 rounded-[20px] bg-surface py-2 pr-2.5 transition-[transform,box-shadow] duration-200 ease-k",
         nested ? "pl-2" : "pl-1",
         selected
-          ? "shadow-[0_0_0_2px_var(--brand),0_18px_34px_-20px_rgba(208,16,111,.55)]"
+          ? "shadow-[0_0_0_2px_var(--accent),0_18px_34px_-20px_rgba(208,16,111,.55)]"
           : isDragging
             ? "shadow-lift"
             : "shadow-card hover:-translate-y-px hover:shadow-[0_14px_28px_-18px_rgba(0,0,0,.3),0_0_0_1px_rgba(0,0,0,.05)]",

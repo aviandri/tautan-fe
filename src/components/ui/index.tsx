@@ -19,7 +19,7 @@ type ButtonSize = "sm" | "md" | "lg";
 const variants: Record<ButtonVariant, string> = {
   primary: "bg-brand text-brand-ink hover:bg-brand-hover",
   dark: "bg-foreground text-background hover:bg-ink-2",
-  secondary: "bg-surface text-foreground shadow-[inset_0_0_0_1px_var(--line-2)] hover:shadow-[inset_0_0_0_1px_var(--foreground)]",
+  secondary: "bg-surface text-foreground shadow-[inset_0_0_0_1px_var(--line-2)] hover:shadow-[inset_0_0_0_1px_var(--ink)]",
   soft: "bg-sunken text-foreground hover:bg-line",
   ghost: "text-foreground hover:bg-sunken",
   danger: "bg-danger text-white hover:brightness-90",
@@ -91,7 +91,7 @@ export function IconButton({
 
 /** Kartu inputs: soft fill with a hairline, white with an ink ring when focused. */
 const ring = "shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-[inset_0_0_0_1px_var(--line-2)]";
-const ringFocus = "focus:bg-surface focus:shadow-[inset_0_0_0_2px_var(--foreground)] focus:outline-none";
+const ringFocus = "focus:bg-surface focus:shadow-[inset_0_0_0_2px_var(--ink)] focus:outline-none";
 const ringBad = "aria-[invalid=true]:shadow-[inset_0_0_0_2px_var(--danger)]";
 const inputBase =
   `w-full rounded-2xl border-0 bg-background px-4 text-[15px] font-medium text-foreground placeholder:font-normal placeholder:text-muted/70 ` +
@@ -114,7 +114,7 @@ export const PrefixInput = forwardRef<
         "flex h-12 w-full items-center rounded-2xl bg-background pl-4 text-[15px] font-medium",
         "transition-[box-shadow,background-color] duration-150",
         ring,
-        "focus-within:bg-surface focus-within:shadow-[inset_0_0_0_2px_var(--foreground)]",
+        "focus-within:bg-surface focus-within:shadow-[inset_0_0_0_2px_var(--ink)]",
         "has-[[aria-invalid=true]]:shadow-[inset_0_0_0_2px_var(--danger)]",
       )}
     >

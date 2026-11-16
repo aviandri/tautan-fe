@@ -16,7 +16,7 @@ export interface DragHandleProps {
 const PASTEL: Record<string, string> = { sell: "var(--mint)", creators: "var(--blush)", links: "var(--sky)", grow: "var(--butter)", media: "var(--peach)" };
 export function tileColor(type: BlockType): string {
   const cat = CATEGORIES.find((c) => c.types.includes(type));
-  return (cat && PASTEL[cat.id]) || "var(--sunken)";
+  return (cat && PASTEL[cat.id]) || "var(--surface)";
 }
 
 export function TypeChip({ type, size = "md" }: { type: BlockType; size?: "sm" | "md" | "lg" }) {
