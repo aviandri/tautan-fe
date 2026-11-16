@@ -7,7 +7,7 @@
  */
 import { Eye, Monitor, Smartphone, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMedia } from "@/lib/use-media";
 import { Alert, Button, cx, Spinner } from "@/components/ui";
 import { toast } from "@/components/ui/toast";
@@ -107,6 +107,14 @@ export function Editor() {
     router.replace(`${pathname}${q.size ? `?${q}` : ""}`, { scroll: false });
   }, [addParam, addHandled, data, active, params, pathname, router, quick]);
 
+  // The card new ones are inserted after: the last selected card. Opening a draft or the
+  // sell-paste choice keeps it; deselecting (Escape, Done, switching tab) clears it.
+  const anchorRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (sel?.kind === "block") anchorRef.current = sel.id;
+    else if (!sel) anchorRef.current = null;
+  }, [sel]);
+
   const sheetOpen = !isLg && !!sel;
   useEffect(() => {
     if (!sheetOpen && !previewOpen) return;
@@ -158,8 +166,19 @@ export function Editor() {
   };
 
   /** New top-level cards go first (the server appends), then open in the settings panel. */
+  /**
+   * A new top-level card goes right after the card that was selected when the add started (its
+   * folder, if a folder link was selected); with nothing selected it stays at the end of the tab,
+   * where the server puts it. Then it opens in the settings panel and scrolls into view.
+   */
   function onCreated(b: Block) {
-    if (!b.parent_id) reorder.mutate({ tabId: active.id, ids: [b.id, ...top.filter((x) => x.id !== b.id).map((x) => x.id)] });
+    const anchor = blocks.find((x) => x.id === anchorRef.current);
+    const anchorTop = anchor?.parent_id ?? anchor?.id;
+    if (!b.parent_id && anchorTop && anchorTop !== b.id && top.some((x) => x.id === anchorTop)) {
+      const ids = top.map((x) => x.id).filter((id) => id !== b.id);
+      ids.splice(ids.indexOf(anchorTop) + 1, 0, b.id);
+      reorder.mutate({ tabId: active.id, ids });
+    }
     setSel({ kind: "block", id: b.id });
     setFresh(b.id);
   }
@@ -229,6 +248,7 @@ export function Editor() {
           tab={active}
           tabs={tabs}
           selectedId={selectedBlock?.id}
+          scrollToId={fresh ?? undefined}
           onSelect={(b) => {
             setSel({ kind: "block", id: b.id });
             setFresh(null);

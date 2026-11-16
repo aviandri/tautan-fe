@@ -21,6 +21,15 @@ describe("onboarding", () => {
         expect(BLOCK_META[st.type].needsInputFirst, st.key).toBe(false);
       }
   });
+  it("list starters seed one sample item so the section shows right after onboarding", () => {
+    for (const list of Object.values(STARTERS))
+      for (const st of list) {
+        const d = st.data() as { items?: Record<string, string>[] };
+        if (st.type === "social_icons" || !d.items) continue; // profiles need real URLs; see the editor's empty state
+        expect(d.items.length, st.key).toBeGreaterThan(0);
+        for (const it of d.items) expect(Object.values(it).every((v) => typeof v === "string" && v.trim().length > 0), st.key).toBe(true);
+      }
+  });
   it("applyPatch merges onboarding and marks a claimed username", () => {
     const a = applyPatch(base, { onboarding: { step: "profile", intent: "sell" } });
     expect(a.onboarding).toMatchObject({ completed: false, username_claimed: false, step: "profile", intent: "sell", suggested_username: "jane" });
