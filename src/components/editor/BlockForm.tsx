@@ -33,6 +33,9 @@ import {
 import { LatestVideoForm, PodcastForm, PostGridForm, ShopTheLookForm } from "./creator/FetchedForms";
 import { BrandsForm, CommunityForm, EventsForm, GalleryForm, MediaKitForm, RateCardForm } from "./creator/CreatorForms";
 import { SOCIAL_PLATFORMS } from "@/lib/social";
+import { AskMeForm, GiveawayForm, LeadMagnetForm, PollForm } from "./engage/EngageForms";
+import { BeforeAfterForm, MapForm, MarqueeForm, ResumeForm, SpotlightForm, TimelineForm } from "./layout/LayoutForms";
+import { DONATE_PLATFORMS, type DiscountCodeEntry, type TextStyle } from "@/lib/types";
 
 export interface FormContext {
   /** All tabs (link → tab destination). */
@@ -184,7 +187,35 @@ function HeadingForm({ data, onChange, errors, autoFocus }: FormProps<"heading">
   );
 }
 
+const TEXT_STYLE_LABEL: Record<TextStyle, string> = {
+  card: "Card",
+  sticky_note: "Sticky note",
+  speech_bubble: "Speech bubble",
+  torn_paper: "Torn paper",
+  chalkboard: "Chalkboard",
+};
+
 function TextForm({ data, onChange, autoFocus }: FormProps<"text">) {
+  return (
+    <>
+      <TextFieldBody data={data} onChange={onChange} autoFocus={autoFocus} />
+      <Field label="Style">
+        {(p) => (
+          <select {...p} value={data.style ?? ""} onChange={(e) => onChange({ ...data, style: (e.target.value || undefined) as TextStyle | undefined })} className={selectCls}>
+            <option value="">Plain</option>
+            {(Object.keys(TEXT_STYLE_LABEL) as TextStyle[]).map((st) => (
+              <option key={st} value={st}>
+                {TEXT_STYLE_LABEL[st]}
+              </option>
+            ))}
+          </select>
+        )}
+      </Field>
+    </>
+  );
+}
+
+function TextFieldBody({ data, onChange, autoFocus }: Pick<FormProps<"text">, "data" | "onChange" | "autoFocus">) {
   return (
     <TextField
       label="Text"
@@ -251,21 +282,40 @@ function MusicForm({ data, onChange, errors, autoFocus }: FormProps<"music">) {
 
 function SocialIconsForm({ data, onChange, errors }: FormProps<"social_icons">) {
   const used = new Set(data.items.map((i) => i.platform));
+  const donate = data.variant === "donate";
+  const platforms = donate ? DONATE_OPTIONS : SOCIAL_PLATFORMS;
   return (
+    <>
+    <Segmented<"icons" | "donate">
+      label="Kind"
+      value={donate ? "donate" : "icons"}
+      onChange={(v) =>
+        onChange({
+          ...data,
+          variant: v === "donate" ? "donate" : undefined,
+          // Switching kind keeps only the icons that still fit.
+          items: data.items.filter((it) => v !== "donate" || (DONATE_PLATFORMS as readonly string[]).includes(it.platform)),
+        })
+      }
+      options={[
+        { value: "icons", label: "Social profiles" },
+        { value: "donate", label: "Tips and donations" },
+      ]}
+    />
     <ItemsEditor
       items={data.items}
       onChange={(items) => onChange({ ...data, items })}
-      make={() => ({ platform: SOCIAL_PLATFORMS.find((p) => !used.has(p.id))?.id ?? "website", url: "" })}
-      addLabel="Add icon"
-      max={SOCIAL_PLATFORMS.length}
+      make={() => ({ platform: platforms.find((p) => !used.has(p.id))?.id ?? (donate ? "saweria" : "website"), url: "" })}
+      addLabel={donate ? "Add tip link" : "Add icon"}
+      max={platforms.length}
       render={(it, update, i) => {
-        const platform = SOCIAL_PLATFORMS.find((p) => p.id === it.platform);
+        const platform = platforms.find((p) => p.id === it.platform);
         return (
           <div className="grid gap-2 sm:grid-cols-[150px_minmax(0,1fr)]">
             <Field label="Platform" error={errors[`items.${i}.platform`]}>
               {(p) => (
                 <select {...p} value={it.platform} onChange={(e) => update({ platform: e.target.value })} className={selectCls}>
-                  {SOCIAL_PLATFORMS.map((pl) => (
+                  {platforms.map((pl) => (
                     <option key={pl.id} value={pl.id} disabled={pl.id !== it.platform && used.has(pl.id)}>
                       {pl.label}
                     </option>
@@ -273,13 +323,22 @@ function SocialIconsForm({ data, onChange, errors }: FormProps<"social_icons">) 
                 </select>
               )}
             </Field>
-            <UrlField label="Profile link" value={it.url} onChange={(url) => update({ url })} placeholder={platform?.placeholder} error={errors[`items.${i}.url`]} />
+            <UrlField label={donate ? "Tip page link" : "Profile link"} value={it.url} onChange={(url) => update({ url })} placeholder={platform?.placeholder} error={errors[`items.${i}.url`]} />
           </div>
         );
       }}
     />
+    </>
   );
 }
+
+const DONATE_OPTIONS: { id: (typeof DONATE_PLATFORMS)[number]; label: string; placeholder: string }[] = [
+  { id: "saweria", label: "Saweria", placeholder: "https://saweria.co/yourname" },
+  { id: "trakteer", label: "Trakteer", placeholder: "https://trakteer.id/yourname" },
+  { id: "kofi", label: "Ko-fi", placeholder: "https://ko-fi.com/yourname" },
+  { id: "paypal", label: "PayPal", placeholder: "https://paypal.me/yourname" },
+  { id: "buymeacoffee", label: "Buy Me a Coffee", placeholder: "https://buymeacoffee.com/yourname" },
+];
 
 function FolderForm({ data, onChange, autoFocus }: FormProps<"folder">) {
   type S = NonNullable<BlockDataMap["folder"]["style"]>;
@@ -327,6 +386,30 @@ function DiscountCodeForm({ data, onChange, errors, autoFocus }: FormProps<"disc
         <UrlField label="Shop link (optional)" value={data.url ?? ""} onChange={(url) => set({ url })} error={errors.url} />
         <TextField label="Button label" value={data.button_label ?? ""} onChange={(button_label) => set({ button_label })} placeholder="Copy code" maxLength={40} />
       </div>
+      <MoreOptions
+        title="More codes"
+        defaultOpen={!!data.codes?.length}
+        badge={data.codes?.length ? <span className="rounded-full bg-black/[.06] px-1.5 text-[11px] text-muted">{data.codes.length}</span> : null}
+      >
+        <p className="text-[13px] text-muted">Visitors swipe through the codes, one card each.</p>
+        <ItemsEditor<DiscountCodeEntry>
+          items={data.codes ?? []}
+          onChange={(codes) => set({ codes })}
+          make={() => ({ code: "" })}
+          addLabel="Add code"
+          max={10}
+          render={(c, update, i) => (
+            <div className="flex flex-col gap-2">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <TextField label="Code" value={c.code} onChange={(code) => update({ code: code.toUpperCase().replace(/\s/g, "") })} maxLength={40} error={errors[`codes.${i}.code`]} />
+                <TextField label="Discount" value={c.discount ?? ""} onChange={(discount) => update({ discount })} maxLength={24} placeholder="15% off" error={errors[`codes.${i}.discount`]} />
+              </div>
+              <TextField label="Description" value={c.description ?? ""} onChange={(description) => update({ description })} maxLength={300} error={errors[`codes.${i}.description`]} />
+              <UrlField label="Shop link (optional)" value={c.url ?? ""} onChange={(url) => update({ url })} error={errors[`codes.${i}.url`]} />
+            </div>
+          )}
+        />
+      </MoreOptions>
       <p className="text-[13px] text-muted">Each copy counts as a click in Analytics.</p>
     </>
   );
@@ -506,6 +589,16 @@ const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   events: EventsForm,
   podcast: PodcastForm,
   community: CommunityForm,
+  poll: PollForm,
+  ask_me: AskMeForm,
+  lead_magnet: LeadMagnetForm,
+  giveaway: GiveawayForm,
+  spotlight: SpotlightForm,
+  marquee: MarqueeForm,
+  timeline: TimelineForm,
+  resume: ResumeForm,
+  before_after: BeforeAfterForm,
+  map: MapForm,
 };
 
 export function BlockForm<K extends BlockType>({ type, ...props }: FormProps<K> & { type: K }) {

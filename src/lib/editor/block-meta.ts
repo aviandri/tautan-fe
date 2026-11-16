@@ -30,6 +30,9 @@ import type { BlockDataMap, BlockType, FormField } from "../types";
 import { compact, keep, maxLen, plural, put, required, withSchedule, type BlockMeta, type FieldErrors } from "./meta-core";
 import { SELL_META } from "./sell-meta";
 import { CREATOR_META } from "./creator-meta";
+import { ENGAGE_META } from "./engage-meta";
+import { LAYOUT_META } from "./layout-meta";
+import { DONATE_PLATFORMS, TEXT_STYLES } from "../types";
 import { prettyUrl, urlError } from "../url";
 
 export type { BlockMeta, FieldErrors } from "./meta-core";
@@ -113,7 +116,11 @@ export const BLOCK_META: { [K in BlockType]: BlockMeta<K> } = {
     defaultData: () => ({ content: "" }),
     needsInputFirst: false,
     summary: (d) => d.content.replace(/[*_#>`]/g, "").split("\n")[0] || "Empty text",
-    validate: withSchedule<"text">(keep),
+    validate: withSchedule<"text">((d) => {
+      const e: FieldErrors = {};
+      if (d.style && !TEXT_STYLES.includes(d.style)) put(e, "style", "Pick a style");
+      return { errors: e, data: compact({ ...d }, ["style"]) };
+    }),
   },
   image: {
     type: "image",
@@ -183,7 +190,13 @@ export const BLOCK_META: { [K in BlockType]: BlockMeta<K> } = {
       const items = d.items
         .filter((it) => it.platform || it.url.trim())
         .map((it) => ({ ...it, url: it.url.trim() }));
-      return { errors: e, data: { ...d, items } };
+      if (d.variant === "donate")
+        items.forEach((it, i) => {
+          if (!(DONATE_PLATFORMS as readonly string[]).includes(it.platform)) put(e, `items.${i}.platform`, "Pick a tip platform");
+        });
+      const data = { ...d, items };
+      if (data.variant !== "donate") delete data.variant; // "icons" is stored as absent
+      return { errors: e, data };
     }),
   },
   folder: {
@@ -229,9 +242,18 @@ export const BLOCK_META: { [K in BlockType]: BlockMeta<K> } = {
       put(e, "description", maxLen(d.description, 300));
       put(e, "discount", maxLen(d.discount, 24));
       put(e, "url", urlError(d.url, false));
+      const codes = (d.codes ?? []).map((c, i) => {
+        const o = compact({ ...c, code: c.code.trim().toUpperCase(), url: c.url?.trim() }, ["description", "discount", "url", "ends_at"]);
+        put(e, `codes.${i}.code`, required(o.code) ? "Add the code" : maxLen(o.code, 40));
+        put(e, `codes.${i}.description`, maxLen(o.description, 300));
+        put(e, `codes.${i}.discount`, maxLen(o.discount, 24));
+        put(e, `codes.${i}.url`, urlError(o.url, false));
+        return o;
+      });
+      if (codes.length > 10) put(e, "codes", "Up to 10 codes");
       return {
         errors: e,
-        data: compact({ ...d, code: d.code.trim(), url: d.url?.trim() }, ["description", "brand", "discount", "url", "button_label"]),
+        data: compact({ ...d, code: d.code.trim(), url: d.url?.trim(), codes: codes.length ? codes : undefined }, ["description", "brand", "discount", "url", "button_label", "codes"]),
       };
     }),
   },
@@ -419,6 +441,8 @@ export const BLOCK_META: { [K in BlockType]: BlockMeta<K> } = {
   },
   ...SELL_META,
   ...CREATOR_META,
+  ...ENGAGE_META,
+  ...LAYOUT_META,
 };
 
 export function getMeta<K extends BlockType>(type: K): BlockMeta<K> {

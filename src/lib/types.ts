@@ -4,6 +4,9 @@
  * validators for forms and API responses; TS types are inferred from them.
  */
 import { z } from "zod";
+import { DiscountCodeEntrySchema, GateViewSchema, P3CD_SCHEMAS, TEXT_STYLES, type GateInput, type GateView } from "./types-p3cd";
+
+export * from "./types-p3cd";
 
 // ---------- Theme ----------
 
@@ -204,6 +207,18 @@ export const BLOCK_TYPES = [
   "events",
   "podcast",
   "community",
+  // Phase 3 (P3-C Engage)
+  "poll",
+  "ask_me",
+  "lead_magnet",
+  "giveaway",
+  // Phase 3 (P3-D Text and layout)
+  "spotlight",
+  "marquee",
+  "timeline",
+  "resume",
+  "before_after",
+  "map",
 ] as const;
 export type BlockType = (typeof BLOCK_TYPES)[number];
 
@@ -245,7 +260,7 @@ export const LinkDataSchema = z.object({
   tab_id: z.string().optional(),
   ...schedule,
 });
-export const TextDataSchema = z.object({ content: z.string(), ...schedule });
+export const TextDataSchema = z.object({ content: z.string(), style: z.enum(TEXT_STYLES).optional(), ...schedule });
 export const ImageDataSchema = z.object({
   url: z.string(),
   alt: z.string().optional(),
@@ -262,6 +277,8 @@ export const VideoDataSchema = z.object({ url: z.string(), resolved: mediaResolv
 export const MusicDataSchema = z.object({ url: z.string(), resolved: mediaResolved, ...schedule });
 export const SocialIconsDataSchema = z.object({
   items: z.array(z.object({ platform: z.string(), url: z.string() })),
+  /** P3-D: "donate" limits platforms to the tip platforms; absent means icons. */
+  variant: z.enum(["icons", "donate"]).optional(),
   ...schedule,
 });
 export const FolderDataSchema = z.object({
@@ -317,6 +334,8 @@ export const DiscountCodeDataSchema = z.object({
   discount: z.string().optional(),
   url: z.string().optional(),
   button_label: z.string().optional(),
+  /** P3-D: several codes shown in sequence (swipe). */
+  codes: z.array(DiscountCodeEntrySchema).optional(),
   ...schedule,
 });
 export const CountdownDataSchema = z.object({
@@ -789,6 +808,7 @@ export const BlockDataSchemas = {
   events: EventsDataSchema,
   podcast: PodcastDataSchema,
   community: CommunityDataSchema,
+  ...P3CD_SCHEMAS,
 } satisfies Record<BlockType, z.ZodType>;
 
 export type BlockDataMap = {
@@ -827,6 +847,10 @@ interface BlockBase {
   updated_at: string;
   /** P2-1 soft delete: set on blocks from GET /blocks/deleted */
   deleted_at?: string;
+  /** Card-level gate (editor view: includes has_password, never the hash). */
+  gate?: GateView;
+  /** Public reads: the card is gated and its data is withheld (data is null). */
+  locked?: boolean;
 }
 
 /** Discriminated union on `type`: narrowing `block.type` narrows `block.data`. */
@@ -846,6 +870,8 @@ const BlockBaseSchema = z.object({
   created_at: z.string(),
   updated_at: z.string(),
   deleted_at: z.string().optional(),
+  gate: GateViewSchema.optional(),
+  locked: z.boolean().optional(),
 });
 
 export const BlockSchema = z.discriminatedUnion(
@@ -926,6 +952,7 @@ export type CreateBlockInput = {
     type: K;
     data: BlockDataMap[K];
     parent_id?: string | null;
+    gate?: GateInput | null;
   };
 }[BlockType];
 
@@ -934,6 +961,8 @@ export interface UpdateBlockInput {
   is_visible?: boolean;
   tab_id?: string;
   parent_id?: string | null;
+  /** null removes the gate */
+  gate?: GateInput | null;
 }
 
 export interface ApiErrorBody {
