@@ -86,9 +86,11 @@ await check("Cards: a pasted link appears as a card", async () => {
 });
 await page.getByRole("button", { name: /and continue/i }).click();
 
-await check("Look: the picked theme applies to the preview immediately", async () => {
+await check("Look: the picked theme and its colour palette apply to the preview immediately", async () => {
   await page.getByRole("radio", { name: /^Malam/ }).click({ timeout: 30000 });
-  await page.waitForFunction(() => [...document.querySelectorAll("aside *")].some((n) => getComputedStyle(n).backgroundColor === "rgb(15, 23, 42)"), null, { timeout: 3000 });
+  // Malam's ground (#0e1420) and its palette: the header band and cards take the tonal surfaces
+  await page.waitForFunction(() => [...document.querySelectorAll("aside *")].some((n) => getComputedStyle(n).backgroundColor === "rgb(14, 20, 32)"), null, { timeout: 3000 });
+  await page.waitForFunction(() => !!document.querySelector("aside .tp-palette"), null, { timeout: 3000 });
   await shot("3-look");
 });
 await page.close();
