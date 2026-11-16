@@ -1,7 +1,8 @@
 /**
  * P2-6 starter sections, by intent. Only block types whose starting data is
- * valid without user input, and no invented facts: headings and labels only;
- * the user fills in the rest in the editor.
+ * valid without user input, and no invented facts: headings, labels and, where a
+ * card would otherwise render empty (FAQ, testimonials), one clearly-sample item
+ * that tells the owner what to replace, so every ticked section shows on the page.
  */
 import { FORM_PRESETS } from "../editor/block-meta";
 import type { BlockDataMap, BlockType, CreateBlockInput, OnboardingIntent } from "../types";
@@ -24,7 +25,10 @@ const s = <K extends BlockType>(key: string, type: K, title: string, description
 
 const socials = s("socials", "social_icons", "Social icons", "Your profiles in one row", () => ({ items: [] }));
 const signup = (title: string) => s("signup", "email_signup", "Email signup", "Grow a list you own", () => ({ title, button_label: "Subscribe", placeholder: "you@example.com" }));
-const faq = s("faq", "faq", "FAQ", "Answer the questions you get every week", () => ({ heading: "Good to know", items: [{ q: "", a: "" }] }));
+const faq = s("faq", "faq", "FAQ", "Answer the questions you get every week", () => ({
+  heading: "Good to know",
+  items: [{ q: "Add your first question", a: "Replace this with your answer. Tap the FAQ card in the editor to change or add questions." }],
+}));
 
 export const STARTERS: Record<OnboardingIntent, Starter[]> = {
   local: [
@@ -35,7 +39,10 @@ export const STARTERS: Record<OnboardingIntent, Starter[]> = {
   ],
   sell: [
     s("shop_heading", "heading", "Shop heading", "A title above your product links", () => ({ title: "Shop" })),
-    s("reviews", "testimonial", "Testimonials", "Quotes from happy customers", () => ({ heading: "What customers say", items: [{ quote: "", author: "" }] })),
+    s("reviews", "testimonial", "Testimonials", "Quotes from happy customers", () => ({
+      heading: "What customers say",
+      items: [{ quote: "What customers say about you goes here. Replace it with a real quote.", author: "Customer name" }],
+    })),
     signup("Be first to hear about new drops"),
     faq,
   ],

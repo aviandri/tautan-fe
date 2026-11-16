@@ -2,6 +2,7 @@
 
 /** Kartu editor, left pane: tabs, paste/add, the sortable card list and recently deleted. */
 import { Clock, EyeOff, GripVertical, Plus } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { Button, cx, Switch } from "@/components/ui";
 import { getMeta } from "@/lib/editor/block-meta";
 import { siblings, useReorderBlocks, useUpdateBlock } from "@/lib/editor/queries";
@@ -53,8 +54,11 @@ export function CardRow({
   isDragging,
   taps,
   nested,
+  scrollIntoView,
 }: {
   block: Block;
+  /** a freshly added card: bring it into view */
+  scrollIntoView?: boolean;
   selected: boolean;
   onSelect: () => void;
   drag?: DragHandleProps;
@@ -65,8 +69,13 @@ export function CardRow({
   const meta = getMeta(block.type);
   const update = useUpdateBlock();
   const summary = (meta.summary as (d: Block["data"]) => string)(block.data);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (scrollIntoView) ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [scrollIntoView]);
   return (
     <div
+      ref={ref}
       className={cx(
         "flex items-center gap-2 rounded-[20px] bg-surface py-2 pr-2.5 transition-[transform,box-shadow] duration-200 ease-k",
         nested ? "pl-2" : "pl-1",
@@ -116,6 +125,7 @@ export function CardList({
   tab,
   tabs,
   selectedId,
+  scrollToId,
   onSelect,
   onSelectTab,
   onAdd,
@@ -128,6 +138,7 @@ export function CardList({
   tab: Tab;
   tabs: Tab[];
   selectedId?: string;
+  scrollToId?: string;
   onSelect: (b: Block) => void;
   onSelectTab: (t: Tab) => void;
   onAdd: () => void;
@@ -161,7 +172,7 @@ export function CardList({
             <SortableItem key={b.id} id={b.id}>
               {({ drag, isDragging }) => (
                 <div className="flex flex-col gap-2">
-                  <CardRow block={b} selected={selectedId === b.id} onSelect={() => onSelect(b)} drag={drag} isDragging={isDragging} taps={taps?.get(b.id)} />
+                  <CardRow block={b} selected={selectedId === b.id} scrollIntoView={scrollToId === b.id} onSelect={() => onSelect(b)} drag={drag} isDragging={isDragging} taps={taps?.get(b.id)} />
                   {b.type === "folder" && !isDragging && (
                     <FolderChildren folder={b} blocks={blocks} selectedId={selectedId} onSelect={onSelect} onAdd={() => onAddToFolder(b)} taps={taps} />
                   )}
