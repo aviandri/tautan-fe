@@ -9,7 +9,7 @@ import { safeImageSrc } from "@/lib/safe-url";
 import { trackEvent } from "@/lib/track";
 import { themeFontVariables } from "@/lib/theme/fonts";
 import { PublicContext } from "./context";
-import { BlockRenderer } from "./BlockRenderer";
+import { BlockList } from "./BlockRenderer";
 import s from "./public.module.css";
 
 export interface PublicPageProps {
@@ -54,8 +54,26 @@ export function PublicPage({
     trackEvent(profile.username, { kind: "view" });
   }, [preview, profile.username]);
 
-  const ctx = useMemo(() => ({ username: profile.username, preview }), [profile.username, preview]);
   const basePath = `/${profile.username}`;
+  const ctx = useMemo(
+    () => ({
+      username: profile.username,
+      preview,
+      selectTab: (tabId: string) => {
+        const t = sortedTabs.find((x) => x.id === tabId);
+        if (!t) return;
+        setSlug(t.slug);
+        onTabChange?.(t.slug);
+        if (!preview) window.history.replaceState(null, "", basePath + tabQuery(sortedTabs, t));
+        window.scrollTo({ top: 0 });
+      },
+      tabHref: (tabId: string) => {
+        const t = sortedTabs.find((x) => x.id === tabId);
+        return t ? basePath + tabQuery(sortedTabs, t) : undefined;
+      },
+    }),
+    [profile.username, preview, sortedTabs, basePath, onTabChange],
+  );
 
   function onTabClick(e: MouseEvent, t: Tab) {
     // plain <a href> keeps tabs working without JS; with JS we swap in place
@@ -111,7 +129,7 @@ export function PublicPage({
           ) : null}
 
           {tree.top.length ? (
-            tree.top.map((b) => <BlockRenderer key={b.id} block={b} childBlocks={tree.children.get(b.id)} />)
+            <BlockList blocks={tree.top} childrenOf={tree.children} />
           ) : (
             <p className={s.empty}>Nothing here yet.</p>
           )}

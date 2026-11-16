@@ -6,6 +6,12 @@
   --t-line: color-mix(in srgb, var(--t-text) 16%, transparent);
   --t-muted: color-mix(in srgb, var(--t-text) 70%, transparent);
   --t-card-radius: min(max(var(--t-btn-radius), 10px), 22px);
+  /* Theme v2 slots (P2-2 sets them; these are the v1 defaults) */
+  --t-block-bg: var(--t-surface);
+  --t-block-text: var(--t-text);
+  --t-label-bg: var(--t-text);
+  --t-label-text: var(--t-bg-solid);
+  --t-gap: 14px;
 
   background: var(--t-bg);
   background-color: var(--t-bg-solid);
@@ -29,7 +35,7 @@
   max-width: 580px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--t-gap);
   flex: 1;
 }
 
@@ -158,7 +164,8 @@
 
 /* surfaces */
 .card {
-  background: var(--t-surface);
+  background: var(--t-block-bg);
+  color: var(--t-block-text);
   border: 1px solid var(--t-line);
   border-radius: var(--t-card-radius);
   padding: 16px 18px;
@@ -431,4 +438,540 @@ textarea.input {
   .socialLink:hover {
     transform: none;
   }
+}
+
+/* ================= Phase 2 blocks ================= */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.alignLeft {
+  text-align: left;
+  justify-content: flex-start;
+}
+.alignRight {
+  text-align: right;
+  justify-content: flex-end;
+}
+
+/* link details */
+.linkTitleRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: inherit;
+}
+.btnLabel .linkTitleRow {
+  display: flex;
+  justify-content: center;
+}
+.alignLeft .btnLabel .linkTitleRow {
+  justify-content: flex-start;
+}
+.alignRight .btnLabel .linkTitleRow {
+  justify-content: flex-end;
+}
+.linkTitle {
+  font-weight: 600;
+}
+.linkDesc {
+  display: block;
+  font-weight: 400;
+  font-size: 0.85em;
+  opacity: 0.8;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.linkLabel {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--t-label-bg);
+  color: var(--t-label-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.linkEmoji {
+  width: 40px;
+  flex: none;
+  font-size: 22px;
+  line-height: 1;
+  text-align: center;
+}
+.linkIcon {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 8px;
+  object-fit: cover;
+  margin: 0 4px;
+}
+.btnThumbLarge {
+  padding: 8px 14px 8px 8px;
+  min-height: 76px;
+}
+.thumbLarge {
+  width: 60px;
+  height: 60px;
+  border-radius: calc(var(--t-btn-radius) * 0.7);
+  object-fit: cover;
+  flex: none;
+}
+.thumbLargeSpacer {
+  width: 46px;
+  flex: none;
+}
+.btnIcon {
+  width: 18px;
+  height: 18px;
+}
+
+/* thumbnail_highlight */
+.linkCard {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  border: 2px solid var(--t-btn-border);
+  border-radius: var(--t-card-radius);
+  box-shadow: var(--t-btn-shadow);
+  text-decoration: none;
+  text-align: center;
+  transition: transform 0.15s ease;
+}
+.linkCard:hover,
+.linkBgImage:hover,
+.linkTile:hover {
+  transform: translateY(-2px);
+}
+.linkCardImage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+.linkCardBody {
+  padding: 12px 16px 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* image_background */
+.linkBgImage {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 150px;
+  padding: 16px;
+  border-radius: var(--t-card-radius);
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+  box-shadow: var(--t-btn-shadow);
+  transition: transform 0.15s ease;
+}
+.linkBgShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.05) 70%);
+}
+.linkBgBody {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.alignLeft .linkBgBody {
+  align-items: flex-start;
+}
+.alignRight .linkBgBody {
+  align-items: flex-end;
+}
+
+/* grid + carousel tiles */
+.grid2,
+.grid3 {
+  display: grid;
+  gap: 10px;
+}
+.grid2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.grid3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.carousel {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  margin: 0 -16px;
+  padding: 0 16px 6px;
+  scrollbar-width: thin;
+}
+.carouselItem {
+  flex: 0 0 62%;
+  scroll-snap-align: start;
+}
+.linkTile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--t-text);
+  text-decoration: none;
+  text-align: left;
+  transition: transform 0.15s ease;
+}
+.linkTileMedia {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  border-radius: var(--t-card-radius);
+  overflow: hidden;
+  background: var(--t-block-bg);
+  border: 1px solid var(--t-line);
+}
+.linkTileMedia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.linkTileMedia .linkLabel {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+.linkTileIcon {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 28px;
+  font-weight: 700;
+}
+.linkTileTitle {
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1.3;
+}
+
+/* heading, divider */
+.heading {
+  margin: 10px 0 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+.divider {
+  width: 100%;
+  margin: 4px 0;
+  border: 0;
+  border-top-color: var(--t-line);
+}
+.spacer {
+  height: 12px;
+}
+
+/* file */
+.fileIcon {
+  width: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.fileIcon svg,
+.fileDownload {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+/* discount code */
+.discount {
+  composes: card;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  border-style: dashed;
+  border-width: 2px;
+}
+.discountBrand {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+.discountValue {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.discountDesc {
+  margin: 0;
+  font-size: 0.92rem;
+  opacity: 0.85;
+}
+.discountCodeRow {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  border: 1px solid var(--t-line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--t-bg-solid) 60%, transparent);
+}
+.discountCode {
+  flex: 1;
+  padding: 10px 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: left;
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+.discountCopy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-left: 1px solid var(--t-line);
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.discountCopy svg {
+  width: 16px;
+  height: 16px;
+}
+.discount .btn {
+  margin-top: 4px;
+}
+
+/* countdown */
+.countdown {
+  composes: card;
+  text-align: center;
+}
+.countdownLabel {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.countdownGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.countdownCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--t-bg-solid) 55%, transparent);
+}
+.countdownNum {
+  font-size: 1.6rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.countdownUnit {
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+.countdownDesc,
+.countdownEnded {
+  margin: 10px 0 0;
+  font-size: 0.92rem;
+}
+
+/* booking */
+.bookingFrame {
+  width: 100%;
+  height: 640px;
+  border: 0;
+  border-radius: var(--t-card-radius);
+  background: #fff;
+}
+
+/* quote */
+.bigQuote {
+  margin: 4px 0;
+  padding: 6px 4px 6px 18px;
+  border-left: 3px solid var(--t-text);
+}
+.bigQuote blockquote {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.45;
+  font-weight: 500;
+}
+.bigQuote figcaption {
+  margin-top: 10px;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.quoteRole {
+  font-weight: 400;
+  opacity: 0.75;
+}
+.quoteLink {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+/* block heads (faq, testimonial, quote, folder inline) */
+.blockHead {
+  margin-bottom: 4px;
+  text-align: center;
+}
+.blockHeading {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 2px;
+}
+.blockDesc {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--t-muted);
+}
+.folderInline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.folderInline > .blockHeading {
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* forms */
+.formDesc {
+  margin: -4px 0 4px;
+  font-size: 0.92rem;
+  color: var(--t-muted);
+}
+.signupRow {
+  display: flex;
+  gap: 8px;
+}
+.signupRow .input {
+  flex: 1;
+  min-width: 0;
+}
+.signupRow .btn {
+  flex: none;
+  min-height: 44px;
+}
+@media (max-width: 380px) {
+  .signupRow {
+    flex-direction: column;
+  }
+  .signupRow .btn {
+    width: 100% !important;
+  }
+}
+.checkRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-weight: 500;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+.checkRow input {
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--t-text);
+  flex: none;
+}
+
+/* image extras */
+.fullBleed {
+  width: calc(100% + 32px);
+  max-width: none;
+  margin-left: -16px;
+  margin-right: -16px;
+  border-radius: 0;
+}
+.imageButton {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  border-radius: var(--t-card-radius);
+  overflow: hidden;
+}
+.imageButton.fullBleed {
+  border-radius: 0;
+}
+.imageButton:focus-visible {
+  outline: 3px solid var(--t-text);
+  outline-offset: 3px;
+}
+.lightbox {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  max-width: 96vw;
+  max-height: 92vh;
+  overflow: visible;
+}
+.lightbox::backdrop {
+  background: rgba(0, 0, 0, 0.82);
+}
+.lightbox img {
+  display: block;
+  max-width: 96vw;
+  max-height: 92vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.lightboxClose {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.92);
+  color: #111;
+  cursor: pointer;
+}
+.lightboxClose svg {
+  width: 20px;
+  height: 20px;
 }

@@ -94,3 +94,22 @@ export function toMusicEmbed(raw: string): Embed | null {
   }
   return null;
 }
+
+const BOOKING_HOSTS = new Set(["calendly.com", "cal.com", "app.cal.com"]);
+
+/** Calendly / Cal.com URL → iframe src, or null for anything else (the BE validates too). */
+export function bookingEmbedSrc(raw: string): string | null {
+  try {
+    const u = new URL(raw);
+    const host = u.hostname.replace(/^www\./, "");
+    if (u.protocol !== "https:" || !BOOKING_HOSTS.has(host) || u.pathname.length < 2) return null;
+    if (host === "calendly.com") {
+      u.searchParams.set("hide_gdpr_banner", "1");
+      return u.toString();
+    }
+    u.searchParams.set("embed", "true");
+    return u.toString();
+  } catch {
+    return null;
+  }
+}

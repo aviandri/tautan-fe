@@ -6,7 +6,7 @@ import { resolveTheme, themeToCssVars } from "@/lib/theme/resolve";
 import { buildTabTree } from "@/lib/page-structure";
 import { themeFontVariables } from "@/lib/theme/fonts";
 import { PublicContext } from "./context";
-import { BlockRenderer } from "./BlockRenderer";
+import { BlockList } from "./BlockRenderer";
 import s from "./public.module.css";
 
 /**
@@ -21,9 +21,7 @@ export function ThemedBlocks({ theme, blocks, className, style }: { theme: Theme
     <PublicContext.Provider value={{ username: "", preview: true }}>
       <div className={[s.page, themeFontVariables, className].filter(Boolean).join(" ")} style={{ ...vars, padding: 20, ...style }}>
         <div className={s.column}>
-          {tree.top.map((b) => (
-            <BlockRenderer key={b.id} block={b} childBlocks={tree.children.get(b.id)} />
-          ))}
+          <BlockList blocks={tree.top} childrenOf={tree.children} />
         </div>
       </div>
     </PublicContext.Provider>

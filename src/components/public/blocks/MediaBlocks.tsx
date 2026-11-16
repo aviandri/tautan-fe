@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
+
 import type { BlockOf } from "@/lib/types";
 import { toMusicEmbed, toVideoEmbed } from "@/lib/embeds";
 import { safeHref, safeImageSrc } from "@/lib/safe-url";
@@ -18,17 +21,57 @@ export function TextBlock({ block }: { block: BlockOf<"text"> }) {
 }
 
 export function ImageBlock({ block }: { block: BlockOf<"image"> }) {
-  const src = safeImageSrc(block.data.url);
-  const href = safeHref(block.data.link_url);
+  const d = block.data;
+  const src = safeImageSrc(d.url);
+  const href = safeHref(d.link_url);
   const onClick = useLinkClick(block.id);
+  const [zoom, setZoom] = useState(false);
   if (!src) return null;
+  const cls = `${s.image} ${d.full_bleed ? s.fullBleed : ""}`;
   // eslint-disable-next-line @next/next/no-img-element
-  const img = <img className={s.image} src={src} alt={block.data.alt ?? ""} loading="lazy" decoding="async" />;
-  if (!href) return img;
+  const img = <img className={cls} src={src} alt={d.alt ?? ""} loading="lazy" decoding="async" />;
+  if (href) {
+    return (
+      <a className={`${s.imageLink} ${d.full_bleed ? s.fullBleed : ""}`} href={href} target="_blank" rel="noopener noreferrer" onClick={onClick}>
+        {img}
+      </a>
+    );
+  }
+  if (d.lightbox) {
+    return (
+      <>
+        <button type="button" className={`${s.imageButton} ${d.full_bleed ? s.fullBleed : ""}`} onClick={() => setZoom(true)} aria-label={d.alt ? `Enlarge image: ${d.alt}` : "Enlarge image"}>
+          {img}
+        </button>
+        {zoom ? <Lightbox src={src} alt={d.alt ?? ""} onClose={() => setZoom(false)} /> : null}
+      </>
+    );
+  }
+  return img;
+}
+
+function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dlg = ref.current;
+    // no close() in cleanup: it fires onClose, and StrictMode's double effect would unmount us at once.
+    // Unmounting removes the dialog (and its top-layer state) anyway.
+    if (dlg && !dlg.open) dlg.showModal();
+  }, []);
   return (
-    <a className={s.imageLink} href={href} target="_blank" rel="noopener noreferrer" onClick={onClick}>
-      {img}
-    </a>
+    <dialog
+      ref={ref}
+      className={s.lightbox}
+      onClose={onClose}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      aria-label={alt || "Image"}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} />
+      <button type="button" className={s.lightboxClose} onClick={onClose} aria-label="Close">
+        <X aria-hidden />
+      </button>
+    </dialog>
   );
 }
 

@@ -1,4 +1,4 @@
-import type { Block, Tab } from "./types";
+import type { Block, BlockOf, Tab } from "./types";
 
 export function sortTabs(tabs: Tab[]): Tab[] {
   return [...tabs].sort((a, b) => a.position - b.position);
@@ -38,4 +38,25 @@ export function buildTabTree(blocks: Block[], tabId: string | undefined): TabTre
 /** Query string for a tab ("" for the first tab, so the canonical URL stays clean). Prefix with the path. */
 export function tabQuery(tabs: Tab[], tab: Tab): string {
   return sortTabs(tabs)[0]?.id === tab.id ? "" : `?tab=${encodeURIComponent(tab.slug)}`;
+}
+
+type GroupLayout = "grid2" | "grid3" | "carousel";
+const GROUPED = new Set<string>(["grid2", "grid3", "carousel"]);
+
+export type ListItem =
+  | { kind: "block"; block: Block }
+  | { kind: "group"; layout: GroupLayout; blocks: BlockOf<"link">[] };
+
+/** Adjacent links sharing a grid2 / grid3 / carousel layout become one group. */
+export function groupBlocks(blocks: Block[]): ListItem[] {
+  const out: ListItem[] = [];
+  for (const b of blocks) {
+    const layout = b.type === "link" ? b.data.layout : undefined;
+    if (b.type === "link" && layout && GROUPED.has(layout)) {
+      const last = out[out.length - 1];
+      if (last?.kind === "group" && last.layout === layout) last.blocks.push(b);
+      else out.push({ kind: "group", layout: layout as GroupLayout, blocks: [b] });
+    } else out.push({ kind: "block", block: b });
+  }
+  return out;
 }
