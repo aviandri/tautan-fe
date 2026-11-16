@@ -5,11 +5,11 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEve
 import type { Block, Profile, Tab } from "@/lib/types";
 import { resolveTheme, themeToCssVars } from "@/lib/theme/resolve";
 import { buildTabTree, selectTab, sortTabs, tabQuery } from "@/lib/page-structure";
-import { safeImageSrc } from "@/lib/safe-url";
 import { trackEvent } from "@/lib/track";
 import { themeFontVariables } from "@/lib/theme/fonts";
 import { PublicContext } from "./context";
 import { BlockList } from "./BlockRenderer";
+import { ProfileHeader, SocialRow } from "./ProfileHeader";
 import s from "./public.module.css";
 
 export interface PublicPageProps {
@@ -44,7 +44,8 @@ export function PublicPage({
 
   const tab = selectTab(sortedTabs, slug);
   const tree = useMemo(() => buildTabTree(blocks, tab?.id), [blocks, tab?.id]);
-  const vars = useMemo(() => themeToCssVars(resolveTheme(profile.theme)), [profile.theme]);
+  const theme = useMemo(() => resolveTheme(profile.theme), [profile.theme]);
+  const vars = useMemo(() => themeToCssVars(theme), [theme]);
 
   // one view per page load (the ref guards React StrictMode's double effect in dev)
   const viewed = useRef(false);
@@ -86,28 +87,16 @@ export function PublicPage({
 
   // the editor mounts this inside its own <main>
   const Main = preview ? "div" : "main";
-  const avatar = safeImageSrc(profile.avatar_url);
-  const name = profile.display_name || profile.username;
 
   return (
     <PublicContext.Provider value={ctx}>
       <div
-        className={[s.page, themeFontVariables, fullHeight && s.fullHeight, className].filter(Boolean).join(" ")}
+        className={[s.page, themeFontVariables, fullHeight && s.fullHeight, theme.bg_desktop && s.desktopBg, className].filter(Boolean).join(" ")}
         style={{ ...vars, ...style }}
       >
+        <div className={s.sheet}>
         <Main className={s.column}>
-          <header className={s.header}>
-            {avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className={s.avatar} src={avatar} alt="" width={96} height={96} />
-            ) : (
-              <div className={s.avatarFallback} aria-hidden>
-                {name.slice(0, 1).toUpperCase()}
-              </div>
-            )}
-            <h1 className={s.name}>{name}</h1>
-            {profile.bio ? <p className={s.bio}>{profile.bio}</p> : null}
-          </header>
+          <ProfileHeader profile={profile} theme={theme} />
 
           {sortedTabs.length > 1 ? (
             <nav className={s.tabs} aria-label="Page sections">
@@ -133,6 +122,8 @@ export function PublicPage({
           ) : (
             <p className={s.empty}>Nothing here yet.</p>
           )}
+
+          {profile.socials?.length && profile.socials_position === "bottom" ? <SocialRow socials={profile.socials} /> : null}
         </Main>
 
         <footer className={s.footer}>
@@ -140,6 +131,7 @@ export function PublicPage({
             Made with Tautan
           </Link>
         </footer>
+        </div>
       </div>
     </PublicContext.Provider>
   );

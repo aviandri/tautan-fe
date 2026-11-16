@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, type ReactNode } from "react";
 import { RotateCcw, Upload } from "lucide-react";
-import type { ButtonStyle, Theme, ThemeBg } from "@/lib/types";
+import type { ButtonStyle, HeaderLayout, Theme, ThemeBg } from "@/lib/types";
 import { getPreset, hasOverrides, themeFromPreset } from "@/lib/theme/presets";
 import { isColor, isImageUrl, resolveTheme } from "@/lib/theme/resolve";
 import { DEFAULT_GRADIENT, parseGradient, toGradientCss, type SimpleGradient } from "@/lib/theme/gradient";
@@ -62,9 +62,108 @@ export function ThemeCustomizer({ value, onChange, onUploadImage }: ThemeCustomi
         </div>
       </Section>
 
+      <Section title="Header">
+        <Segmented<HeaderLayout>
+          label="Header layout"
+          value={t.header?.layout ?? "classic"}
+          options={[
+            { value: "classic", label: "Classic" },
+            { value: "banner", label: "Banner" },
+            { value: "headshot", label: "Headshot" },
+            { value: "business", label: "Business" },
+          ]}
+          onChange={(layout) => set({ header: { ...t.header, layout } })}
+        />
+        {t.header?.layout === "banner" ? (
+          <ImageEditor
+            value={t.header.banner_image_url ?? ""}
+            onChange={(banner_image_url) => set({ header: { layout: "banner", banner_image_url } })}
+            onUploadImage={onUploadImage}
+            label="Banner image URL"
+          />
+        ) : null}
+      </Section>
+
       <Section title="Text">
-        <FontField value={t.font} onChange={(font) => set({ font })} />
+        <FontField value={t.font} onChange={(font) => set({ font, fonts: t.fonts?.title ? { title: t.fonts.title } : undefined })} />
+        <label className="flex flex-col gap-1.5 text-xs font-medium text-muted">
+          Name and heading font
+          <select
+            value={t.fonts?.title ?? ""}
+            onChange={(e) => set({ fonts: e.target.value ? { ...t.fonts, title: e.target.value } : undefined })}
+            className="min-h-10 rounded-lg border border-line bg-surface px-3 text-sm text-foreground"
+          >
+            <option value="">Same as body</option>
+            {FONT_OPTIONS.map((f) => (
+              <option key={f.id} value={f.label}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <ColorField label="Text colour" value={t.text_color} onChange={(text_color) => set({ text_color })} />
+      </Section>
+
+      <Section title="Blocks">
+        <Optional
+          label="Custom block colours"
+          on={!!t.block}
+          onToggle={(on) => set({ block: on ? { color: "#ffffff", text_color: t.text_color } : undefined })}
+        >
+          {t.block ? (
+            <div className="grid grid-cols-2 gap-3">
+              <ColorField label="Block colour" value={t.block.color} onChange={(color) => set({ block: { ...t.block!, color } })} />
+              <ColorField label="Block text" value={t.block.text_color} onChange={(text_color) => set({ block: { ...t.block!, text_color } })} />
+            </div>
+          ) : null}
+        </Optional>
+        <Optional
+          label="Custom label colours"
+          on={!!t.label}
+          onToggle={(on) => set({ label: on ? { color: t.button.color, text_color: t.button.text_color } : undefined })}
+        >
+          {t.label ? (
+            <div className="grid grid-cols-2 gap-3">
+              <ColorField label="Label colour" value={t.label.color} onChange={(color) => set({ label: { ...t.label!, color } })} />
+              <ColorField label="Label text" value={t.label.text_color} onChange={(text_color) => set({ label: { ...t.label!, text_color } })} />
+            </div>
+          ) : null}
+        </Optional>
+        <Optional label="Border" on={!!t.border} onToggle={(on) => set({ border: on ? { width: 2, color: t.text_color } : undefined })}>
+          {t.border ? (
+            <div className="grid grid-cols-2 items-end gap-3">
+              <SliderField label="Width" min={0} max={12} value={t.border.width} unit="px" onChange={(width) => set({ border: { ...t.border!, width } })} />
+              <ColorField label="Border colour" value={t.border.color} onChange={(color) => set({ border: { ...t.border!, color } })} />
+            </div>
+          ) : null}
+        </Optional>
+        <Optional label="Shadow" on={!!t.shadow} onToggle={(on) => set({ shadow: on ? { amount: 30, style: "soft" } : undefined })}>
+          {t.shadow ? (
+            <>
+              <Segmented<"soft" | "solid">
+                label="Shadow style"
+                value={t.shadow.style}
+                options={[
+                  { value: "soft", label: "Soft" },
+                  { value: "solid", label: "Solid" },
+                ]}
+                onChange={(style) => set({ shadow: { ...t.shadow!, style } })}
+              />
+              <SliderField label="Amount" min={0} max={100} value={t.shadow.amount} onChange={(amount) => set({ shadow: { ...t.shadow!, amount } })} />
+            </>
+          ) : null}
+        </Optional>
+        <SliderField label="Space between blocks" min={0} max={64} value={t.spacing ?? 14} unit="px" onChange={(spacing) => set({ spacing })} />
+      </Section>
+
+      <Section title="Wide screens">
+        <Optional
+          label="Colour around the page on desktop"
+          on={!!t.bg_desktop}
+          onToggle={(on) => set({ bg_desktop: on ? "#e7e5df" : undefined })}
+        >
+          {t.bg_desktop ? <ColorField label="Desktop background" value={t.bg_desktop} onChange={(bg_desktop) => set({ bg_desktop })} /> : null}
+        </Optional>
       </Section>
     </div>
   );
@@ -159,6 +258,63 @@ export function ColorField({ label, value, onChange }: { label: string; value: s
   );
 }
 
+function Optional({ label, on, onToggle, children }: { label: string; on: boolean; onToggle: (on: boolean) => void; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="flex min-h-9 cursor-pointer items-center justify-between gap-3 text-sm text-foreground">
+        {label}
+        <span className="relative inline-flex">
+          <input type="checkbox" role="switch" checked={on} onChange={(e) => onToggle(e.target.checked)} className="peer sr-only" />
+          <span className="h-6 w-10 rounded-full bg-line transition peer-checked:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-focus-visible:ring-offset-2" />
+          <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface shadow transition peer-checked:translate-x-4" />
+        </span>
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function SliderField({
+  label,
+  min,
+  max,
+  value,
+  unit = "",
+  onChange,
+}: {
+  label: string;
+  min: number;
+  max: number;
+  value: number;
+  unit?: string;
+  onChange: (v: number) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-xs font-medium text-muted">
+        {label}
+      </label>
+      <div className="flex items-center gap-3">
+        <input
+          id={id}
+          type="range"
+          min={min}
+          max={max}
+          step={1}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-full accent-[var(--brand)]"
+        />
+        <span className="w-12 text-right font-mono text-xs text-muted">
+          {value}
+          {unit}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function RadiusField({ radius, onChange }: { radius: number; onChange: (r: number) => void }) {
   const id = useId();
   const pill = radius >= PILL;
@@ -229,6 +385,8 @@ function BackgroundEditor({
     color: bg.type === "color" ? bg.value : "#f5f5f4",
     gradient: bg.type === "gradient" ? bg.value : toGradientCss(DEFAULT_GRADIENT),
     image: bg.type === "image" ? bg.value : "",
+    split: bg.type === "split" ? bg.value : bg.type === "gradient" ? bg.value : toGradientCss(DEFAULT_GRADIENT),
+    none: "",
   });
   memory.current[bg.type] = bg.value;
 
@@ -255,6 +413,8 @@ function BackgroundEditor({
           { value: "color", label: "Colour" },
           { value: "gradient", label: "Gradient" },
           { value: "image", label: "Image" },
+          { value: "split", label: "Top" },
+          { value: "none", label: "Plain" },
         ]}
         onChange={switchTo}
       />
@@ -262,6 +422,13 @@ function BackgroundEditor({
         <ColorField label="Background colour" value={bg.value} onChange={(value) => onChange({ type: "color", value })} />
       ) : mode === "gradient" ? (
         <GradientEditor value={bg.value} onChange={(value) => onChange({ type: "gradient", value })} />
+      ) : mode === "split" ? (
+        <>
+          <p className="text-xs text-muted">A gradient behind your header; the rest of the page stays plain.</p>
+          <GradientEditor value={bg.value} onChange={(value) => onChange({ type: "split", value })} />
+        </>
+      ) : mode === "none" ? (
+        <p className="text-xs text-muted">A plain page in a neutral that suits your text colour.</p>
       ) : (
         <ImageEditor
           value={bg.type === "image" ? bg.value : ""}
@@ -313,10 +480,12 @@ function ImageEditor({
   value,
   onChange,
   onUploadImage,
+  label = "Or paste an image URL",
 }: {
   value: string;
   onChange: (url: string) => void;
   onUploadImage?: (file: File) => Promise<string>;
+  label?: string;
 }) {
   const id = useId();
   const [draft, setDraft] = useState(value);
@@ -368,7 +537,7 @@ function ImageEditor({
         </>
       ) : null}
       <label htmlFor={id} className="text-xs font-medium text-muted">
-        Or paste an image URL
+        {label}
       </label>
       <input
         id={id}

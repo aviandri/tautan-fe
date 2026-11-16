@@ -51,3 +51,20 @@ describe("safeHref", () => {
     expect(safeHref("data:text/html,x")).toBeUndefined();
   });
 });
+
+import { socialHandle, socialUrl } from "../social";
+
+describe("social handles", () => {
+  it("builds URLs from handles and reads them back", () => {
+    expect(socialUrl("instagram", "@studio.lempung")).toBe("https://instagram.com/studio.lempung");
+    expect(socialUrl("tiktok", "studio")).toBe("https://tiktok.com/@studio");
+    expect(socialUrl("whatsapp", "+62 812-3456")).toBe("https://wa.me/628123456");
+    expect(socialUrl("email", "hi@x.test")).toBe("mailto:hi@x.test");
+    expect(socialUrl("website", "studio.test")).toBe("https://studio.test");
+    expect(socialUrl("x", "https://x.com/already")).toBe("https://x.com/already");
+    expect(socialHandle("tiktok", "https://www.tiktok.com/@studio")).toBe("studio");
+    expect(socialHandle("instagram", "https://instagram.com/studio.lempung/")).toBe("studio.lempung");
+    expect(socialHandle("email", "mailto:hi@x.test")).toBe("hi@x.test");
+    expect(socialHandle("website", "https://studio.test")).toBe("https://studio.test");
+  });
+});

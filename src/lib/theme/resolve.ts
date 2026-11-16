@@ -8,8 +8,11 @@ const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 const FUNC_COLOR = /^(?:rgb|rgba|hsl|hsla)\(\s*[\d.%\s,/+-]+\)$/i;
 const GRADIENT = /^(?:repeating-)?(?:linear|radial|conic)-gradient\([#\w\s.,%()-]+\)$/i;
 
+/** CSS colour names (the BE accepts them). Letters only, so nothing can escape the property. */
+const NAMED = /^[a-z]{3,20}$/i;
+
 export function isColor(v: unknown): v is string {
-  return typeof v === "string" && (HEX.test(v.trim()) || FUNC_COLOR.test(v.trim()));
+  return typeof v === "string" && (HEX.test(v.trim()) || FUNC_COLOR.test(v.trim()) || NAMED.test(v.trim()));
 }
 
 export function isGradient(v: unknown): v is string {
@@ -45,10 +48,12 @@ export function resolveTheme(theme: DeepPartial<Theme> | null | undefined): Reso
     if (
       typeof value === "string" &&
       ((type === "color" && isColor(value)) ||
-      (type === "gradient" && isGradient(value)) ||
+      ((type === "gradient" || type === "split") && isGradient(value)) ||
       (type === "image" && isImageUrl(value)))
     ) {
       bg = { type, value: value.trim() };
+    } else if (type === "none") {
+      bg = { type, value: "" };
     }
   }
 
@@ -69,33 +74,101 @@ export function resolveTheme(theme: DeepPartial<Theme> | null | undefined): Reso
     // stored as the family name (the BE rejects ids like "dm-sans"); older ids still resolve
     font: findFont(t.font)?.label ?? p.font,
     text_color: isColor(t.text_color) ? t.text_color : p.text_color,
+    ...resolveV2(t),
   };
+}
+
+const clamp = (n: unknown, lo: number, hi: number) =>
+  typeof n === "number" && Number.isFinite(n) ? Math.min(Math.max(n, lo), hi) : undefined;
+
+function pair(v: DeepPartial<Theme>["block"]) {
+  return v && isColor(v.color) && isColor(v.text_color) ? { color: v.color, text_color: v.text_color } : undefined;
+}
+
+/** Theme v2 keys: each is kept only when valid, otherwise left out (the page uses its v1 look). */
+function resolveV2(t: DeepPartial<Theme>): Partial<Theme> {
+  const out: Partial<Theme> = {};
+  if (isColor(t.bg_desktop)) out.bg_desktop = t.bg_desktop;
+  const spacing = clamp(t.spacing, 0, 64);
+  if (spacing !== undefined) out.spacing = spacing;
+  const block = pair(t.block);
+  if (block) out.block = block;
+  const label = pair(t.label);
+  if (label) out.label = label;
+  const bw = clamp(t.border?.width, 0, 12);
+  if (bw !== undefined && isColor(t.border?.color)) out.border = { width: bw, color: t.border!.color! };
+  const sa = clamp(t.shadow?.amount, 0, 100);
+  if (sa !== undefined && (t.shadow?.style === "soft" || t.shadow?.style === "solid")) out.shadow = { amount: sa, style: t.shadow.style };
+  const title = findFont(t.fonts?.title)?.label;
+  const body = findFont(t.fonts?.body)?.label;
+  if (title || body) out.fonts = { ...(title ? { title } : {}), ...(body ? { body } : {}) };
+  const layout = t.header?.layout;
+  if (layout === "classic" || layout === "banner" || layout === "headshot" || layout === "business") {
+    const banner = isImageUrl(t.header?.banner_image_url) ? t.header!.banner_image_url : undefined;
+    out.header = { layout, ...(banner ? { banner_image_url: banner } : {}) };
+  }
+  return out;
 }
 
 function cssUrl(u: string): string {
   return `url("${u.replace(/["\\\n\r]/g, (c) => encodeURIComponent(c))}")`;
 }
 
-export function backgroundValue(bg: ResolvedTheme["bg"]): string {
+export function backgroundValue(bg: ResolvedTheme["bg"], solid = "transparent"): string {
   if (bg.type === "image") return `${cssUrl(assetUrl(bg.value) ?? bg.value)} center / cover no-repeat`;
+  // split: the gradient sits behind the header only, the rest of the page is plain
+  if (bg.type === "split") return `${bg.value} top / 100% 340px no-repeat, ${solid}`;
+  if (bg.type === "none") return solid;
   return bg.value;
+}
+
+export function assetCssUrl(u: string): string {
+  return cssUrl(assetUrl(u) ?? u);
 }
 
 /** CSS custom properties consumed by components/public. */
 export function themeToCssVars(r: ResolvedTheme): CSSProperties {
   const { style, radius, color, text_color } = r.button;
+  const solid = r.bg.type === "color" ? r.bg.value : fallbackSolid(r);
   const vars: Record<string, string> = {
-    "--t-bg": backgroundValue(r.bg),
+    "--t-bg": backgroundValue(r.bg, solid),
     // a solid colour behind image/gradient grounds for overscroll and fallback
-    "--t-bg-solid": r.bg.type === "color" ? r.bg.value : fallbackSolid(r),
+    "--t-bg-solid": solid,
     "--t-text": r.text_color,
-    "--t-font": fontStack(r.font),
+    "--t-font": fontStack(r.fonts?.body ?? r.font),
+    "--t-font-title": fontStack(r.fonts?.title ?? r.fonts?.body ?? r.font),
     "--t-btn-radius": `${radius}px`,
     "--t-btn-bg": style === "outline" ? "transparent" : color,
     "--t-btn-text": text_color,
     "--t-btn-border": style === "fill" ? "transparent" : style === "outline" ? color : r.text_color,
     "--t-btn-shadow": style === "shadow" ? `4px 4px 0 ${r.text_color}` : "none",
   };
+  // ---- Theme v2 ----
+  if (r.block) {
+    vars["--t-block-bg"] = r.block.color;
+    vars["--t-block-text"] = r.block.text_color;
+  }
+  if (r.label) {
+    vars["--t-label-bg"] = r.label.color;
+    vars["--t-label-text"] = r.label.text_color;
+  }
+  if (r.border) {
+    vars["--t-btn-bw"] = `${r.border.width}px`;
+    vars["--t-card-bw"] = `${r.border.width}px`;
+    vars["--t-btn-border"] = r.border.width ? r.border.color : "transparent";
+    vars["--t-card-bc"] = r.border.width ? r.border.color : "transparent";
+  }
+  if (r.shadow && r.shadow.amount > 0) {
+    const a = r.shadow.amount;
+    const sh =
+      r.shadow.style === "solid"
+        ? `${Math.max(1, Math.round(a / 12))}px ${Math.max(1, Math.round(a / 12))}px 0 ${r.border?.color ?? r.text_color}`
+        : `0 ${Math.round(a / 8)}px ${Math.round(a / 3)}px rgba(0, 0, 0, ${(a / 300).toFixed(2)})`;
+    vars["--t-btn-shadow"] = sh;
+    vars["--t-card-shadow"] = sh;
+  }
+  if (r.spacing !== undefined) vars["--t-gap"] = `${r.spacing}px`;
+  if (r.bg_desktop) vars["--t-bg-desktop"] = r.bg_desktop;
   return vars as CSSProperties;
 }
 

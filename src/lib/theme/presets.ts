@@ -104,6 +104,8 @@ export const DEFAULT_THEME: Theme = themeFromPreset(DEFAULT_PRESET);
 export function hasOverrides(theme: Theme): boolean {
   const p = getPreset(theme.preset);
   if (p.preset !== theme.preset) return true;
+  const v2: (keyof Theme)[] = ["bg_desktop", "spacing", "block", "label", "border", "shadow", "fonts", "header"];
+  if (v2.some((k) => theme[k] !== undefined)) return true;
   const eq = (a: string | number, b: string | number) => String(a).toLowerCase() === String(b).toLowerCase();
   return !(
     eq(theme.bg.type, p.bg.type) &&

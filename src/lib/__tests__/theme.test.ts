@@ -75,8 +75,9 @@ describe("resolveTheme", () => {
   });
 
   it("accepts common colour syntaxes only", () => {
-    for (const c of ["#fff", "#ffffff", "#ffffff80", "rgb(1, 2, 3)", "hsl(10 20% 30% / 0.5)"]) expect(isColor(c)).toBe(true);
-    for (const c of ["red", "#ggg", "rgb(1,2,3);x:y", "var(--x)"]) expect(isColor(c)).toBe(false);
+    // CSS colour names are allowed (the P2 BE accepts them); letters only, so nothing can escape
+    for (const c of ["#fff", "#ffffff", "#ffffff80", "rgb(1, 2, 3)", "hsl(10 20% 30% / 0.5)", "red", "rebeccapurple"]) expect(isColor(c)).toBe(true);
+    for (const c of ["#ggg", "rgb(1,2,3);x:y", "var(--x)", "red;x", "url(a)"]) expect(isColor(c)).toBe(false);
   });
 });
 
@@ -103,5 +104,48 @@ describe("gradient", () => {
   });
   it("returns null for complex gradients", () => {
     expect(parseGradient("radial-gradient(circle, #000, #fff)")).toBeNull();
+  });
+});
+
+describe("theme v2", () => {
+  const base = themeFromPreset("batu");
+  it("keeps valid v2 keys and drops invalid ones", () => {
+    const r = resolveTheme({
+      ...base,
+      spacing: 200,
+      block: { color: "#fff", text_color: "#111" },
+      label: { color: "javascript:x", text_color: "#fff" },
+      border: { width: 3, color: "#000" },
+      shadow: { amount: 40, style: "glow" as never },
+      fonts: { title: "Fraunces", body: "Comic Sans" },
+      header: { layout: "banner", banner_image_url: "javascript:alert(1)" },
+      bg_desktop: "#eee",
+    });
+    expect(r.spacing).toBe(64);
+    expect(r.block).toEqual({ color: "#fff", text_color: "#111" });
+    expect(r.label).toBeUndefined();
+    expect(r.border).toEqual({ width: 3, color: "#000" });
+    expect(r.shadow).toBeUndefined();
+    expect(r.fonts).toEqual({ title: "Fraunces" });
+    expect(r.header).toEqual({ layout: "banner" });
+    expect(r.bg_desktop).toBe("#eee");
+  });
+  it("maps v2 keys to CSS variables", () => {
+    const v = themeToCssVars(
+      resolveTheme({ ...base, spacing: 24, border: { width: 2, color: "#000" }, shadow: { amount: 60, style: "solid" }, fonts: { title: "Fraunces" } }),
+    ) as Record<string, string>;
+    expect(v["--t-gap"]).toBe("24px");
+    expect(v["--t-btn-bw"]).toBe("2px");
+    expect(v["--t-card-shadow"]).toBe("5px 5px 0 #000");
+    expect(v["--t-font-title"]).toContain("--font-fraunces");
+  });
+  it("renders split and none backgrounds over a plain page", () => {
+    const split = themeToCssVars(resolveTheme({ ...base, bg: { type: "split", value: "linear-gradient(90deg, #f00 0%, #00f 100%)" } })) as Record<string, string>;
+    expect(split["--t-bg"]).toContain("340px no-repeat");
+    const none = themeToCssVars(resolveTheme({ ...base, bg: { type: "none", value: "" } })) as Record<string, string>;
+    expect(none["--t-bg"]).toBe(none["--t-bg-solid"]);
+  });
+  it("counts v2 keys as overrides", () => {
+    expect(hasOverrides({ ...base, spacing: 20 })).toBe(true);
   });
 });
