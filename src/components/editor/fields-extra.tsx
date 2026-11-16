@@ -128,10 +128,13 @@ export function ScheduleField({
   value,
   onChange,
   error,
+  noun = "block",
 }: {
   value: Schedule | undefined;
   onChange: (s: Schedule | undefined) => void;
   error?: string;
+  /** what gets hidden, for the hint ("block", "announcement") */
+  noun?: string;
 }) {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const set = (p: Partial<Schedule>) => {
@@ -147,7 +150,7 @@ export function ScheduleField({
         <DateTimeField label="Hide after" value={value?.end_at} onChange={(end_at) => set({ end_at })} error={error} clearable />
       </div>
       <p className="text-[12px] text-muted">
-        Times are in your zone ({tz}). Outside this window the block is hidden from visitors but stays here.
+        Times are in your zone ({tz}). Outside this window the {noun} is hidden from visitors but stays here.
       </p>
     </div>
   );

@@ -6,7 +6,9 @@ import { UsernameStatusLine } from "@/components/auth/UsernameStatusLine";
 import { PUBLIC_HOST } from "@/components/brand";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { ImageField, TextField } from "@/components/editor/fields";
-import { Button, Card, Field, PrefixInput, Spinner, Switch } from "@/components/ui";
+import { Button, Field, PrefixInput, Spinner, Switch } from "@/components/ui";
+import { Section, useSection } from "./section";
+import { AnnouncementSection } from "./AnnouncementSection";
 import { toast } from "@/components/ui/toast";
 import { API_BASE, ApiError, assetUrl } from "@/lib/api";
 import { useUpdateProfile } from "@/lib/profile";
@@ -41,67 +43,6 @@ function profileError(err: unknown): string {
     }
   }
   return "Couldn't save. Check your connection.";
-}
-
-/** Shared section wrapper with its own Save button, enabled when dirty. */
-function Section({
-  title,
-  description,
-  children,
-  dirty,
-  saving,
-  canSave = true,
-  onSave,
-  onReset,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-  dirty?: boolean;
-  saving?: boolean;
-  canSave?: boolean;
-  onSave?: () => void;
-  onReset?: () => void;
-}) {
-  return (
-    <Card>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSave?.();
-        }}
-      >
-        <div className="border-b border-line px-5 py-4 sm:px-6">
-          <h2 className="text-[15px] font-semibold">{title}</h2>
-          {description && <p className="mt-0.5 text-sm text-muted">{description}</p>}
-        </div>
-        <div className="flex flex-col gap-5 px-5 py-5 sm:px-6">{children}</div>
-        {onSave && (
-          <div className="flex items-center justify-end gap-2 border-t border-line px-5 py-3 sm:px-6">
-            {dirty && onReset && (
-              <Button type="button" variant="ghost" size="sm" onClick={onReset}>
-                Discard
-              </Button>
-            )}
-            <Button type="submit" size="sm" disabled={!dirty || !canSave} loading={saving}>
-              Save
-            </Button>
-          </div>
-        )}
-      </form>
-    </Card>
-  );
-}
-
-/**
- * Section-local edits. `saved` is derived from the live profile, so after a
- * successful save the section is clean again without remounting (and other
- * sections keep their unsaved edits).
- */
-function useSection<T extends object>(saved: T) {
-  const [v, setV] = useState(saved);
-  const dirty = JSON.stringify(v) !== JSON.stringify(saved);
-  return { v, set: (p: Partial<T>) => setV((x) => ({ ...x, ...p })), reset: () => setV(saved), dirty };
 }
 
 export function Settings() {
@@ -261,6 +202,8 @@ function SettingsInner({ profile, email }: { profile: Profile; email: string }) 
           />
         </div>
       </Section>
+
+      <AnnouncementSection profile={profile} />
 
       <Section
         title="Search and sharing"
