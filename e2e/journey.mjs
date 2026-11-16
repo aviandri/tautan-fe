@@ -76,7 +76,7 @@ await p.waitForURL(/onboarding/, { timeout: 15000 });
 ok('Sign up → onboarding', true, email);
 
 await step(p, 'Onboarding: how do you want to start');
-await p.getByText('Selling things').click();
+await p.getByRole('radio', { name: /^Selling things/ }).click();
 await p.getByRole('button', { name: /^continue$/i }).click();
 await p.getByLabel('Name').fill('Dapur Nara');
 await p.getByLabel('Bio').fill('Home bakery in Kotabaru, Yogyakarta');
@@ -85,7 +85,7 @@ await p.getByRole('button', { name: /^continue$/i }).click();
 await step(p, 'Onboarding: starter sections');
 await p.getByRole('button', { name: /and continue/i }).click();
 await p.getByText('Choose a look').waitFor();
-await p.locator('button, [role=radio], label').filter({ hasText: /^Senja/ }).first().click();
+await p.getByRole('radio', { name: /^Senja/ }).click({ timeout: 15000 }); // ThemePicker loads on demand
 await step(p, 'Onboarding: pick the Senja look');
 await p.getByRole('button', { name: /^continue$/i }).click();
 await p.getByText('Claim your link').waitFor();
@@ -93,6 +93,14 @@ await p.getByLabel('Your page address').fill(user);
 await p.waitForTimeout(800);
 await step(p, 'Onboarding: claim your address');
 await p.getByRole('button', { name: /publish my page/i }).click();
+await p.waitForURL(/\/onboarding\/live/, { timeout: 15000 });
+await p.getByRole('heading', { name: /your page is live/i }).waitFor();
+await step(p, 'Onboarding: your page is live');
+ok('Live screen shows heading, username and Copy link',
+  (await p.getByRole('heading', { name: /your page is live/i }).count()) > 0 &&
+  (await p.locator('body').innerText()).includes(user) &&
+  (await p.getByRole('button', { name: /copy link/i }).count()) > 0);
+await p.getByRole('link', { name: /go to my dashboard/i }).or(p.getByRole('button', { name: /go to my dashboard/i })).first().click();
 await p.waitForURL(/dashboard/, { timeout: 15000 });
 await p.waitForTimeout(1200);
 await step(p, 'Dashboard after publishing');
@@ -112,13 +120,13 @@ await p.getByRole('button', { name: /^add card$/i }).click();
 await p.getByLabel(/search cards/i).fill('produk');
 await p.waitForTimeout(500);
 await step(p, 'Add a card: search "produk"');
-await p.getByRole('button', { name: /product/i }).first().click();
+await p.getByRole('dialog', { name: 'Add a card' }).getByRole('button', { name: /^Product:/ }).click();
 await p.waitForTimeout(500);
 await p.getByLabel('Product name').fill('Fudgy brownies 20×20');
-await p.getByLabel('Price').fill('85000');
+await p.getByLabel('Price', { exact: true }).fill('85000');
 await p.getByLabel('Was (optional)').fill('95000');
 await p.locator('button, [role=radio], label').filter({ hasText: /^Best seller$/ }).first().click({ timeout: 5000 }).catch(() => {});
-await p.getByLabel('WhatsApp number').fill('081234567890');
+await p.getByLabel('WhatsApp number', { exact: true }).fill('081234567890');
 await step(p, 'Product form filled');
 await p.getByRole('button', { name: /^add product$/i }).click();
 await p.waitForTimeout(2000);
@@ -148,7 +156,9 @@ await step(p, 'Editor with all the new cards');
 
 // ---------- VISITOR on a phone, arriving from Instagram
 await new Promise((r) => setTimeout(r, 2500)); // let the revalidate webhook land
-const vc = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, extraHTTPHeaders: { referer: 'https://www.instagram.com/' } });
+const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
+// the BE bot filter drops HeadlessChrome visits, so present a normal phone browser
+const vc = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, userAgent: IPHONE_UA, extraHTTPHeaders: { referer: 'https://www.instagram.com/' } });
 const v = await vc.newPage();
 const third = [];
 watch(v, 'visitor', errs, third);
@@ -174,7 +184,7 @@ await step(v, 'Visitor: marketplace and WhatsApp order');
 await v.getByText(/open now/i).first().scrollIntoViewIfNeeded();
 await step(v, 'Visitor: store hours and payment');
 
-await v.getByText('Which flavour next?').scrollIntoViewIfNeeded();
+await v.getByText('Which flavour next?').first().scrollIntoViewIfNeeded();
 await v.getByText('Pandan', { exact: true }).click();
 await v.getByRole('button', { name: /^vote$/i }).click();
 await v.waitForTimeout(1500);
