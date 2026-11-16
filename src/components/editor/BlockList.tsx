@@ -6,10 +6,12 @@ import { Button } from "@/components/ui";
 import { getMeta } from "@/lib/editor/block-meta";
 import { siblings, useReorderBlocks } from "@/lib/editor/queries";
 import type { Block, BlockType, Tab } from "@/lib/types";
-import { BlockPicker, NewBlockDraft, useQuickCreate } from "./AddBlock";
+import { NewBlockDraft, useQuickCreate } from "./AddBlock";
+import { CardPicker } from "./CardPicker";
 import { BlockCard } from "./BlockCard";
 import { DeletedBlocks } from "./DeletedBlocks";
-import { SmartPaste } from "./SmartPaste";
+import { pasteError, SmartPaste, usePasteToBlock } from "./SmartPaste";
+import { toast } from "@/components/ui/toast";
 import { SortableItem, SortableList } from "./Sortable";
 
 type Adding = { type: BlockType; parentId: string | null } | null;
@@ -18,6 +20,7 @@ export function BlockList({ blocks, tab, tabs }: { blocks: Block[]; tab: Tab; ta
   const top = siblings(blocks, tab.id, null);
   const reorder = useReorderBlocks();
   const quick = useQuickCreate();
+  const paste = usePasteToBlock(tab.id);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [fresh, setFresh] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
@@ -50,12 +53,20 @@ export function BlockList({ blocks, tab, tabs }: { blocks: Block[]; tab: Tab; ta
 
   return (
     <div className="flex flex-col gap-3">
-      {!picking && !adding && <SmartPaste tabId={tab.id} onCreated={onCreated} />}
-      {picking ? (
-        <BlockPicker onPick={(t) => pick(t)} onClose={() => setPicking(false)} />
-      ) : adding && !adding.parentId ? null : (
-        <Button size="lg" onClick={() => setPicking(true)} loading={quick.pending} className="w-full">
-          <Plus className="size-4" /> Add block
+      {!adding && <SmartPaste tabId={tab.id} onCreated={onCreated} />}
+      {picking && (
+        <CardPicker
+          onPick={(t) => pick(t)}
+          onPaste={(text) => {
+            setPicking(false);
+            paste.run(text).then(onCreated, (e) => toast.error(pasteError(e)));
+          }}
+          onClose={() => setPicking(false)}
+        />
+      )}
+      {!(adding && !adding.parentId) && (
+        <Button size="lg" onClick={() => setPicking(true)} loading={quick.pending || paste.busy} className="w-full">
+          <Plus className="size-4" /> Add card
         </Button>
       )}
 

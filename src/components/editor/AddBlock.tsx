@@ -1,53 +1,13 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
-import { Button, IconButton } from "@/components/ui";
-import { getMeta, PICKER_GROUPS } from "@/lib/editor/block-meta";
+import { Button } from "@/components/ui";
+import { getMeta } from "@/lib/editor/block-meta";
 import { useCreateBlock } from "@/lib/editor/queries";
 import type { Block, BlockDataMap, BlockType, CreateBlockInput, Tab } from "@/lib/types";
 import { TypeChip } from "./BlockCard";
 import { BlockForm } from "./BlockForm";
-
-/** Grid of block types. */
-export function BlockPicker({ onPick, onClose }: { onPick: (t: BlockType) => void; onClose: () => void }) {
-  return (
-    <div className="rounded-2xl border border-line bg-surface p-3 shadow-[0_12px_32px_-12px_rgba(0,0,0,.18)]">
-      <div className="mb-2 flex items-center justify-between pl-1.5">
-        <p className="text-sm font-semibold">Add a block</p>
-        <IconButton label="Close" onClick={onClose}>
-          <X className="size-4" />
-        </IconButton>
-      </div>
-      <div className="flex flex-col gap-3">
-        {PICKER_GROUPS.map((g) => (
-          <div key={g.title}>
-            <p className="mb-1 pl-2 text-[11px] font-semibold uppercase tracking-wide text-muted">{g.title}</p>
-            <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
-              {g.types.map((t) => {
-                const m = getMeta(t);
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => onPick(t)}
-                    className="flex items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-black/[.035] active:translate-y-px"
-                  >
-                    <TypeChip type={t} />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium">{m.label}</span>
-                      <span className="block truncate text-[12px] text-muted">{m.description}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /**
  * For types whose default data the server would reject (a URL is required),
