@@ -123,11 +123,21 @@ const ZONES: { tz: string; label: string }[] = [
   { tz: "Asia/Manila", label: "Manila (UTC+8)" },
 ];
 
-export function TzSelect({ value, onChange, error }: { value: string; onChange: (tz: string) => void; error?: string }) {
+export function TzSelect({
+  value,
+  onChange,
+  error,
+  hint = "Visitors see “Open now” based on this zone, wherever they are.",
+}: {
+  value: string;
+  onChange: (tz: string) => void;
+  error?: string;
+  hint?: string;
+}) {
   const local = browserTz();
   const extra = [value, local].filter((z, i, a) => z && !ZONES.some((x) => x.tz === z) && a.indexOf(z) === i);
   return (
-    <Field label="Time zone" error={error} hint="Visitors see “Open now” based on this zone, wherever they are.">
+    <Field label="Time zone" error={error} hint={hint}>
       {(p) => (
         <select {...p} value={value} onChange={(e) => onChange(e.target.value)} className={selectCls}>
           {ZONES.map((z) => (

@@ -30,6 +30,7 @@ import {
   TipJarForm,
   WhatsAppForm,
 } from "./sell/SellForms";
+import { BrandsForm, CommunityForm, EventsForm, GalleryForm, MediaKitForm, RateCardForm } from "./creator/CreatorForms";
 import { SOCIAL_PLATFORMS } from "@/lib/social";
 
 export interface FormContext {
@@ -497,16 +498,16 @@ const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   payment: PaymentForm,
   tip_jar: TipJarForm,
   reviews: ReviewsForm,
-  media_kit: PendingForm,
-  rate_card: PendingForm,
-  brands: PendingForm,
+  media_kit: MediaKitForm,
+  rate_card: RateCardForm,
+  brands: BrandsForm,
   post_grid: PendingForm,
   latest_video: PendingForm,
   shop_the_look: PendingForm,
-  gallery: PendingForm,
-  events: PendingForm,
+  gallery: GalleryForm,
+  events: EventsForm,
   podcast: PendingForm,
-  community: PendingForm,
+  community: CommunityForm,
 };
 
 export function BlockForm<K extends BlockType>({ type, ...props }: FormProps<K> & { type: K }) {

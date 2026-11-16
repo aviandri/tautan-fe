@@ -5,7 +5,7 @@
 import type { BlockDataMap, BlockType } from "../types";
 import { BLOCK_META } from "./block-meta";
 
-export type CategoryId = "all" | "sell" | "links" | "grow" | "media" | "text";
+export type CategoryId = "all" | "sell" | "creators" | "links" | "grow" | "media" | "text";
 
 export const CATEGORIES: { id: Exclude<CategoryId, "all">; label: string; types: BlockType[] }[] = [
   {
@@ -13,6 +13,7 @@ export const CATEGORIES: { id: Exclude<CategoryId, "all">; label: string; types:
     label: "Sell and book",
     types: ["product", "shop", "whatsapp", "marketplace", "price_list", "payment", "store_info", "booking", "discount_code", "tip_jar", "reviews"],
   },
+  { id: "creators", label: "Creators", types: ["media_kit", "rate_card", "brands", "events", "community", "gallery"] },
   { id: "links", label: "Links and buttons", types: ["link", "folder", "file", "social_icons"] },
   { id: "grow", label: "Grow your audience", types: ["email_signup", "form", "contact_form", "countdown", "testimonial", "faq"] },
   { id: "media", label: "Video and music", types: ["video", "music", "image"] },
