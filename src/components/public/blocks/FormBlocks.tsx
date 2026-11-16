@@ -5,7 +5,6 @@ import type { BlockOf, FormField } from "@/lib/types";
 import { validateAnswers, type RawAnswers } from "@/lib/form-validate";
 import { api, ApiError } from "@/lib/api";
 import { formErrorMessage } from "@/lib/form-validate";
-import { usePublic } from "../context";
 import s from "../public.module.css";
 
 type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent"; message: string } | { kind: "error"; message: string };
@@ -23,9 +22,8 @@ function Sent({ title, message }: { title?: string; message: string }) {
 
 // ---------- email signup ----------
 
-export function EmailSignupBlock({ block }: { block: BlockOf<"email_signup"> }) {
+export function EmailSignupBlock({ block, username, preview }: { block: BlockOf<"email_signup">; username: string; preview: boolean }) {
   const d = block.data;
-  const { username, preview } = usePublic();
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [error, setError] = useState<string | null>(null);
   const id = `signup-${block.id}`;
@@ -105,9 +103,8 @@ function Honeypot() {
 const AUTOCOMPLETE: Partial<Record<FormField["type"], string>> = { email: "email", phone: "tel" };
 const INPUT_TYPE: Partial<Record<FormField["type"], string>> = { email: "email", phone: "tel", date: "date", number: "number", text: "text" };
 
-export function FormBlock({ block }: { block: BlockOf<"form"> }) {
+export function FormBlock({ block, username, preview }: { block: BlockOf<"form">; username: string; preview: boolean }) {
   const d = block.data;
-  const { username, preview } = usePublic();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const fields = d.fields ?? [];

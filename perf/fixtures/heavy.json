@@ -1,0 +1,685 @@
+{
+ "profile": {
+  "id": "p-heavy",
+  "user_id": "u-heavy",
+  "username": "heavy",
+  "display_name": "Sari Wulandari",
+  "bio": "Ceramicist in Yogyakarta. Small-batch stoneware, workshops on weekends.",
+  "avatar_url": "http://localhost:8097/uploads/avatar.jpg",
+  "theme": {
+   "preset": "kertas",
+   "bg": {
+    "type": "color",
+    "value": "#f8d9e6"
+   },
+   "font": "Urbanist",
+   "text_color": "#16150f",
+   "button": {
+    "style": "fill",
+    "color": "#d0106f",
+    "text_color": "#ffffff",
+    "radius": 100
+   }
+  },
+  "seo": {
+   "title": "",
+   "description": "",
+   "image_url": null
+  },
+  "is_published": true,
+  "created_at": "2026-11-16T00:00:00Z",
+  "updated_at": "2026-11-16T00:00:00Z",
+  "socials": [
+   {
+    "platform": "instagram",
+    "url": "https://instagram.com/kiln"
+   },
+   {
+    "platform": "email",
+    "url": "mailto:hi@example.com"
+   }
+  ],
+  "socials_position": "top",
+  "announcement": {
+   "id": "ann1",
+   "layout": "banner",
+   "title": "Kiln sale this weekend",
+   "description": "20% off plates until Sunday.",
+   "cta": {
+    "label": "Shop",
+    "url": "https://example.com/shop"
+   }
+  },
+  "settings": {
+   "ga4_id": "G-TEST1234",
+   "meta_pixel_id": "1234567890",
+   "show_share": true,
+   "show_save_contact": true
+  }
+ },
+ "tabs": [
+  {
+   "id": "tab-home",
+   "profile_id": "p-heavy",
+   "title": "Home",
+   "slug": "home",
+   "position": 0
+  },
+  {
+   "id": "tab-shop",
+   "profile_id": "p-heavy",
+   "title": "Shop",
+   "slug": "shop",
+   "position": 1
+  }
+ ],
+ "blocks": [
+  {
+   "id": "b01",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 0,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "image",
+   "data": {
+    "url": "http://localhost:8097/uploads/hero.jpg",
+    "alt": "Stoneware plates on a wooden table",
+    "lightbox": true
+   }
+  },
+  {
+   "id": "b02",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 1,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Shop the spring glaze collection",
+    "url": "https://example.com/shop",
+    "description": "Twelve new pieces"
+   }
+  },
+  {
+   "id": "b03",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 2,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Workshop sign-ups",
+    "url": "https://example.com/workshops",
+    "layout": "thumbnail",
+    "thumbnail_url": "http://localhost:8097/uploads/t0.jpg"
+   }
+  },
+  {
+   "id": "b04",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 3,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Studio tour",
+    "url": "https://example.com/tour",
+    "layout": "grid2",
+    "thumbnail_url": "http://localhost:8097/uploads/t1.jpg"
+   }
+  },
+  {
+   "id": "b05",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 4,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Glaze notes",
+    "url": "https://example.com/notes",
+    "layout": "grid2",
+    "thumbnail_url": "http://localhost:8097/uploads/t2.jpg"
+   }
+  },
+  {
+   "id": "b06",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 5,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "heading",
+   "data": {
+    "title": "Latest"
+   }
+  },
+  {
+   "id": "b07",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 6,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "video",
+   "data": {
+    "url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ"
+   }
+  },
+  {
+   "id": "b08",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 7,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "music",
+   "data": {
+    "url": "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC"
+   }
+  },
+  {
+   "id": "b09",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 8,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "discount_code",
+   "data": {
+    "code": "KILN15",
+    "description": "15% off your first order",
+    "brand": "Kiln",
+    "url": "https://example.com/shop"
+   }
+  },
+  {
+   "id": "b10",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 9,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "countdown",
+   "data": {
+    "ends_at": "2026-11-25T15:07:16Z",
+    "label": "Winter kiln sale starts in",
+    "description": "Seconds and seconds-only pieces."
+   }
+  },
+  {
+   "id": "b11",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 10,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "text",
+   "data": {
+    "content": "Small-batch stoneware made in Yogyakarta. **Wholesale** enquiries welcome."
+   }
+  },
+  {
+   "id": "b12",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 11,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "folder",
+   "data": {
+    "title": "Studio favourites",
+    "style": "collapsible"
+   }
+  },
+  {
+   "id": "b13",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": "b12",
+   "position": 0,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Clay supplier",
+    "url": "https://example.com/fav0"
+   }
+  },
+  {
+   "id": "b14",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": "b12",
+   "position": 1,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Kiln I use",
+    "url": "https://example.com/fav1"
+   }
+  },
+  {
+   "id": "b15",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": "b12",
+   "position": 2,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Glaze recipes",
+    "url": "https://example.com/fav2"
+   }
+  },
+  {
+   "id": "b16",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 12,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "social_icons",
+   "data": {
+    "items": [
+     {
+      "platform": "instagram",
+      "url": "https://instagram.com/kiln"
+     },
+     {
+      "platform": "tiktok",
+      "url": "https://tiktok.com/@kiln"
+     },
+     {
+      "platform": "youtube",
+      "url": "https://youtube.com/@kiln"
+     }
+    ]
+   }
+  },
+  {
+   "id": "b17",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 13,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "quote",
+   "data": {
+    "quote": "Make the thing you wish existed.",
+    "name": "Sari"
+   }
+  },
+  {
+   "id": "b18",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 14,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "faq",
+   "data": {
+    "heading": "Questions",
+    "items": [
+     {
+      "q": "Do you ship abroad?",
+      "a": "Yes, to most of Southeast Asia."
+     },
+     {
+      "q": "Are the plates dishwasher-safe?",
+      "a": "Yes."
+     },
+     {
+      "q": "Custom orders?",
+      "a": "Open twice a year."
+     }
+    ]
+   }
+  },
+  {
+   "id": "b19",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 15,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "divider",
+   "data": {
+    "style": "dashed"
+   }
+  },
+  {
+   "id": "b20",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 16,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "file",
+   "data": {
+    "title": "Wholesale price sheet",
+    "url": "https://example.com/price.pdf",
+    "file_name": "price.pdf",
+    "size": 812000
+   }
+  },
+  {
+   "id": "b21",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 17,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "booking",
+   "data": {
+    "url": "https://calendly.com/example/30min"
+   }
+  },
+  {
+   "id": "b22",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 18,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "email_signup",
+   "data": {
+    "title": "Kiln-opening letter",
+    "description": "One email when a firing comes out.",
+    "button_label": "Join"
+   }
+  },
+  {
+   "id": "b23",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 19,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "contact_form",
+   "data": {
+    "title": "Say hello",
+    "button_label": "Send"
+   }
+  },
+  {
+   "id": "b24",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 20,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "form",
+   "data": {
+    "title": "Custom order request",
+    "button_label": "Send request",
+    "fields": [
+     {
+      "id": "name",
+      "type": "text",
+      "label": "Name",
+      "required": true
+     },
+     {
+      "id": "email",
+      "type": "email",
+      "label": "Email",
+      "required": true
+     },
+     {
+      "id": "piece",
+      "type": "select",
+      "label": "Piece",
+      "options": [
+       "Plate",
+       "Bowl",
+       "Mug"
+      ]
+     },
+     {
+      "id": "notes",
+      "type": "textarea",
+      "label": "Notes"
+     }
+    ]
+   }
+  },
+  {
+   "id": "b25",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 21,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "testimonial",
+   "data": {
+    "heading": "Notes from the studio",
+    "items": [
+     {
+      "quote": "Fixture quote one.",
+      "author": "Fixture A"
+     },
+     {
+      "quote": "Fixture quote two.",
+      "author": "Fixture B"
+     }
+    ]
+   }
+  },
+  {
+   "id": "b26",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 22,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Carousel item 1",
+    "url": "https://example.com/c0",
+    "layout": "carousel",
+    "thumbnail_url": "http://localhost:8097/uploads/t3.jpg"
+   }
+  },
+  {
+   "id": "b27",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 23,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Carousel item 2",
+    "url": "https://example.com/c1",
+    "layout": "carousel",
+    "thumbnail_url": "http://localhost:8097/uploads/t4.jpg"
+   }
+  },
+  {
+   "id": "b28",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-home",
+   "parent_id": null,
+   "position": 24,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Carousel item 3",
+    "url": "https://example.com/c2",
+    "layout": "carousel",
+    "thumbnail_url": "http://localhost:8097/uploads/t5.jpg"
+   }
+  },
+  {
+   "id": "b29",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-shop",
+   "parent_id": null,
+   "position": 0,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Product 1",
+    "url": "https://example.com/p0",
+    "layout": "grid2",
+    "thumbnail_url": "http://localhost:8097/uploads/t0.jpg"
+   }
+  },
+  {
+   "id": "b30",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-shop",
+   "parent_id": null,
+   "position": 1,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Product 2",
+    "url": "https://example.com/p1",
+    "layout": "grid2",
+    "thumbnail_url": "http://localhost:8097/uploads/t1.jpg"
+   }
+  },
+  {
+   "id": "b31",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-shop",
+   "parent_id": null,
+   "position": 2,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Product 3",
+    "url": "https://example.com/p2",
+    "layout": "grid2",
+    "thumbnail_url": "http://localhost:8097/uploads/t2.jpg"
+   }
+  },
+  {
+   "id": "b32",
+   "profile_id": "p-heavy",
+   "tab_id": "tab-shop",
+   "parent_id": null,
+   "position": 3,
+   "is_visible": true,
+   "created_at": "2026-11-16T00:00:00Z",
+   "updated_at": "2026-11-16T00:00:00Z",
+   "type": "link",
+   "data": {
+    "title": "Product 4",
+    "url": "https://example.com/p3",
+    "layout": "grid2",
+    "thumbnail_url": "http://localhost:8097/uploads/t3.jpg"
+   }
+  }
+ ],
+ "media": {
+  "/uploads/avatar.jpg": {
+   "width": 400,
+   "height": 400,
+   "widths": []
+  },
+  "/uploads/hero.jpg": {
+   "width": 1080,
+   "height": 720,
+   "widths": []
+  },
+  "/uploads/t0.jpg": {
+   "width": 480,
+   "height": 480,
+   "widths": []
+  },
+  "/uploads/t1.jpg": {
+   "width": 480,
+   "height": 480,
+   "widths": []
+  },
+  "/uploads/t2.jpg": {
+   "width": 480,
+   "height": 480,
+   "widths": []
+  },
+  "/uploads/t3.jpg": {
+   "width": 480,
+   "height": 480,
+   "widths": []
+  },
+  "/uploads/t4.jpg": {
+   "width": 480,
+   "height": 480,
+   "widths": []
+  },
+  "/uploads/t5.jpg": {
+   "width": 480,
+   "height": 480,
+   "widths": []
+  }
+ }
+}

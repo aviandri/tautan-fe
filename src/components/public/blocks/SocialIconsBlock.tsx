@@ -1,5 +1,3 @@
-"use client";
-
 import {
   siInstagram,
   siTiktok,
@@ -20,7 +18,7 @@ import { BriefcaseBusiness, Globe, Mail } from "lucide-react";
 import type { BlockOf } from "@/lib/types";
 import { platformLabel } from "@/lib/social";
 import { safeHref } from "@/lib/safe-url";
-import { useLinkClick } from "../context";
+import { track } from "../env";
 import s from "../public.module.css";
 
 const BRAND: Record<string, SimpleIcon> = {
@@ -56,7 +54,6 @@ export function SocialIcon({ platform }: { platform: string }) {
 }
 
 export function SocialIconsBlock({ block }: { block: BlockOf<"social_icons"> }) {
-  const onClick = useLinkClick(block.id);
   const items = (block.data.items ?? []).filter((i) => safeHref(i.url));
   if (!items.length) return null;
   return (
@@ -69,7 +66,7 @@ export function SocialIconsBlock({ block }: { block: BlockOf<"social_icons"> }) 
           target="_blank"
           rel="noopener noreferrer"
           aria-label={platformLabel(it.platform)}
-          onClick={onClick}
+          {...track(block.id, `social:${it.platform}`.slice(0, 40).replace(/[^a-z0-9_:]/g, "_"))}
         >
           <SocialIcon platform={it.platform} />
         </a>

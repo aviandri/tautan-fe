@@ -1,9 +1,8 @@
-"use client";
-
 import { ChevronDown } from "lucide-react";
 import type { Block, BlockOf } from "@/lib/types";
 import { safeHref, safeImageSrc } from "@/lib/safe-url";
 import { LinkBlock } from "./LinkBlock";
+import type { PageEnv } from "../env";
 import s from "../public.module.css";
 
 // Folder and FAQ use <details>/<summary>: they open without JavaScript and are keyboard
@@ -19,14 +18,14 @@ function BlockHead({ heading, description }: { heading?: string; description?: s
   );
 }
 
-export function FolderBlock({ block, children }: { block: BlockOf<"folder">; children: Block[] }) {
+export function FolderBlock({ block, children, env }: { block: BlockOf<"folder">; children: Block[]; env: PageEnv }) {
   const links = children.filter((c): c is BlockOf<"link"> => c.type === "link");
   if (block.data.style === "inline") {
     return (
       <section className={s.folderInline} aria-label={block.data.title || "Links"}>
         {block.data.title ? <div className={s.blockHeading}>{block.data.title}</div> : null}
         {links.map((c) => (
-          <LinkBlock key={c.id} block={c} />
+          <LinkBlock key={c.id} block={c} env={env} />
         ))}
       </section>
     );
@@ -41,7 +40,7 @@ export function FolderBlock({ block, children }: { block: BlockOf<"folder">; chi
         </span>
       </summary>
       <div className={s.folderBody}>
-        {links.length ? links.map((c) => <LinkBlock key={c.id} block={c} />) : <p className={s.empty}>No links yet</p>}
+        {links.length ? links.map((c) => <LinkBlock key={c.id} block={c} env={env} />) : <p className={s.empty}>No links yet</p>}
       </div>
     </details>
   );

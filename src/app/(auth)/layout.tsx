@@ -1,20 +1,23 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand";
+import { Providers } from "../providers";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid min-h-dvh lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <div className="flex flex-col px-6 py-6 sm:px-10">
-        <Link href="/" className="w-fit" aria-label="Tautan home">
-          <Logo />
-        </Link>
-        <main className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-12">
-          {children}
-        </main>
-        <p className="text-[13px] text-muted">© {new Date().getFullYear()} Tautan</p>
+    <Providers>
+      <div className="grid min-h-dvh lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="flex flex-col px-6 py-6 sm:px-10">
+          <Link href="/" className="w-fit" aria-label="Tautan home">
+            <Logo />
+          </Link>
+          <main className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-12">
+            {children}
+          </main>
+          <p className="text-[13px] text-muted">© {new Date().getFullYear()} Tautan</p>
+        </div>
+        <AuthAside />
       </div>
-      <AuthAside />
-    </div>
+    </Providers>
   );
 }
 

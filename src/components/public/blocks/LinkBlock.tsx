@@ -1,32 +1,18 @@
-"use client";
-
-import type { MouseEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { BlockOf, LinkData } from "@/lib/types";
 import { safeHref, safeImageSrc } from "@/lib/safe-url";
-import { useLinkClick, usePublic } from "../context";
+import { mediaFor, tabHref, track, type PageEnv } from "../env";
+import { Img } from "../Img";
 import s from "../public.module.css";
 
 type LinkBlockT = BlockOf<"link">;
 
 /** Where a link goes, by dest_kind (url | email | file | tab). */
-function useLinkTarget(block: LinkBlockT) {
-  const { selectTab, tabHref, preview } = usePublic();
-  const track = useLinkClick(block.id);
+function linkTarget(block: LinkBlockT, env: PageEnv) {
   const d = block.data;
-
   if (d.dest_kind === "tab" && d.tab_id) {
-    const tabId = d.tab_id;
-    return {
-      href: tabHref?.(tabId),
-      external: false,
-      onClick: (e: MouseEvent) => {
-        track(e);
-        if (selectTab && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
-          e.preventDefault();
-          selectTab(tabId);
-        }
-      },
-    };
+    const t = tabHref(env, d.tab_id);
+    return { href: t?.href, external: false, tab: t?.slug };
   }
   let raw = d.url;
   if (d.dest_kind === "email" && raw && !raw.startsWith("mailto:")) raw = `mailto:${raw}`;
@@ -34,8 +20,7 @@ function useLinkTarget(block: LinkBlockT) {
   return {
     href,
     external: !!href && !href.startsWith("mailto:") && !href.startsWith("tel:") && !href.startsWith("/"),
-    download: d.dest_kind === "file" && !preview ? true : undefined,
-    onClick: track,
+    download: d.dest_kind === "file" && !env.preview ? true : undefined,
   };
 }
 
@@ -59,16 +44,18 @@ function Label({ label }: { label?: string }) {
 
 function Anchor({
   block,
+  env,
   className,
   children,
   style,
 }: {
   block: LinkBlockT;
+  env: PageEnv;
   className: string;
   children: ReactNode;
   style?: React.CSSProperties;
 }) {
-  const t = useLinkTarget(block);
+  const t = linkTarget(block, env);
   if (!t.href) {
     return (
       <div className={className} style={style}>
@@ -84,7 +71,8 @@ function Anchor({
       target={t.external ? "_blank" : undefined}
       rel={t.external ? "noopener noreferrer" : undefined}
       download={t.download}
-      onClick={t.onClick}
+      data-tab={t.tab}
+      {...track(block.id)}
     >
       {children}
     </a>
@@ -94,16 +82,15 @@ function Anchor({
 const alignClass = (a?: LinkData["text_align"]) => (a === "left" ? s.alignLeft : a === "right" ? s.alignRight : "");
 
 /** One link on its own (button, thumbnail, thumbnail_highlight, image_background). */
-export function LinkBlock({ block }: { block: LinkBlockT }) {
+export function LinkBlock({ block, env }: { block: LinkBlockT; env: PageEnv }) {
   const d = block.data;
   const thumb = safeImageSrc(d.thumbnail_url);
   const title = d.title || d.url;
 
   if (d.layout === "thumbnail_highlight" && thumb) {
     return (
-      <Anchor block={block} className={`${s.linkCard} ${alignClass(d.text_align)}`}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={s.linkCardImage} src={thumb} alt="" loading="lazy" decoding="async" />
+      <Anchor block={block} env={env} className={`${s.linkCard} ${alignClass(d.text_align)}`}>
+        <Img className={s.linkCardImage} src={thumb} alt="" media={mediaFor(env, thumb)} sizes="(max-width: 600px) 100vw, 560px" />
         <span className={s.linkCardBody}>
           <span className={s.linkTitleRow}>
             <Icon icon={d.icon} />
@@ -118,7 +105,7 @@ export function LinkBlock({ block }: { block: LinkBlockT }) {
 
   if (d.layout === "image_background" && thumb) {
     return (
-      <Anchor block={block} className={`${s.linkBgImage} ${alignClass(d.text_align)}`} style={{ backgroundImage: `url("${thumb.replace(/"/g, "%22")}")` }}>
+      <Anchor block={block} env={env} className={`${s.linkBgImage} ${alignClass(d.text_align)}`} style={{ backgroundImage: `url("${thumb.replace(/"/g, "%22")}")` }}>
         <span className={s.linkBgShade} aria-hidden />
         <span className={s.linkBgBody}>
           <Label label={d.label} />
@@ -134,10 +121,9 @@ export function LinkBlock({ block }: { block: LinkBlockT }) {
   // button (default) and thumbnail
   const big = d.layout === "thumbnail" && thumb;
   return (
-    <Anchor block={block} className={`${s.btn} ${big ? s.btnThumbLarge : ""} ${alignClass(d.text_align)}`}>
+    <Anchor block={block} env={env} className={`${s.btn} ${big ? s.btnThumbLarge : ""} ${alignClass(d.text_align)}`}>
       {thumb ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className={big ? s.thumbLarge : s.thumb} src={thumb} alt="" loading="lazy" decoding="async" />
+        <Img className={big ? s.thumbLarge : s.thumb} src={thumb} alt="" media={mediaFor(env, thumb)} sizes={big ? "60px" : "40px"} />
       ) : d.icon ? (
         <Icon icon={d.icon} />
       ) : null}
@@ -154,15 +140,14 @@ export function LinkBlock({ block }: { block: LinkBlockT }) {
 }
 
 /** A square tile, used by grid2, grid3 and carousel groups. */
-export function LinkTile({ block }: { block: LinkBlockT }) {
+export function LinkTile({ block, env }: { block: LinkBlockT; env: PageEnv }) {
   const d = block.data;
   const thumb = safeImageSrc(d.thumbnail_url);
   return (
-    <Anchor block={block} className={`${s.linkTile} ${alignClass(d.text_align)}`}>
+    <Anchor block={block} env={env} className={`${s.linkTile} ${alignClass(d.text_align)}`}>
       <span className={s.linkTileMedia}>
         {thumb ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb} alt="" loading="lazy" decoding="async" />
+          <Img src={thumb} alt="" media={mediaFor(env, thumb)} sizes="(max-width: 600px) 50vw, 280px" />
         ) : (
           <span className={s.linkTileIcon}>{d.icon ? <Icon icon={d.icon} /> : (d.title || "?").slice(0, 1).toUpperCase()}</span>
         )}
@@ -175,13 +160,13 @@ export function LinkTile({ block }: { block: LinkBlockT }) {
 }
 
 /** Adjacent links that share grid2 / grid3 / carousel render as one group. */
-export function LinkGroup({ layout, blocks }: { layout: "grid2" | "grid3" | "carousel"; blocks: LinkBlockT[] }) {
+export function LinkGroup({ layout, blocks, env }: { layout: "grid2" | "grid3" | "carousel"; blocks: LinkBlockT[]; env: PageEnv }) {
   if (layout === "carousel") {
     return (
       <div className={s.carousel} role="list">
         {blocks.map((b) => (
           <div key={b.id} role="listitem" className={s.carouselItem}>
-            <LinkTile block={b} />
+            <LinkTile block={b} env={env} />
           </div>
         ))}
       </div>
@@ -190,7 +175,7 @@ export function LinkGroup({ layout, blocks }: { layout: "grid2" | "grid3" | "car
   return (
     <div className={layout === "grid3" ? s.grid3 : s.grid2}>
       {blocks.map((b) => (
-        <LinkTile key={b.id} block={b} />
+        <LinkTile key={b.id} block={b} env={env} />
       ))}
     </div>
   );

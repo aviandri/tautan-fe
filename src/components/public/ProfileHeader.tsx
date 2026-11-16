@@ -1,16 +1,14 @@
-"use client";
-
 import type { Profile, Theme } from "@/lib/types";
 import { safeHref, safeImageSrc } from "@/lib/safe-url";
 import { platformLabel } from "@/lib/social";
 import { isTempUsername } from "@/lib/page-extras";
 import { SocialIcon } from "./blocks/SocialIconsBlock";
-import { usePublic } from "./context";
+import { Img } from "./Img";
+import { mediaFor, type MediaMap } from "./env";
 import s from "./public.module.css";
 
 /** Header socials row (profile.socials). "divider" entries are spacers. */
 export function SocialRow({ socials }: { socials: NonNullable<Profile["socials"]> }) {
-  const { preview } = usePublic();
   const items = socials.filter((x) => x.platform === "divider" || safeHref(x.url));
   if (!items.some((x) => x.platform !== "divider")) return null;
   return (
@@ -26,7 +24,6 @@ export function SocialRow({ socials }: { socials: NonNullable<Profile["socials"]
             target="_blank"
             rel="noopener noreferrer me"
             aria-label={platformLabel(it.platform)}
-            onClick={preview ? (e) => e.preventDefault() : undefined}
           >
             <SocialIcon platform={it.platform} />
           </a>
@@ -41,19 +38,17 @@ export function displayName(profile: Profile): string {
   return profile.display_name?.trim() || (isTempUsername(profile.username) ? "" : profile.username);
 }
 
-export function ProfileHeader({ profile, theme }: { profile: Profile; theme: Theme }) {
+export function ProfileHeader({ profile, theme, preview, media }: { profile: Profile; theme: Theme; preview: boolean; media?: MediaMap }) {
   const layout = theme.header?.layout ?? "classic";
   const avatar = safeImageSrc(profile.avatar_url);
   const banner = safeImageSrc(theme.header?.banner_image_url);
-  const { preview } = usePublic();
   const real = displayName(profile);
   // a brand-new account in the editor preview has neither a name nor a claimed username yet
   const name = real || (preview ? "Your name" : "");
   const socialsTop = profile.socials?.length && (profile.socials_position ?? "top") === "top";
 
   const avatarEl = avatar ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img className={s.avatar} src={avatar} alt="" width={96} height={96} />
+    <Img className={s.avatar} src={avatar} alt="" media={mediaFor({ media }, avatar)} width={96} height={96} sizes="96px" priority={layout !== "headshot"} />
   ) : (
     <div className={s.avatarFallback} aria-hidden>
       {(name || "?").slice(0, 1).toUpperCase()}
@@ -85,8 +80,7 @@ export function ProfileHeader({ profile, theme }: { profile: Profile; theme: The
     return (
       <header className={`${s.header} ${s.headerHeadshot}`}>
         {avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className={s.headshot} src={avatar} alt="" />
+          <Img className={s.headshot} src={avatar} alt="" media={mediaFor({ media }, avatar)} width={320} height={400} sizes="320px" priority />
         ) : (
           avatarEl
         )}

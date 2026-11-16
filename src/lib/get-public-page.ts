@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { API_BASE, ApiError, USE_MOCK, api } from "./api";
 import type { PublicPageResponse } from "./types";
 
@@ -6,6 +7,22 @@ export type PublicPageResult =
   | { kind: "page"; data: PublicPageResponse }
   | { kind: "moved"; to: string }
   | { kind: "missing" };
+
+/** Cache tag for one page; POST /api/revalidate (the BE's publish/edit webhook) calls revalidateTag on it. */
+export const profileTag = (username: string) => `profile:${username.toLowerCase()}`;
+
+/** Seconds a cached page is served before a background refresh (matches the BE's s-maxage). */
+export const PAGE_REVALIDATE = 60;
+
+/**
+ * The cached read the ISR route uses. unstable_cache stores our own result union, so a rename (301 →
+ * "moved") or an unpublish (404 → "missing") is cached and revalidated exactly like a page: the
+ * plain fetch data cache would instead keep serving the last 200 when a refresh came back 301.
+ */
+export function getPublicPageCached(username: string): Promise<PublicPageResult> {
+  const u = username.toLowerCase();
+  return unstable_cache(() => getPublicPage(u), ["public-page", u], { tags: [profileTag(u)], revalidate: PAGE_REVALIDATE })();
+}
 
 /**
  * GET /public/{username} for the SSR route. Uses redirect:"manual" because a renamed page answers
@@ -24,9 +41,7 @@ export async function getPublicPage(username: string): Promise<PublicPageResult>
   const res = await fetch(`${API_BASE}/public/${encodeURIComponent(username)}`, {
     redirect: "manual",
     headers: { Accept: "application/json" },
-    // no data cache: Next keeps serving a cached 200 when the refresh comes back as a 301, so a
-    // renamed (or unpublished) page would stay up under its old URL. The route renders per request
-    // anyway (it reads ?tab), and the API read is one indexed query.
+    // caching happens one level up (getPublicPageCached), around the whole result
     cache: "no-store",
   });
   if (res.status === 301 || res.status === 308) {

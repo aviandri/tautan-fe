@@ -1,17 +1,25 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { z } from "zod";
 import type { BlockOf } from "@/lib/types";
 import { ApiError, api } from "@/lib/api";
-import { usePublic } from "../context";
 import s from "../public.module.css";
 
-export const contactSchema = z.object({
-  name: z.string().trim().min(1, "Enter your name").max(100, "Keep it under 100 characters"),
-  email: z.string().trim().email("Enter a valid email address").max(254),
-  message: z.string().trim().min(1, "Write a message").max(2000, "Keep it under 2000 characters"),
-});
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Same rules the BE applies; plain checks keep this island small (no zod on the public page). */
+export function checkContact(raw: { name: unknown; email: unknown; message: unknown }): { ok: true; data: Fields } | { ok: false; errors: Errors } {
+  const name = String(raw.name ?? "").trim();
+  const email = String(raw.email ?? "").trim();
+  const message = String(raw.message ?? "").trim();
+  const errors: Errors = {};
+  if (!name) errors.name = "Enter your name";
+  else if (name.length > 100) errors.name = "Keep it under 100 characters";
+  if (!EMAIL.test(email) || email.length > 254) errors.email = "Enter a valid email address";
+  if (!message) errors.message = "Write a message";
+  else if (message.length > 2000) errors.message = "Keep it under 2000 characters";
+  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, data: { name, email, message } };
+}
 
 function contactErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
@@ -22,12 +30,11 @@ function contactErrorMessage(err: unknown): string {
   return "Couldn't reach the server. Check your connection and try again.";
 }
 
-type Fields = z.infer<typeof contactSchema>;
+type Fields = { name: string; email: string; message: string };
 type Errors = Partial<Record<keyof Fields, string>>;
 type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent" } | { kind: "error"; message: string };
 
-export function ContactFormBlock({ block }: { block: BlockOf<"contact_form"> }) {
-  const { username, preview } = usePublic();
+export function ContactFormBlock({ block, username, preview }: { block: BlockOf<"contact_form">; username: string; preview: boolean }) {
   // ids from the block id: unique per page, identical on server and client
   const uid = `contact-${block.id}`;
   const [errors, setErrors] = useState<Errors>({});
@@ -43,14 +50,9 @@ export function ContactFormBlock({ block }: { block: BlockOf<"contact_form"> }) 
       setStatus({ kind: "sent" });
       return;
     }
-    const parsed = contactSchema.safeParse({ name: fd.get("name"), email: fd.get("email"), message: fd.get("message") });
-    if (!parsed.success) {
-      const errs: Errors = {};
-      for (const issue of parsed.error.issues) {
-        const k = issue.path[0] as keyof Fields;
-        errs[k] ??= issue.message;
-      }
-      setErrors(errs);
+    const parsed = checkContact({ name: fd.get("name"), email: fd.get("email"), message: fd.get("message") });
+    if (!parsed.ok) {
+      setErrors(parsed.errors);
       return;
     }
     setErrors({});

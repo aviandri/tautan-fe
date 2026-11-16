@@ -7,8 +7,19 @@ import { Toaster } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { homeFor, useRequireSession } from "@/lib/session";
+import { Providers } from "../providers";
 
+// React Query lives here (and in the auth/onboarding layouts), not in the root layout, so the
+// public /[username] page doesn't download it.
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Providers>
+      <DashboardShell>{children}</DashboardShell>
+    </Providers>
+  );
+}
+
+function DashboardShell({ children }: { children: React.ReactNode }) {
   const session = useRequireSession();
   const router = useRouter();
   const needsOnboarding = homeFor(session.data?.profile) === "/onboarding";

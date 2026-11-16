@@ -1,15 +1,15 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Play } from "lucide-react";
 
 import type { BlockOf } from "@/lib/types";
-import { toMusicEmbed, toVideoEmbed } from "@/lib/embeds";
+import { toMusicEmbed, toVideoEmbed, youtubeId } from "@/lib/embeds";
 import { safeHref, safeImageSrc } from "@/lib/safe-url";
 import { MiniMarkdown } from "@/lib/mini-markdown";
-import { useLinkClick } from "../context";
+import { mediaFor, track, type PageEnv } from "../env";
+import { Img } from "../Img";
 import { LinkBlock } from "./LinkBlock";
 import s from "../public.module.css";
+
+// Server-safe (no hooks): interactivity comes from PageRuntime via data-* attributes.
 
 export function TextBlock({ block }: { block: BlockOf<"text"> }) {
   if (!block.data.content?.trim()) return null;
@@ -20,98 +20,99 @@ export function TextBlock({ block }: { block: BlockOf<"text"> }) {
   );
 }
 
-export function ImageBlock({ block }: { block: BlockOf<"image"> }) {
+export function ImageBlock({ block, env, priority = false }: { block: BlockOf<"image">; env: PageEnv; priority?: boolean }) {
   const d = block.data;
   const src = safeImageSrc(d.url);
   const href = safeHref(d.link_url);
-  const onClick = useLinkClick(block.id);
-  const [zoom, setZoom] = useState(false);
   if (!src) return null;
   const cls = `${s.image} ${d.full_bleed ? s.fullBleed : ""}`;
-  // eslint-disable-next-line @next/next/no-img-element
-  const img = <img className={cls} src={src} alt={d.alt ?? ""} loading="lazy" decoding="async" />;
+  const img = <Img className={cls} src={src} alt={d.alt ?? ""} media={mediaFor(env, src)} sizes="(max-width: 600px) 100vw, 560px" priority={priority} />;
   if (href) {
     return (
-      <a className={`${s.imageLink} ${d.full_bleed ? s.fullBleed : ""}`} href={href} target="_blank" rel="noopener noreferrer" onClick={onClick}>
+      <a className={`${s.imageLink} ${d.full_bleed ? s.fullBleed : ""}`} href={href} target="_blank" rel="noopener noreferrer" {...track(block.id)}>
         {img}
       </a>
     );
   }
   if (d.lightbox) {
     return (
-      <>
-        <button type="button" className={`${s.imageButton} ${d.full_bleed ? s.fullBleed : ""}`} onClick={() => setZoom(true)} aria-label={d.alt ? `Enlarge image: ${d.alt}` : "Enlarge image"}>
-          {img}
-        </button>
-        {zoom ? <Lightbox src={src} alt={d.alt ?? ""} onClose={() => setZoom(false)} /> : null}
-      </>
+      <button
+        type="button"
+        className={`${s.imageButton} ${d.full_bleed ? s.fullBleed : ""}`}
+        data-lightbox={src}
+        data-alt={d.alt ?? ""}
+        aria-label={d.alt ? `Enlarge image: ${d.alt}` : "Enlarge image"}
+      >
+        {img}
+      </button>
     );
   }
   return img;
 }
 
-function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const dlg = ref.current;
-    // no close() in cleanup: it fires onClose, and StrictMode's double effect would unmount us at once.
-    // Unmounting removes the dialog (and its top-layer state) anyway.
-    if (dlg && !dlg.open) dlg.showModal();
-  }, []);
-  return (
-    <dialog
-      ref={ref}
-      className={s.lightbox}
-      onClose={onClose}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-      aria-label={alt || "Image"}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} />
-      <button type="button" className={s.lightboxClose} onClick={onClose} aria-label="Close">
-        <X aria-hidden />
-      </button>
-    </dialog>
-  );
-}
-
 /** Unrecognised media URL: show it as a plain link so the visitor can still reach it. */
-function Fallback({ block }: { block: BlockOf<"video"> | BlockOf<"music"> }) {
-  return (
-    <LinkBlock
-      block={{ ...block, type: "link", data: { title: block.data.url, url: block.data.url } } as BlockOf<"link">}
-    />
-  );
+function Fallback({ block, env }: { block: BlockOf<"video"> | BlockOf<"music">; env: PageEnv }) {
+  return <LinkBlock env={env} block={{ ...block, type: "link", data: { title: block.data.url, url: block.data.url } } as BlockOf<"link">} />;
 }
 
-export function VideoBlock({ block }: { block: BlockOf<"video"> }) {
+/**
+ * Click-to-load facade: a poster and a play button in the iframe's exact box. The third-party
+ * player (≈1 MB of script for YouTube) loads only when the visitor presses play.
+ */
+export function VideoBlock({ block, env }: { block: BlockOf<"video">; env: PageEnv }) {
   const e = toVideoEmbed(block.data.url);
-  if (!e) return <Fallback block={block} />;
+  if (!e) return <Fallback block={block} env={env} />;
+  const yt = e.provider === "youtube" ? youtubeId(block.data.url) : null;
   return (
     <div className={s.embedVideo}>
-      <iframe
-        src={e.src}
-        title={e.title}
-        loading="lazy"
-        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-        referrerPolicy="strict-origin-when-cross-origin"
-        allowFullScreen
-      />
+      <button
+        type="button"
+        className={s.facade}
+        data-embed={e.src}
+        data-autoplay="autoplay=1"
+        data-title={e.title}
+        aria-label={`Play ${e.title}`}
+        {...track(block.id, "play")}
+      >
+        {yt ? (
+          // poster from YouTube's image CDN (an image, not script), lazy below the fold
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className={s.facadePoster} src={`https://i.ytimg.com/vi/${yt}/hqdefault.jpg`} alt="" loading="lazy" decoding="async" width={480} height={360} />
+        ) : null}
+        <span className={s.facadePlay} aria-hidden>
+          <Play />
+        </span>
+        <span className={s.facadeLabel}>{e.provider === "youtube" ? "YouTube" : "Vimeo"}</span>
+      </button>
     </div>
   );
 }
 
-export function MusicBlock({ block }: { block: BlockOf<"music"> }) {
+export function MusicBlock({ block, env }: { block: BlockOf<"music">; env: PageEnv }) {
   const e = toMusicEmbed(block.data.url);
-  if (!e) return <Fallback block={block} />;
+  if (!e) return <Fallback block={block} env={env} />;
+  const provider = e.provider === "spotify" ? "Spotify" : "SoundCloud";
   return (
-    <iframe
-      className={s.embedAudio}
-      src={e.src}
-      title={e.title}
-      height={e.height}
-      loading="lazy"
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-    />
+    <div className={s.audioFacadeBox} style={{ height: e.height }}>
+      <button
+        type="button"
+        className={s.audioFacade}
+        data-embed={e.src}
+        data-autoplay={e.provider === "soundcloud" ? "auto_play=true" : undefined}
+        data-title={e.title}
+        data-height={String(e.height ?? 152)}
+        data-frame-class={s.embedAudio}
+        aria-label={`Play ${e.title}`}
+        {...track(block.id, "play")}
+      >
+        <span className={s.facadePlay} aria-hidden>
+          <Play />
+        </span>
+        <span className={s.audioFacadeText}>
+          <span className={s.linkTitle}>Listen on {provider}</span>
+          <span className={s.linkDesc}>{e.title}</span>
+        </span>
+      </button>
+    </div>
   );
 }
