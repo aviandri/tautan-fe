@@ -15,6 +15,7 @@ import { getMeta } from "@/lib/editor/block-meta";
 import { byPosition, errorMessage, siblings, useCreateBlock, useEditorData, useReorderBlocks, useUpdateBlock } from "@/lib/editor/queries";
 import { linkBlock, marketplaceBlock, type SellSuggestion } from "@/lib/editor/smart-paste";
 import { MARKETPLACES } from "@/lib/sell/platforms-meta";
+import { BLOCK_TYPES } from "@/lib/constants";
 import type { Block, BlockDataMap, BlockOf, BlockType, CreateBlockInput, Tab } from "@/lib/types";
 import { NewBlockDraft, useQuickCreate } from "./AddBlock";
 import { CardList } from "./CardList";
@@ -89,6 +90,22 @@ export function Editor() {
   useEffect(() => {
     if (sel?.kind === "block" && data && (!selectedBlock || selectedBlock.tab_id !== active?.id)) setSel(null);
   }, [sel, selectedBlock, data, active?.id]);
+
+  // ?add=<type> (from onboarding's "next steps") opens that card once the page has loaded
+  const addParam = params.get("add");
+  const [addHandled, setAddHandled] = useState(false);
+  useEffect(() => {
+    if (!addParam || addHandled || !data || !active) return;
+    setAddHandled(true);
+    if ((BLOCK_TYPES as readonly string[]).includes(addParam)) {
+      const t = addParam as BlockType;
+      if (getMeta(t).needsInputFirst) setSel({ kind: "new", type: t, parentId: null });
+      else quick.run(t, active.id, null, (b) => setSel({ kind: "block", id: b.id }));
+    }
+    const q = new URLSearchParams(params);
+    q.delete("add");
+    router.replace(`${pathname}${q.size ? `?${q}` : ""}`, { scroll: false });
+  }, [addParam, addHandled, data, active, params, pathname, router, quick]);
 
   const sheetOpen = !isLg && !!sel;
   useEffect(() => {

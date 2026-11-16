@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Wizard } from "@/components/onboarding/Wizard";
 import { Spinner } from "@/components/ui";
 import { homeFor, useRequireSession } from "@/lib/session";
@@ -9,7 +9,11 @@ import { homeFor, useRequireSession } from "@/lib/session";
 export default function OnboardingPage() {
   const session = useRequireSession();
   const router = useRouter();
-  const done = session.data && homeFor(session.data.profile) !== "/onboarding";
+  // Decide once, from the first load: finishing the wizard updates the profile optimistically,
+  // and that must not race the wizard's own hand-off to /onboarding/live.
+  const alreadyDone = useRef<boolean | null>(null);
+  if (session.data && alreadyDone.current === null) alreadyDone.current = homeFor(session.data.profile) !== "/onboarding";
+  const done = alreadyDone.current === true;
   useEffect(() => {
     if (done) router.replace("/dashboard");
   }, [done, router]);

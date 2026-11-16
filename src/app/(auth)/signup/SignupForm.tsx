@@ -3,19 +3,25 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { z } from "zod";
 import { UsernameStatusLine } from "@/components/auth/UsernameStatusLine";
 import { PUBLIC_HOST } from "@/components/brand";
+import { Link2 } from "lucide-react";
+import { PasswordField } from "@/components/auth/PasswordField";
 import { Alert, Button, Field, Input, PrefixInput } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { homeFor, useAcceptAuth } from "@/lib/session";
 import { useRedirectIfSignedIn } from "@/lib/use-redirect-if-signed-in";
 import { useUsernameCheck } from "@/lib/use-username-check";
 
-const schema = z.object({
-  email: z.email("Enter a valid email"),
-  password: z.string().min(8, "At least 8 characters").max(72, "At most 72 characters"),
-});
+const EMAIL_RE = /^[^\s@<>()]+@[^\s@<>()]+\.[^\s@<>()]+$/;
+/** Same rules as before (no zod here: it would ship the whole schema library with this page). */
+function check(email: string, password: string) {
+  const e: Partial<Record<"email" | "password", string>> = {};
+  if (!EMAIL_RE.test(email.trim())) e.email = "Enter a valid email";
+  if (password.length < 8) e.password = "At least 8 characters";
+  else if (password.length > 72) e.password = "At most 72 characters";
+  return e;
+}
 
 export function SignupForm() {
   const router = useRouter();
@@ -32,23 +38,21 @@ export function SignupForm() {
   const [errors, setErrors] = useState<Partial<Record<"email" | "password", string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const check = useUsernameCheck(username);
+  const usernameCheck = useUsernameCheck(username);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
-    const parsed = schema.safeParse({ email, password });
-    if (!parsed.success) {
-      const fe: typeof errors = {};
-      for (const i of parsed.error.issues) fe[i.path[0] as "email" | "password"] ??= i.message;
+    const fe = check(email, password);
+    if (Object.keys(fe).length) {
       setErrors(fe);
       return;
     }
     setErrors({});
-    if (withUsername && !check.ok) return;
+    if (withUsername && !usernameCheck.ok) return;
     setSubmitting(true);
     try {
-      const r = await api.auth.signup({ ...parsed.data, ...(withUsername ? { username: check.value } : {}) });
+      const r = await api.auth.signup({ email: email.trim(), password, ...(withUsername ? { username: usernameCheck.value } : {}) });
       accept(r);
       router.replace(homeFor(r.profile));
     } catch (err) {
@@ -65,24 +69,24 @@ export function SignupForm() {
 
   return (
     <>
-      <h1 className="text-[28px] font-semibold tracking-tight">{withUsername ? "Claim your Tautan" : "Create your Tautan"}</h1>
-      <p className="mt-2 text-[15px] text-muted">
-        {withUsername ? "Your username becomes your page address. You can change it later." : "Free to start. You'll pick your page address at the end of setup."}
+      <h1 className="text-[40px] font-semibold leading-[.98] tracking-[-0.045em] sm:text-[48px]">{withUsername ? "Claim your Tautan" : "Create your Tautan account"}</h1>
+      <p className="mt-2.5 text-[17px] leading-relaxed text-ink-2">
+        {withUsername ? "Your username becomes your page address. You can change it later." : "Email and a password for now. You choose your page address at the end."}
       </p>
 
-      <form onSubmit={onSubmit} noValidate className="mt-8 flex flex-col gap-5">
+      <form onSubmit={onSubmit} noValidate className="mt-7 flex flex-col gap-4">
         {formError && <Alert>{formError}</Alert>}
 
         {withUsername && (
         <Field
           label="Username"
-          hint={<UsernameStatusLine status={check.status} host={PUBLIC_HOST} />}
+          hint={<UsernameStatusLine status={usernameCheck.status} host={PUBLIC_HOST} />}
         >
           {(p) => (
             <PrefixInput
               {...p}
               prefix={`${PUBLIC_HOST}/`}
-              aria-invalid={check.status.state === "invalid" || check.status.state === "taken"}
+              aria-invalid={usernameCheck.status.state === "invalid" || usernameCheck.status.state === "taken"}
               value={username}
               onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ""))}
               autoComplete="username"
@@ -101,29 +105,29 @@ export function SignupForm() {
           )}
         </Field>
 
-        <Field label="Password" error={errors.password} hint="At least 8 characters">
-          {(p) => (
-            <Input
-              {...p}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-            />
-          )}
-        </Field>
+        <PasswordField value={password} onChange={setPassword} error={errors.password} autoComplete="new-password" meter />
 
-        <Button type="submit" size="lg" loading={submitting} disabled={withUsername && !check.ok} className="mt-1">
+        <Button type="submit" size="lg" loading={submitting} disabled={withUsername && !usernameCheck.ok} className="mt-1.5">
           {withUsername ? "Create my page" : "Create account"}
         </Button>
       </form>
 
-      <p className="mt-6 text-sm text-muted">
-        Already have an account?{" "}
-        <Link href="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
+      <p className="mt-4 text-center text-[13px] text-muted">
+        Already have a page?{" "}
+        <Link href="/login" className="font-bold text-foreground underline underline-offset-2">
           Log in
         </Link>
       </p>
+      {!withUsername && (
+        <div className="mt-6 flex items-center gap-3 rounded-[20px] bg-surface px-4 py-3.5 shadow-[0_0_0_1px_var(--line)]">
+          <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-[14px] bg-mint">
+            <Link2 className="size-5" aria-hidden />
+          </span>
+          <p className="text-[15px] leading-snug">
+            <b>Moving from another link page?</b> <span className="text-muted">Paste it on the next screen and we copy everything over.</span>
+          </p>
+        </div>
+      )}
     </>
   );
 }

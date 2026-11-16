@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { UsernameSchema } from "./types";
+import { USERNAME_RE } from "./constants";
 
 export type UsernameStatus =
   | { state: "idle" }
@@ -25,10 +25,8 @@ export function useUsernameCheck(raw: string, { current, delay = 350 }: { curren
   useEffect(() => {
     if (!value) return setStatus({ state: "idle" });
     if (current && value === current) return setStatus({ state: "unchanged" });
-    const parsed = UsernameSchema.safeParse(value);
-    if (!parsed.success) {
-      return setStatus({ state: "invalid", message: parsed.error.issues[0]?.message ?? "Invalid username" });
-    }
+    // same rule and message as UsernameSchema, without pulling zod into the auth pages
+    if (!USERNAME_RE.test(value)) return setStatus({ state: "invalid", message: "3–30 chars: lowercase letters, numbers, _ or ." });
     setStatus({ state: "checking" });
     const ctrl = new AbortController();
     const t = setTimeout(() => {

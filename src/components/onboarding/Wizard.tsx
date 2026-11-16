@@ -1,14 +1,22 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check, Download, Link2, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Download, Link2, Loader2, Plus } from "lucide-react";
 import { useState } from "react";
 import { UsernameStatusLine } from "@/components/auth/UsernameStatusLine";
 import { Logo, PUBLIC_HOST } from "@/components/brand";
 import { ImageField, TextField } from "@/components/editor/fields";
-import { PhonePreview } from "@/components/editor/preview/Preview";
+import dynamic from "next/dynamic";
 import { SmartPaste } from "@/components/editor/SmartPaste";
-import { ThemePicker } from "@/components/theme";
+// Heavy parts load on demand: the live preview (public renderer) and the Look step's theme picker.
+const PhonePreview = dynamic(() => import("@/components/editor/preview/Preview").then((m) => m.PhonePreview), {
+  ssr: false,
+  loading: () => <div className="h-[620px] w-[290px] animate-pulse rounded-[48px] bg-white/50" aria-label="Loading preview" />,
+});
+const ThemePicker = dynamic(() => import("@/components/theme").then((m) => m.ThemePicker), {
+  ssr: false,
+  loading: () => <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{Array.from({ length: 8 }, (_, i) => <div key={i} className="h-[200px] animate-pulse rounded-3xl bg-sunken" />)}</div>,
+});
 import { Alert, Button, cx, Field, Input, PrefixInput, Spinner, Switch } from "@/components/ui";
 import { toast, Toaster } from "@/components/ui/toast";
 import { api, ApiError } from "@/lib/api";
@@ -22,7 +30,7 @@ import { useUsernameCheck } from "@/lib/use-username-check";
 
 export const STEPS = ["start", "profile", "sections", "theme", "claim"] as const;
 export type Step = (typeof STEPS)[number];
-const STEP_LABELS: Record<Step, string> = { start: "Start", profile: "Profile", sections: "Sections", theme: "Look", claim: "Your link" };
+const STEP_LABELS: Record<Step, string> = { start: "Start", profile: "Profile", sections: "Cards", theme: "Look", claim: "Your address" };
 
 export function resumeStep(p: Profile): Step {
   const s = p.onboarding?.step as Step | undefined;
@@ -74,47 +82,49 @@ export function Wizard({ profile }: { profile: Profile }) {
   const firstTab = tabs[0];
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[minmax(0,1fr)_440px]">
-      <div className="flex min-h-dvh flex-col px-5 py-5 sm:px-10">
-        <header className="flex items-center justify-between">
-          <Logo />
-          <button onClick={logout} className="text-[13px] font-medium text-muted hover:text-foreground">
-            Log out
-          </button>
-        </header>
-
-        <nav aria-label="Setup progress" className="mx-auto mt-8 w-full max-w-xl">
-          <ol className="flex items-center gap-2">
+    <div className="flex min-h-dvh flex-col bg-background">
+      <header className="flex flex-wrap items-center gap-5 px-5 py-5 sm:px-8">
+        <Logo />
+        <nav aria-label="Setup progress" className="order-3 w-full sm:order-none sm:mx-auto sm:w-auto">
+          <ol className="flex flex-wrap gap-x-[22px] gap-y-2">
             {STEPS.map((s, i) => (
-              <li key={s} className="flex flex-1 flex-col gap-1.5">
-                <span className={cx("h-1 rounded-full transition-colors", i <= idx ? "bg-brand" : "bg-line")} />
-                <span className={cx("hidden text-[12px] font-medium sm:block", i === idx ? "text-foreground" : "text-muted")} aria-current={i === idx ? "step" : undefined}>
-                  {STEP_LABELS[s]}
-                </span>
+              <li
+                key={s}
+                aria-current={i === idx ? "step" : undefined}
+                className={cx("flex items-center gap-2 text-[14px] font-semibold", i === idx ? "text-foreground" : "text-muted")}
+              >
+                <b
+                  className={cx(
+                    "inline-flex size-[26px] items-center justify-center rounded-full text-[12px]",
+                    i < idx ? "bg-ok text-white" : i === idx ? "bg-foreground text-background" : "bg-sunken text-ink-2",
+                  )}
+                >
+                  {i < idx ? <Check className="size-3.5" strokeWidth={3} aria-hidden /> : i + 1}
+                </b>
+                <span className={cx(i !== idx && "max-sm:sr-only")}>{STEP_LABELS[s]}</span>
               </li>
             ))}
           </ol>
         </nav>
+        <button onClick={logout} className="ml-auto text-[14px] font-semibold text-ink-2 hover:text-foreground sm:ml-0">
+          Log out
+        </button>
+      </header>
 
-        <main className="mx-auto flex w-full max-w-xl flex-1 flex-col py-10">
+      <div className="flex flex-1 flex-wrap gap-10 px-5 pb-8 pt-3 sm:px-8">
+        <main className="k-enter mx-auto flex w-full min-w-0 max-w-[720px] flex-[1_1_620px] flex-col justify-center" key={step}>
           {step === "start" && <StartStep profile={profile} tabId={firstTab?.id} onNext={next} />}
           {step === "profile" && <ProfileStep profile={profile} onNext={next} onBack={back} />}
           {step === "sections" && firstTab && <SectionsStep profile={profile} tabId={firstTab.id} onNext={next} onBack={back} />}
           {step === "theme" && <ThemeStep value={themeDraft ?? profile.theme} onChange={setThemeDraft} dirty={!!themeDraft} onNext={next} onBack={back} />}
           {step === "claim" && <ClaimStep profile={profile} onBack={back} />}
         </main>
-      </div>
 
-      <aside className="hidden border-l border-line bg-surface/50 lg:flex lg:items-center lg:justify-center">
-        {editor.data ? (
-          <div className="sticky top-8">
-            <PhonePreview profile={shown} tabs={tabs} blocks={editor.data.blocks} />
-            <p className="mt-4 text-center text-[13px] text-muted">Your page, as you build it</p>
-          </div>
-        ) : (
-          <Spinner />
-        )}
-      </aside>
+        <aside aria-label="Live preview" className="hidden min-w-[320px] flex-[0_1_440px] flex-col items-center justify-center gap-4 rounded-[36px] bg-blush p-7 lg:flex">
+          {editor.data ? <PhonePreview profile={shown} tabs={tabs} blocks={editor.data.blocks} width={290} height={600} /> : <Spinner />}
+          <span className="rounded-full bg-surface px-3 py-1 font-mono text-[12px] text-ink-2">Your page, as you build it</span>
+        </aside>
+      </div>
       <Toaster />
     </div>
   );
@@ -124,16 +134,16 @@ type NextFn = (extra?: Parameters<ReturnType<typeof useUpdateProfile>["mutate"]>
 
 function StepHeader({ title, description }: { title: string; description: string }) {
   return (
-    <div className="mb-8">
-      <h1 className="text-[28px] font-semibold leading-tight tracking-tight">{title}</h1>
-      <p className="mt-2 text-[15px] text-muted">{description}</p>
+    <div className="mb-7">
+      <h1 className="text-[38px] font-semibold leading-[.98] tracking-[-0.045em] sm:text-[52px]">{title}</h1>
+      <p className="mt-2.5 text-[18px] leading-relaxed text-ink-2">{description}</p>
     </div>
   );
 }
 
 function Footer({ onBack, children }: { onBack?: () => void; children: React.ReactNode }) {
   return (
-    <div className="mt-10 flex items-center gap-3">
+    <div className="mt-8 flex items-center gap-3">
       {onBack && (
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="size-4" /> Back
@@ -215,13 +225,13 @@ function StartStep({ profile, tabId, onNext }: { profile: Profile; tabId?: strin
           </div>
         )}
         {preview && (
-          <div className="mt-6 rounded-2xl border border-line bg-surface p-5">
+          <div className="mt-6 rounded-[20px] bg-surface p-5 shadow-card">
             <div className="flex items-center gap-3">
               {preview.profile.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={preview.profile.avatar_url} alt="" className="size-12 rounded-full object-cover" />
               ) : (
-                <div className="size-12 rounded-full bg-black/[.06]" />
+                <div className="size-12 rounded-full bg-sunken" />
               )}
               <div className="min-w-0">
                 <p className="truncate font-semibold">{preview.profile.display_name || "No name found"}</p>
@@ -235,7 +245,7 @@ function StartStep({ profile, tabId, onNext }: { profile: Profile; tabId?: strin
             {preview.links.length > 0 && (
               <ul className="mt-2 flex max-h-56 flex-col gap-1.5 overflow-y-auto">
                 {preview.links.map((l, i) => (
-                  <li key={i} className="flex items-center gap-2 rounded-lg bg-background px-3 py-2 text-sm">
+                  <li key={i} className="k-pop flex items-center gap-2 rounded-[14px] bg-background px-3 py-2 text-sm font-semibold" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
                     <Link2 className="size-3.5 shrink-0 text-muted" aria-hidden />
                     <span className="truncate font-medium">{l.title || l.url}</span>
                   </li>
@@ -257,42 +267,55 @@ function StartStep({ profile, tabId, onNext }: { profile: Profile; tabId?: strin
 
   return (
     <>
-      <StepHeader title="Let's set up your page" description="What will people find on it? This picks a few starting sections. You can change everything later." />
-      <div role="radiogroup" aria-label="What is your page for?" className="grid gap-2.5 sm:grid-cols-2">
-        {INTENTS.map((it) => (
-          <button
-            key={it.value}
-            type="button"
-            role="radio"
-            aria-checked={intent === it.value}
-            onClick={() => setIntent(it.value)}
-            className={cx(
-              "flex flex-col items-start rounded-2xl border p-4 text-left transition-[border-color,box-shadow,transform] active:translate-y-px",
-              intent === it.value ? "border-brand shadow-[0_0_0_3px_rgba(31,92,74,.12)]" : "border-line bg-surface hover:border-line-2",
-            )}
-          >
-            <span className="flex w-full items-center justify-between">
-              <span className="text-[15px] font-semibold">{it.title}</span>
-              {intent === it.value && <Check className="size-4 text-brand" />}
-            </span>
-            <span className="mt-1 text-sm text-muted">{it.description}</span>
-          </button>
-        ))}
-      </div>
+      <StepHeader title="How would you like to start?" description="Pick one. Everything stays editable afterwards." />
       <button
         type="button"
         onClick={() => setMode("import")}
-        className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-dashed border-line p-4 text-left transition-colors hover:border-brand"
+        className="flex w-full items-center gap-3.5 rounded-[28px] bg-surface p-[22px] text-left shadow-card transition-[transform,box-shadow] duration-200 ease-k hover:-translate-y-0.5 hover:shadow-lift"
       >
-        <span className="flex size-9 items-center justify-center rounded-lg bg-brand/[.08] text-brand">
-          <Download className="size-4" />
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-[14px] bg-mint">
+          <Link2 className="size-[22px]" aria-hidden />
         </span>
-        <span>
-          <span className="block text-[15px] font-semibold">Already have a link page?</span>
-          <span className="block text-sm text-muted">Import from Linktree, Beacons or any public page</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[20px] font-bold tracking-[-0.015em]">Already have a link page?</span>
+          <span className="block text-[15px] text-muted">Bring your links from Linktree, Beacons, a portfolio or any public page</span>
         </span>
-        <ArrowRight className="ml-auto size-4 text-muted" />
+        <span className="hidden rounded-full bg-brand-soft px-2.5 py-1 font-mono text-[12px] text-brand-hover sm:inline">Fastest</span>
+        <ArrowRight className="size-4 shrink-0 text-muted" aria-hidden />
       </button>
+      <section aria-labelledby="blank-start" className="mt-3.5 flex flex-col gap-3.5 rounded-[28px] bg-surface p-[22px] shadow-card">
+        <div className="flex items-center gap-3.5">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-[14px] bg-butter">
+            <Plus className="size-[22px]" aria-hidden />
+          </span>
+          <div>
+            <h2 id="blank-start" className="text-[20px] font-bold tracking-[-0.015em]">
+              Start from a blank page
+            </h2>
+            <p className="text-[15px] text-muted">Tell us what the page is for and we add the first cards</p>
+          </div>
+        </div>
+        <div role="radiogroup" aria-label="What is your page for?" className="flex flex-wrap gap-2">
+          {INTENTS.map((it) => (
+            <button
+              key={it.value}
+              type="button"
+              role="radio"
+              aria-checked={intent === it.value}
+              aria-label={`${it.title}: ${it.description}`}
+              onClick={() => setIntent(it.value)}
+              className={cx(
+                "inline-flex h-[34px] items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold transition-colors",
+                intent === it.value ? "bg-foreground text-background" : "bg-sunken hover:bg-line",
+              )}
+            >
+              {intent === it.value && <Check className="size-3.5" aria-hidden />}
+              {it.title}
+            </button>
+          ))}
+        </div>
+        {intent && <p className="text-[14px] text-ink-2">{INTENTS.find((i) => i.value === intent)?.description}</p>}
+      </section>
       <Footer>
         <Button size="lg" disabled={!intent} onClick={() => onNext({ onboarding: { intent, source: "scratch" } })}>
           Continue <ArrowRight className="size-4" />
@@ -369,7 +392,7 @@ function SectionsStep({ profile, tabId, onNext, onBack }: { profile: Profile; ta
           const on = picked.has(st.key);
           return (
             <li key={st.key}>
-              <label className={cx("flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition-colors", on ? "border-brand bg-brand/[.04]" : "border-line bg-surface hover:border-line-2")}>
+              <label className={cx("flex cursor-pointer items-center gap-3 rounded-[20px] p-4 transition-[box-shadow,transform]", on ? "bg-surface shadow-[0_0_0_2px_var(--accent)]" : "bg-surface shadow-card hover:-translate-y-px")}>
                 <input
                   type="checkbox"
                   className="size-4 accent-[var(--accent)]"
@@ -454,7 +477,7 @@ function ClaimStep({ profile, onBack }: { profile: Profile; onBack: () => void }
         onboarding: { completed: true, step: "done" },
       },
       {
-        onSuccess: () => window.location.assign("/dashboard"),
+        onSuccess: () => window.location.assign(publish ? "/onboarding/live" : "/dashboard"),
         onError: (e) => setError(onboardingError(e)),
       },
     );
@@ -478,9 +501,9 @@ function ClaimStep({ profile, onBack }: { profile: Profile; onBack: () => void }
           />
         )}
       </Field>
-      <div className="mt-6 flex items-start justify-between gap-4 rounded-2xl border border-line bg-surface p-4">
+      <div className="mt-6 flex items-center justify-between gap-4 rounded-[20px] bg-surface p-4 shadow-card">
         <div>
-          <p className="text-[15px] font-medium">Publish now</p>
+          <p className="text-[15px] font-bold">Publish now</p>
           <p className="text-sm text-muted">{publish ? "Anyone with the link can see your page." : "Keep it as a draft until you're ready."}</p>
         </div>
         <Switch label="Publish now" checked={publish} onChange={setPublish} />
