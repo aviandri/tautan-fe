@@ -30,7 +30,7 @@ export function SeriesChart({
       const rank = order.indexOf(k);
       const dy = 4 + (rank - (keys.length - 1) / 2) * 14;
       return (
-        <text x={Number(props.x) + 6} y={Number(props.y) + dy} fontSize={12} fill="var(--foreground)">
+        <text x={Number(props.x) + 6} y={Number(props.y) + dy} fontSize={12} fill="var(--ink)">
           {SERIES_V2[k].label}
         </text>
       );
@@ -69,13 +69,13 @@ export function SeriesChart({
             minTickGap={28}
             tickLine={false}
             axisLine={{ stroke: "var(--line)" }}
-            tick={{ fill: "var(--muted)", fontSize: 12 }}
+            tick={{ fill: "var(--ink-3)", fontSize: 12 }}
             tickMargin={8}
           />
-          <YAxis tickFormatter={fmtCompact} allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: "var(--muted)", fontSize: 12 }} width={44} />
+          <YAxis tickFormatter={fmtCompact} allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: "var(--ink-3)", fontSize: 12 }} width={44} />
           <Tooltip
             content={(props) => <Tip {...(props as TooltipContentProps<number, string>)} />}
-            cursor={{ stroke: "var(--muted)", strokeWidth: 1, strokeDasharray: "3 3" }}
+            cursor={{ stroke: "var(--ink-3)", strokeWidth: 1, strokeDasharray: "3 3" }}
             isAnimationActive={false}
           />
           {keys.map((k) => (
@@ -88,7 +88,7 @@ export function SeriesChart({
               strokeWidth={2}
               strokeDasharray={SERIES_V2[k].dash}
               dot={false}
-              activeDot={{ r: 5, stroke: "var(--surface)", strokeWidth: 2 }}
+              activeDot={{ r: 5, stroke: "var(--card)", strokeWidth: 2 }}
               isAnimationActive={false}
               label={endLabel(k)}
             />

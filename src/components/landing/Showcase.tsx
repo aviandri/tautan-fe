@@ -142,7 +142,7 @@ export function QrPoster() {
         {svg ? <div className="h-full w-full [&>svg]:h-full [&>svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} /> : null}
       </div>
       <div className="text-center text-[15px] text-[#1c1a17]/80">Scan for classes and the shop</div>
-      <div className="absolute -right-3 top-6 flex flex-col gap-2 [font-family:var(--font-geist-sans)]">
+      <div className="absolute -right-3 top-6 flex flex-col gap-2 [font-family:var(--font-urbanist)]">
         <span className="rounded-full bg-foreground px-3 py-1 text-xs font-semibold text-background">PNG</span>
         <span className="rounded-full border border-line bg-surface px-3 py-1 text-xs font-semibold text-foreground">SVG</span>
       </div>
