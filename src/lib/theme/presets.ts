@@ -23,7 +23,7 @@ export const PRESETS: Preset[] = [
     button: { style: "fill", radius: 12, color: "#d0106f", text_color: "#ffffff" },
     font: "Fraunces",
     text_color: "#1c1a17",
-    palette: { surfaces: ["#e2efe4", "#e1ebf6", "#f4eac6", "#f5dde2", "#fbe2d0"], accents: ["#d0106f"], ink: "#1c1a17", ink_on_accent: "#ffffff" },
+    palette: { surfaces: ["#d4ecd8", "#d6e6f7", "#f6e6a8", "#f8d3dc", "#fcd9bf"], accents: ["#d0106f"], ink: "#1c1a17", ink_on_accent: "#ffffff" },
     palette_mode: "cycle",
   },
   {
@@ -45,7 +45,7 @@ export const PRESETS: Preset[] = [
     button: { style: "fill", radius: 100, color: "#2f6b3a", text_color: "#ffffff" },
     font: "DM Sans",
     text_color: "#1c3322",
-    palette: { surfaces: ["#d8ead0", "#eaf2c8", "#d2ebe2", "#f2e6c6", "#e3eedf"], accents: ["#2f6b3a"], ink: "#1c3322", ink_on_accent: "#ffffff" },
+    palette: { surfaces: ["#cfe6c3", "#e6f0b0", "#c6e8da", "#f0e0b2", "#dbeccf"], accents: ["#2f6b3a"], ink: "#1c3322", ink_on_accent: "#ffffff" },
     palette_mode: "cycle",
   },
   {
@@ -56,7 +56,7 @@ export const PRESETS: Preset[] = [
     button: { style: "fill", radius: 16, color: "#c2410c", text_color: "#ffffff" },
     font: "Outfit",
     text_color: "#3a1a0c",
-    palette: { surfaces: ["#ffd9c6", "#ffe6b5", "#f8d2d8", "#fde8d4", "#f3dcc0"], accents: ["#c2410c"], ink: "#3a1a0c", ink_on_accent: "#ffffff" },
+    palette: { surfaces: ["#ffcfb8", "#ffe0a3", "#f7c6cf", "#fde0c6", "#f1d2b0"], accents: ["#c2410c"], ink: "#3a1a0c", ink_on_accent: "#ffffff" },
     palette_mode: "cycle",
   },
   {
@@ -67,7 +67,7 @@ export const PRESETS: Preset[] = [
     button: { style: "fill", radius: 100, color: "#0b5c8f", text_color: "#ffffff" },
     font: "Space Grotesk",
     text_color: "#0c2a3a",
-    palette: { surfaces: ["#d2e8f4", "#ccece8", "#e1edf8", "#d6e4ee", "#f1ead6"], accents: ["#0b5c8f"], ink: "#0c2a3a", ink_on_accent: "#ffffff" },
+    palette: { surfaces: ["#c6e2f3", "#bfe7e1", "#d7e6f8", "#cfe0ec", "#f1e6c8"], accents: ["#0b5c8f"], ink: "#0c2a3a", ink_on_accent: "#ffffff" },
     palette_mode: "cycle",
   },
   {
@@ -100,7 +100,7 @@ export const PRESETS: Preset[] = [
     button: { style: "fill", radius: 14, color: "#2f3437", text_color: "#ffffff" },
     font: "Inter",
     text_color: "#1f2123",
-    palette: { surfaces: ["#e3e3de", "#dde5e8", "#e8e1d6", "#e0e7dd", "#ebe3e1"], accents: ["#2f3437"], ink: "#1f2123", ink_on_accent: "#ffffff" },
+    palette: { surfaces: ["#deded8", "#d6e0e4", "#e6ddcf", "#d9e3d5", "#e9dedb"], accents: ["#2f3437"], ink: "#1f2123", ink_on_accent: "#ffffff" },
     palette_mode: "cycle",
   },
 ];

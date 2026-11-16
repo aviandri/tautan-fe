@@ -84,7 +84,6 @@ describe("resolveTheme", () => {
 });
 
 describe("themeToCssVars", () => {
-  const vars = (id: string) => themeToCssVars(themeFromPreset(id)) as Record<string, string>;
   it("maps button styles (single-colour themes)", () => {
     const v = (style: "fill" | "outline" | "shadow") =>
       themeToCssVars(resolveTheme({ preset: "batu", palette_mode: "mono", button: { style, radius: 8, color: "#123456", text_color: "#ffffff" } })) as Record<string, string>;
