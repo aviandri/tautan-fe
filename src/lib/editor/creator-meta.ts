@@ -3,7 +3,7 @@
  */
 import { BadgePercent, CalendarDays, Clapperboard, Handshake, Images, LayoutGrid, MessagesSquare, Mic, ScanSearch, Sparkles } from "lucide-react";
 import type { BlockDataMap, BlockType } from "../types";
-import { COMMUNITY_PLATFORMS, EVENT_STATUSES, LIVE_PLATFORMS, MEDIA_KIT_PLATFORMS, WEEKDAYS } from "../types";
+import { COMMUNITY_PLATFORMS, EVENT_STATUSES, LIVE_PLATFORMS, MEDIA_KIT_PLATFORMS, WEEKDAYS } from "../constants";
 import { CHANNEL_ID_RE, communityUrlError, postPlatform } from "../creator/creator";
 import { moneyError } from "../sell/money";
 import { compact, maxLen, plural, put, required, withSchedule, type BlockMeta, type FieldErrors } from "./meta-core";

@@ -3,7 +3,8 @@
 import { Copy, Plus, X } from "lucide-react";
 import { Button, Field, IconButton, Switch } from "@/components/ui";
 import { browserTz } from "@/lib/editor/sell-meta";
-import { WEEKDAYS, type StoreInfoData, type Weekday } from "@/lib/types";
+import type { StoreInfoData, Weekday } from "@/lib/types";
+import { WEEKDAYS } from "@/lib/constants";
 import { selectCls } from "./sell-fields";
 
 type Slot = StoreInfoData["hours"][number];

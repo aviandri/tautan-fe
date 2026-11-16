@@ -9,14 +9,8 @@ import { COMMUNITY_META, detectCommunity, formatCount, parseCount } from "@/lib/
 import { getMeta, type FieldErrors } from "@/lib/editor/block-meta";
 import { CREATOR_LIMITS, today } from "@/lib/editor/creator-meta";
 import { useEditorData } from "@/lib/editor/queries";
-import {
-  COMMUNITY_PLATFORMS,
-  EVENT_STATUSES,
-  LIVE_PLATFORMS,
-  MEDIA_KIT_PLATFORMS,
-  WEEKDAYS,
-  type BlockDataMap,
-} from "@/lib/types";
+import type { BlockDataMap } from "@/lib/types";
+import { COMMUNITY_PLATFORMS, EVENT_STATUSES, LIVE_PLATFORMS, MEDIA_KIT_PLATFORMS, WEEKDAYS } from "@/lib/constants";
 import { ImageField, ItemsEditor, TextField, UrlField } from "../fields";
 import { FileUploadField, MoreOptions, Segmented } from "../fields-extra";
 import type { FormProps } from "../BlockForm";

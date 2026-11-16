@@ -7,7 +7,7 @@ import { formatMoney } from "@/lib/sell/money";
 import { MARKETPLACES } from "@/lib/sell/platforms";
 import { prettyUrl } from "@/lib/url";
 import type { Block } from "@/lib/types";
-import { Mark } from "./sell/sell-fields";
+import { Mark } from "./sell/mark";
 
 /** After pasting a marketplace link: product card, marketplace card, add to an existing one, or a plain link. */
 export function SellPasteChoice({

@@ -1,0 +1,760 @@
+/* P3-C/D cards, gate stubs, multi-code discount, donate icons. A global sheet (like public.css):
+   one root class "tpx" + data-p parts, so it ships no JS class map. */
+.tpx {
+  text-align: left;
+}
+.tpx [data-p="title"] {
+  margin: 0 0 10px;
+  font-family: var(--t-font-title);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.tpx [data-p="eyebrow"] {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.tpx [data-p="badge"] {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  vertical-align: 2px;
+}
+
+/* ----- text styles ----- */
+.tpx[data-p="textStyle"] {
+  padding: 16px 18px;
+  border-radius: var(--t-card-radius);
+}
+.tpx[data-style="card"] {
+  background: var(--t-block-bg);
+  color: var(--t-block-text);
+  border: 1px solid var(--t-line);
+}
+.tpx[data-style="sticky_note"] {
+  background: #fff3a8;
+  color: #3b3200;
+  border-radius: 4px;
+  box-shadow: 0 10px 18px -12px rgba(0, 0, 0, 0.45);
+  transform: rotate(-1.2deg);
+  font-family: "Comic Sans MS", "Marker Felt", ui-rounded, system-ui, sans-serif;
+}
+.tpx[data-style="speech_bubble"] {
+  position: relative;
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  border-radius: 22px;
+  margin-bottom: 10px;
+}
+.tpx[data-style="speech_bubble"]::after {
+  content: "";
+  position: absolute;
+  left: 28px;
+  bottom: -10px;
+  border: 10px solid transparent;
+  border-top-color: var(--t-btn-bg);
+  border-bottom: 0;
+}
+.tpx[data-style="torn_paper"] {
+  background: #fbf8f1;
+  color: #2b2a26;
+  border-radius: 2px;
+  --tear: 8px;
+  -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / calc(2 * var(--tear)) 100%;
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / calc(2 * var(--tear)) 100%;
+  padding-bottom: calc(16px + var(--tear));
+}
+.tpx[data-style="chalkboard"] {
+  background: #2e3b33;
+  color: #f2f2ea;
+  border: 6px solid #8a6a43;
+  border-radius: 6px;
+  font-family: "Chalkboard SE", "Segoe Print", ui-rounded, system-ui, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* ----- spotlight ----- */
+.tpx[data-p="spotlight"] {
+  padding: 0;
+  overflow: hidden;
+}
+.tpx [data-p="spotMedia"] img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.tpx [data-p="spotBody"] {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px 20px;
+}
+.tpx[data-align="center"] [data-p="spotBody"] {
+  align-items: center;
+  text-align: center;
+}
+.tpx [data-p="spotHeadline"] {
+  margin: 0;
+  font-family: var(--t-font-title);
+  font-size: 1.45rem;
+  line-height: 1.2;
+  font-weight: 800;
+}
+.tpx [data-p="spotText"] {
+  margin: 0;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+.tpx [data-p="spotBtn"] {
+  margin-top: 8px;
+  justify-content: center;
+}
+
+/* ----- marquee (CSS only; still under reduced motion) ----- */
+.tpx[data-p="marquee"] {
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 10px 0;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.tpx[data-p="marquee"][data-style="ribbon"] {
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  border-radius: var(--t-btn-radius);
+}
+.tpx [data-p="mqTrack"] {
+  display: inline-flex;
+  animation: tpx-marquee var(--mq-dur, 24s) linear infinite;
+}
+.tpx[data-dir="right"] [data-p="mqTrack"] {
+  animation-direction: reverse;
+}
+.tpx[data-speed="slow"] {
+  --mq-dur: 40s;
+}
+.tpx[data-speed="fast"] {
+  --mq-dur: 12s;
+}
+.tpx [data-p="mqItem"] {
+  padding-left: 18px;
+}
+.tpx [data-p="mqSep"] {
+  padding-left: 18px;
+  opacity: 0.7;
+}
+@keyframes tpx-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tpx [data-p="mqTrack"] {
+    animation: none;
+  }
+}
+
+/* ----- timeline ----- */
+.tpx [data-p="tlList"] {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tpx [data-p="tlItem"] {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+  padding-bottom: 16px;
+}
+.tpx [data-p="tlItem"]:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 30px;
+  bottom: 2px;
+  border-left: 2px solid var(--t-line);
+}
+.tpx [data-p="tlMark"] {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--t-line);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.tpx[data-style="dotted"] [data-p="tlMark"] {
+  width: 14px;
+  height: 14px;
+  margin: 7px;
+  background: var(--t-line);
+}
+.tpx [data-on] [data-p="tlMark"] {
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  border-color: var(--t-btn-bg);
+}
+.tpx [data-on] [data-p="tlTitle"] {
+  font-weight: 800;
+}
+.tpx [data-p="tlTitle"] {
+  margin: 3px 0 0;
+  font-weight: 650;
+}
+.tpx [data-p="tlDesc"] {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+/* ----- resume ----- */
+.tpx [data-p="cvList"] {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tpx [data-p="cvRole"] {
+  margin: 0;
+  font-weight: 700;
+}
+.tpx [data-p="cvCompany"] {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 10px;
+  margin: 1px 0 0;
+  font-size: 0.92rem;
+}
+.tpx [data-p="cvCompany"] a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tpx [data-p="cvDates"] {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+.tpx [data-p="cvDesc"] {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+/* ----- before / after ----- */
+.tpx[data-p="ba"] {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--t-card-radius);
+  user-select: none;
+  touch-action: pan-y;
+}
+.tpx [data-p="baAfter"] img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.tpx [data-p="baBefore"] {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 calc(100% - var(--pos, 50%)) 0 0);
+}
+.tpx [data-p="baBefore"] img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tpx [data-p="baLine"] {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--pos, 50%);
+  width: 3px;
+  margin-left: -1.5px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+}
+.tpx [data-p="baLine"]::after {
+  content: "‹ ›";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #fff;
+  color: #222;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+.tpx [data-p="baLabel"] {
+  position: absolute;
+  top: 10px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+.tpx [data-side="before"] {
+  left: 10px;
+}
+.tpx [data-side="after"] {
+  right: 10px;
+}
+.tpx [data-p="baRange"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+}
+.tpx [data-p="baRange"]:focus-visible {
+  opacity: 0.001;
+}
+.tpx[data-p="ba"]:has([data-p="baRange"]:focus-visible) [data-p="baLine"]::after {
+  outline: 3px solid var(--t-btn-bg);
+  outline-offset: 2px;
+}
+
+/* ----- map ----- */
+.tpx[data-p="map"] {
+  padding: 0;
+  overflow: hidden;
+}
+.tpx [data-p="mapSvg"] {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 320 / 150;
+}
+.tpx [data-p="mapBg"] {
+  fill: color-mix(in srgb, var(--t-block-text) 6%, var(--t-bg-solid));
+}
+.tpx [data-p="mapRoad"] {
+  stroke: color-mix(in srgb, var(--t-block-text) 14%, transparent);
+  stroke-width: 5;
+  fill: none;
+}
+.tpx [data-p="mapMain"] {
+  stroke: color-mix(in srgb, var(--t-block-text) 22%, transparent);
+  stroke-width: 9;
+  fill: none;
+}
+.tpx [data-p="mapPark"] {
+  fill: color-mix(in srgb, #3f9a5a 28%, transparent);
+}
+.tpx [data-p="mapRiver"] {
+  stroke: color-mix(in srgb, #3b82c4 35%, transparent);
+  stroke-width: 10;
+  fill: none;
+}
+.tpx [data-p="mapPin"] {
+  fill: var(--t-btn-bg);
+}
+.tpx [data-p="mapHalo"] {
+  fill: color-mix(in srgb, var(--t-btn-bg) 22%, transparent);
+}
+.tpx [data-p="mapDot"] {
+  fill: var(--t-btn-text);
+}
+.tpx [data-p="mapInfo"] {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 14px 18px 4px;
+}
+.tpx [data-p="mapIcon"] {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+.tpx [data-p="mapLabel"] {
+  margin: 0;
+  font-weight: 700;
+}
+.tpx [data-p="mapAddr"] {
+  margin: 1px 0 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+.tpx [data-p="mapLinks"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 18px 16px;
+}
+.tpx [data-p="mapBtn"] {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--t-line);
+  border-radius: var(--t-btn-radius);
+  color: inherit;
+  font-size: 0.85rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+.tpx [data-p="mapBtn"]:first-child {
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  border-color: var(--t-btn-bg);
+}
+
+/* ----- discount codes (swipe) ----- */
+.tpx[data-p="codes"] {
+  display: flex;
+  gap: 10px;
+  margin: 2px -4px 0;
+  padding: 2px 4px 6px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+.tpx [data-p="code"] {
+  flex: 0 0 82%;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1.5px dashed var(--t-line);
+  border-radius: calc(var(--t-card-radius) * 0.75);
+}
+.tpx [data-p="code"]:only-child {
+  flex-basis: 100%;
+}
+.tpx [data-p="codeDiscount"] {
+  margin: 0;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+.tpx [data-p="codeDesc"] {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+.tpx [data-p="codeLink"] {
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: inherit;
+}
+.tpx [data-p="codeCount"] {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  opacity: 0.65;
+  text-align: center;
+}
+
+/* ----- donate icons ----- */
+.tpx[data-p="donate"] {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.tpx [data-p="donateLink"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px 0 6px;
+  border-radius: 999px;
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* ----- P3-C engage + gate stubs (shared form parts) ----- */
+.tpx [data-p="sr"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+.tpx [data-p="trap"] {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.tpx form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+.tpx [data-p="row"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+/* The input keeps at least 220px and takes nearly all spare width; a button whose label doesn't
+   fit beside it wraps to its own full-width line (flex-grow) instead of squeezing the input. */
+.tpx [data-p="row"] [data-p="input"] {
+  flex: 999 1 220px;
+  min-width: 0;
+}
+/* .tp-btn is width:100% (full-width page buttons); in a row it must size to its label. */
+.tpx [data-p="row"] [data-p="submit"] {
+  flex: 1 0 auto;
+  width: auto;
+  padding-inline: 16px;
+}
+.tpx [data-p="input"] {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--t-line);
+  border-radius: calc(var(--t-btn-radius) * 0.6);
+  background: var(--t-bg-solid);
+  color: var(--t-text);
+  font: inherit;
+}
+.tpx textarea[data-p="input"] {
+  resize: vertical;
+}
+.tpx [data-p="input"]:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--t-btn-bg) 35%, transparent);
+  outline-offset: 1px;
+}
+.tpx [data-p="submit"] {
+  justify-content: center;
+  flex: none;
+}
+.tpx [data-p="submit"][disabled] {
+  opacity: 0.6;
+}
+.tpx [data-p="check"] {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.85rem;
+}
+.tpx [data-p="fine"],
+.tpx [data-p="fineLink"] {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.7;
+  color: inherit;
+}
+.tpx [data-p="status"]:empty {
+  display: none;
+}
+.tpx [data-p="status"] {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.tpx [data-p="status"][data-tone="error"] {
+  color: #c0392b;
+}
+.tpx [data-p="desc"] {
+  margin: 0 0 10px;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+.tpx [data-p="done"] {
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tpx [data-p="done"] > p {
+  margin: 0;
+  font-weight: 650;
+}
+.tpx [data-p="download"],
+.tpx [data-p="followLink"] {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--t-btn-radius);
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  font-weight: 700;
+  text-decoration: none;
+}
+.tpx [data-p="followLink"] {
+  background: transparent;
+  color: inherit;
+  border: 1px solid var(--t-line);
+}
+
+/* poll */
+.tpx [data-p="pollOptions"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.tpx [data-p="pollOption"] {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--t-line);
+  border-radius: calc(var(--t-btn-radius) * 0.6);
+  cursor: pointer;
+}
+.tpx [data-p="pollOption"]:has(input:checked) {
+  border-color: var(--t-btn-bg);
+  box-shadow: inset 0 0 0 1px var(--t-btn-bg);
+}
+.tpx [data-p="pollOption"] input {
+  accent-color: var(--t-btn-bg);
+}
+.tpx [data-p="pollResults"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tpx [data-p="pollRow"] {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: calc(var(--t-btn-radius) * 0.6);
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--t-line);
+}
+.tpx [data-p="pollRow"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: var(--pct, 0%);
+  background: color-mix(in srgb, var(--t-btn-bg) 22%, transparent);
+  z-index: -1;
+}
+.tpx [data-p="pollRow"][data-mine] {
+  font-weight: 700;
+}
+.tpx [data-p="pollPct"] {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* ask me */
+.tpx [data-p="qa"] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--t-line);
+}
+.tpx [data-p="qaItem"] dt {
+  font-weight: 700;
+}
+.tpx [data-p="qaItem"] dd {
+  margin: 3px 0 0;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+/* lead magnet / giveaway */
+.tpx [data-p="leadCover"] {
+  margin: -16px -18px 14px;
+}
+.tpx [data-p="leadCover"] img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--t-card-radius) var(--t-card-radius) 0 0;
+}
+.tpx [data-p="prize"] {
+  margin: 0 0 8px;
+  font-weight: 650;
+}
+.tpx [data-p="winner"] {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: calc(var(--t-btn-radius) * 0.6);
+  background: color-mix(in srgb, var(--t-btn-bg) 15%, transparent);
+}
+.tpx [data-p="steps"] {
+  margin: 0 0 10px;
+  padding-left: 20px;
+  line-height: 1.7;
+}
+.tpx [data-p="steps"] a {
+  color: inherit;
+  font-weight: 650;
+}
+
+/* gate stub */
+.tpx[data-p="locked"] {
+  text-align: center;
+}
+.tpx [data-p="lockHead"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.tpx [data-p="lockHead"] [data-p="title"] {
+  margin: 0;
+}
+.tpx [data-p="lockIcon"] {
+  width: 26px;
+  height: 26px;
+  opacity: 0.75;
+}
+.tpx[data-p="locked"] form {
+  align-items: stretch;
+}
+.tpx[data-p="locked"] [data-p="followLink"] {
+  align-self: center;
+}

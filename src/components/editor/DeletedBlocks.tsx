@@ -26,16 +26,16 @@ export function DeletedBlocks({ tabs }: { tabs: Tab[] }) {
   };
 
   return (
-    <section className="mt-2 rounded-2xl border border-line">
+    <section className="mt-1 rounded-[20px] bg-surface/60 shadow-card">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm font-medium text-muted hover:text-foreground"
+        className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm font-semibold text-muted hover:text-foreground"
       >
         <Trash2 className="size-4" aria-hidden />
         Recently deleted
-        <span className="rounded-full bg-black/[.06] px-1.5 text-[12px] tabular-nums">{q.isLoading ? "…" : items.length}</span>
+        <span className="rounded-full bg-sunken px-2 font-mono text-[12px]">{q.isLoading ? "…" : items.length}</span>
         <ChevronDown className={cx("ml-auto size-4 transition-transform", open && "rotate-180")} />
       </button>
       {open && (

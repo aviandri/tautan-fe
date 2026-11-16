@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Button, Field, Input } from "@/components/ui";
 import { parseCoords } from "@/lib/editor/layout-meta";
 import type { BlockDataMap } from "@/lib/types";
-import { MARQUEE_SPEEDS } from "@/lib/types";
+import { MARQUEE_SPEEDS } from "@/lib/constants";
 import { ImageField, ItemsEditor, TextField, UrlField } from "../fields";
 import { MoreOptions, Segmented, ToggleRow } from "../fields-extra";
 import type { FormProps } from "../BlockForm";

@@ -32,7 +32,7 @@ import { SELL_META } from "./sell-meta";
 import { CREATOR_META } from "./creator-meta";
 import { ENGAGE_META } from "./engage-meta";
 import { LAYOUT_META } from "./layout-meta";
-import { DONATE_PLATFORMS, TEXT_STYLES } from "../types";
+import { DONATE_PLATFORMS, TEXT_STYLES } from "../constants";
 import { prettyUrl, urlError } from "../url";
 
 export type { BlockMeta, FieldErrors } from "./meta-core";

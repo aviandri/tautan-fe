@@ -1,0 +1,11 @@
+{
+  "name": "tautan-e2e",
+  "private": true,
+  "type": "module",
+  "description": "End-to-end journey test against a running Tautan FE + BE",
+  "scripts": {
+    "journey": "node journey.mjs",
+    "journey:watch": "HEADED=1 SLOWMO=350 node journey.mjs"
+  },
+  "dependencies": { "playwright": "1.49.1" }
+}

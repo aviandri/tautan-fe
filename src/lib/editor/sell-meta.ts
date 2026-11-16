@@ -11,12 +11,12 @@ import type {
   ProductData,
   ShopItem,
 } from "../types";
-import { COURIERS, MARKETPLACE_PLATFORMS, TIP_PLATFORMS, WA_ORDER_FIELDS } from "../types";
+import { COURIERS, MARKETPLACE_PLATFORMS, TIP_PLATFORMS, WA_ORDER_FIELDS } from "../constants";
 import { urlError } from "../url";
 import { compact, maxLen, plural, put, required, withSchedule, type BlockMeta, type FieldErrors } from "./meta-core";
 import { moneyError } from "../sell/money";
 import { e164Error } from "../sell/phone";
-import { detectMarketplace, detectTipPlatform, MARKETPLACES, TIPS } from "../sell/platforms";
+import { detectMarketplace, detectTipPlatform, MARKETPLACES, TIPS } from "../sell/platforms-meta";
 
 export const LIMITS = {
   images: 8,

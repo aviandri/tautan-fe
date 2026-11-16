@@ -4,7 +4,7 @@
  */
 import { Gift, HelpCircle, Magnet, Vote } from "lucide-react";
 import type { BlockDataMap } from "../types";
-import { SHOW_RESULTS, SUBSCRIBE_MODES } from "../types";
+import { SHOW_RESULTS, SUBSCRIBE_MODES } from "../constants";
 import { compact, maxLen, plural, put, required, withSchedule, type BlockMeta, type FieldErrors } from "./meta-core";
 import { httpUrlError, imageUrlError, newItemId } from "./sell-meta";
 

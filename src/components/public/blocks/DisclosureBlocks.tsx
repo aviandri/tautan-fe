@@ -1,3 +1,4 @@
+import { LockedCard } from "./GateBlocks";
 import { ChevronDown } from "../icons";
 import type { Block, BlockOf } from "@/lib/types";
 import { safeHref, safeImageSrc } from "@/lib/safe-url";
@@ -19,14 +20,15 @@ function BlockHead({ heading, description }: { heading?: string; description?: s
 }
 
 export function FolderBlock({ block, children, env }: { block: BlockOf<"folder">; children: Block[]; env: PageEnv }) {
-  const links = children.filter((c): c is BlockOf<"link"> => c.type === "link");
+  const links = children.filter((c) => c.type === "link");
+  // A gated link inside an open folder arrives as data:null: show its own lock stub (LinkBlock
+  // would read data.title). Children of a gated folder never get here: the folder is the stub.
+  const item = (c: Block) => (c.locked || c.data == null ? <LockedCard key={c.id} block={c} /> : <LinkBlock key={c.id} block={c as BlockOf<"link">} env={env} />);
   if (block.data.style === "inline") {
     return (
       <section className={s.folderInline} aria-label={block.data.title || "Links"}>
         {block.data.title ? <div className={s.blockHeading}>{block.data.title}</div> : null}
-        {links.map((c) => (
-          <LinkBlock key={c.id} block={c} env={env} />
-        ))}
+        {links.map(item)}
       </section>
     );
   }
@@ -40,7 +42,7 @@ export function FolderBlock({ block, children, env }: { block: BlockOf<"folder">
         </span>
       </summary>
       <div className={s.folderBody}>
-        {links.length ? links.map((c) => <LinkBlock key={c.id} block={c} env={env} />) : <p className={s.empty}>No links yet</p>}
+        {links.length ? links.map(item) : <p className={s.empty}>No links yet</p>}
       </div>
     </details>
   );

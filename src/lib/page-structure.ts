@@ -51,7 +51,8 @@ export type ListItem =
 export function groupBlocks(blocks: Block[]): ListItem[] {
   const out: ListItem[] = [];
   for (const b of blocks) {
-    const layout = b.type === "link" ? b.data.layout : undefined;
+    // a gated card arrives as data:null (locked stub): never group it
+    const layout = b.type === "link" && b.data ? b.data.layout : undefined;
     if (b.type === "link" && layout && GROUPED.has(layout)) {
       const last = out[out.length - 1];
       if (last?.kind === "group" && last.layout === layout) last.blocks.push(b);
@@ -66,5 +67,8 @@ export function groupBlocks(blocks: Block[]): ListItem[] {
  * viewport (header + about six cards). It loads eagerly with fetchpriority=high and a preload.
  */
 export function firstImageId(top: Block[]): string | undefined {
-  return top.slice(0, 6).find((b) => b.type === "image" || b.type === "video" || (b.type === "product" && b.data.images.length > 0))?.id;
+  return top
+    .slice(0, 6)
+    .filter((b) => !b.locked) // locked stubs (data:null) have no image to prioritise
+    .find((b) => b.type === "image" || b.type === "video" || (b.type === "product" && (b.data?.images?.length ?? 0) > 0) || (b.type === "spotlight" && !!b.data?.image_url))?.id;
 }
