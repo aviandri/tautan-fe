@@ -436,19 +436,6 @@ export const BlockSchema = z.discriminatedUnion(
   ) as unknown as [z.ZodObject, ...z.ZodObject[]],
 ) as unknown as z.ZodType<Block>;
 
-// ---------- Analytics ----------
-
-export type AnalyticsRange = "7d" | "30d" | "90d";
-
-export interface AnalyticsSummary {
-  views: number;
-  clicks: number;
-  ctr: number;
-  series: { date: string; views: number; clicks: number }[];
-  top_links: { block_id: string; title: string; clicks: number }[];
-  top_referrers: { referrer: string; count: number }[];
-}
-
 // ---------- Contact submissions ----------
 
 export interface ContactSubmission {

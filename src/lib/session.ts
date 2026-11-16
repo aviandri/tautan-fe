@@ -10,7 +10,6 @@ export const qk = {
   me: ["me"] as const,
   editor: ["editor"] as const,
   submissions: ["contact-submissions"] as const,
-  analytics: (range: string) => ["analytics", range] as const,
 };
 
 /**
