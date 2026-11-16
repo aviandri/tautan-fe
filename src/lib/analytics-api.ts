@@ -68,6 +68,8 @@ export interface BlockStat {
   is_visible: boolean;
   deleted: boolean;
   created_at: string;
+  /** P3: clicks per meta.action, e.g. {"buy": 2, "marketplace:shopee": 1}; {} when none */
+  actions?: Record<string, number>;
 }
 export interface BlockSeries {
   range: RangeInfo;

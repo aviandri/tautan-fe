@@ -3,13 +3,19 @@
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDownRight, ArrowUpRight, Download, X } from "lucide-react";
+import { Download, TrendingUp, X } from "lucide-react";
 import { RANGES, analyticsApi, browserTz, type AnalyticsQuery, type Dimension, type Interval, type Overview, type Totals } from "@/lib/analytics-api";
 import { DIMENSION_LABELS, RANGE_LABELS, allowedIntervals, parseQuery, serializeQuery, valueLabel, withFilter } from "@/lib/analytics-query";
 import { SERIES_V2, fmtBucket, fmtChange, fmtInt, fmtPct, fmtRangeLabel } from "../format";
 import { SeriesChart } from "./SeriesChart";
 import { BreakdownPanel } from "./BreakdownPanel";
 import { BlocksPanel } from "./BlocksPanel";
+
+// Kartu "Insights": a plain-language highlight, pastel KPI tiles vs the previous period, the chart,
+// and top cards + sources side by side (click a row to filter the whole page). All state is in the URL.
+
+const SEG_RANGES = ["today", "7d", "30d", "90d"] as const;
+const SEG_LABEL: Record<(typeof SEG_RANGES)[number], string> = { today: "Today", "7d": "7 days", "30d": "30 days", "90d": "90 days" };
 
 export function AnalyticsV2() {
   const router = useRouter();
@@ -40,15 +46,36 @@ export function AnalyticsV2() {
   const filters = Object.entries(q.filters ?? {}) as [Dimension, string][];
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Analytics</h1>
-          <p className="mt-1 text-sm text-muted">
-            {overview.data ? `${fmtRangeLabel(overview.data.range.from, overview.data.range.to)} · ${overview.data.range.tz}` : "Visits, clicks and where they come from."}
-          </p>
+    <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-3.5">
+      <header className="flex flex-wrap items-center gap-3">
+        <div className="mr-auto">
+          <h1 className="text-[36px] font-semibold leading-none tracking-[-0.045em] text-foreground">Insights</h1>
+          {overview.data ? (
+            <p className="mt-1.5 text-sm text-muted">
+              {fmtRangeLabel(overview.data.range.from, overview.data.range.to)} · {overview.data.range.tz}
+            </p>
+          ) : null}
         </div>
-        <Toolbar q={q} onChange={go} onExport={() => exportCsv("series")} interval={overview.data?.range.interval} />
+        {filters.map(([d, v]) => (
+          <button
+            key={d}
+            type="button"
+            onClick={() => go(withFilter(q, d, undefined))}
+            className="inline-flex h-[34px] items-center gap-1.5 rounded-full bg-brand-soft px-3.5 text-sm font-semibold text-brand-hover transition-colors hover:bg-[#f7cfe0]"
+            aria-label={`Remove filter ${DIMENSION_LABELS[d]}: ${valueLabel(d, v)}`}
+          >
+            {DIMENSION_LABELS[d]}: {valueLabel(d, v)}
+            <X className="h-3 w-3" strokeWidth={3} aria-hidden />
+          </button>
+        ))}
+        <RangeControl q={q} onChange={go} />
+        <button
+          type="button"
+          onClick={() => exportCsv("series")}
+          className="inline-flex h-[38px] items-center gap-1.5 rounded-full bg-surface px-4 text-sm font-semibold text-foreground shadow-[inset_0_0_0_1px_var(--line-2)] transition hover:shadow-[inset_0_0_0_1px_var(--ink)] active:scale-[0.97]"
+        >
+          <Download className="h-4 w-4" aria-hidden /> Export CSV
+        </button>
       </header>
 
       {exportError ? (
@@ -57,161 +84,159 @@ export function AnalyticsV2() {
         </p>
       ) : null}
 
-      {filters.length ? (
-        <div className="flex flex-wrap items-center gap-2" aria-label="Active filters">
-          <span className="text-sm text-muted">Filtered by</span>
-          {filters.map(([d, v]) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => go(withFilter(q, d, undefined))}
-              className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-sm text-foreground hover:border-muted"
-              aria-label={`Remove filter ${DIMENSION_LABELS[d]}: ${valueLabel(d, v)}`}
-            >
-              <span className="text-muted">{DIMENSION_LABELS[d]}:</span> {valueLabel(d, v)}
-              <X className="h-3.5 w-3.5" aria-hidden />
-            </button>
-          ))}
-          <button type="button" onClick={() => go({ ...q, filters: undefined })} className="min-h-8 px-2 text-sm text-muted underline-offset-2 hover:underline">
-            Clear all
-          </button>
-        </div>
-      ) : null}
-
       {overview.isError && !overview.data ? (
-        <div className="rounded-xl border border-line bg-surface py-10 text-center">
-          <p className="text-sm text-foreground">Couldn&apos;t load analytics.</p>
-          <button type="button" onClick={() => overview.refetch()} className="mt-3 min-h-10 rounded-lg border border-line px-4 text-sm font-medium hover:border-muted">
+        <div className="rounded-k-l bg-surface py-10 text-center shadow-card">
+          <p className="text-sm text-foreground">Couldn&apos;t load your insights.</p>
+          <button type="button" onClick={() => overview.refetch()} className="mt-3 inline-flex h-[38px] items-center rounded-full bg-sunken px-4 text-sm font-semibold hover:bg-[#e1e1dd]">
             Try again
           </button>
         </div>
       ) : !overview.data ? (
-        <div className="flex animate-pulse flex-col gap-6" aria-label="Loading analytics">
+        <div className="flex animate-pulse flex-col gap-3.5" aria-label="Loading insights">
+          <div className="h-[64px] rounded-[24px] bg-sunken" />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             {Array.from({ length: 5 }, (_, i) => (
-              <div key={i} className="h-[104px] rounded-xl border border-line bg-surface" />
+              <div key={i} className="h-[118px] rounded-[24px] bg-sunken" />
             ))}
           </div>
-          <div className="h-[380px] rounded-xl border border-line bg-surface" />
+          <div className="h-[380px] rounded-k-l bg-sunken" />
         </div>
       ) : (
-        <div className={`flex flex-col gap-6 transition-opacity ${overview.isPlaceholderData ? "opacity-60" : ""}`} aria-busy={overview.isFetching}>
+        <div className={`flex flex-col gap-3.5 transition-opacity ${overview.isPlaceholderData ? "opacity-60" : ""}`} aria-busy={overview.isFetching}>
+          <Highlight data={overview.data} rangeKey={q.range} />
           <Kpis data={overview.data} />
-          <SeriesCard data={overview.data} />
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <BreakdownPanel
-          q={q}
-          dimension={dimension}
-          onDimension={setDimension}
-          onFilter={(d, v) => go(withFilter(q, d, q.filters?.[d] === v ? undefined : v))}
-          onExport={() => exportCsv("breakdown")}
-        />
-        <BlocksPanel q={q} onExport={() => exportCsv("blocks")} />
+      <div className="flex flex-wrap gap-3">
+        <div className="min-w-0 flex-[2_1_600px]">{overview.data ? <SeriesCard data={overview.data} q={q} onChange={go} /> : null}</div>
+        <div className="flex min-w-0 flex-[1_1_340px] flex-col gap-3">
+          <BlocksPanel q={q} onExport={() => exportCsv("blocks")} />
+          <BreakdownPanel
+            q={q}
+            dimension={dimension}
+            onDimension={setDimension}
+            onFilter={(d, v) => go(withFilter(q, d, q.filters?.[d] === v ? undefined : v))}
+            onExport={() => exportCsv("breakdown")}
+          />
+        </div>
       </div>
     </div>
   );
 }
 
-function Toolbar({
-  q,
-  onChange,
-  onExport,
-  interval,
-}: {
-  q: AnalyticsQuery;
-  onChange: (q: AnalyticsQuery) => void;
-  onExport: () => void;
-  interval?: Interval;
-}) {
-  const allowed = allowedIntervals(q);
+function RangeControl({ q, onChange }: { q: AnalyticsQuery; onChange: (q: AnalyticsQuery) => void }) {
   const today = new Date().toISOString().slice(0, 10);
   const monthAgo = new Date(Date.now() - 29 * 864e5).toISOString().slice(0, 10);
+  const set = (range: AnalyticsQuery["range"]) =>
+    onChange(range === "custom" ? { ...q, range, from: q.from ?? monthAgo, to: q.to ?? today } : { ...q, range, from: undefined, to: undefined });
+  const more = RANGES.filter((r) => !(SEG_RANGES as readonly string[]).includes(r));
+  const inMore = more.includes(q.range as (typeof more)[number]);
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <label className="sr-only" htmlFor="range">
-        Date range
-      </label>
-      <select
-        id="range"
-        value={q.range}
-        onChange={(e) => {
-          const range = e.target.value as AnalyticsQuery["range"];
-          onChange(range === "custom" ? { ...q, range, from: q.from ?? monthAgo, to: q.to ?? today } : { ...q, range, from: undefined, to: undefined });
-        }}
-        className="min-h-10 rounded-lg border border-line bg-surface px-3 text-sm font-medium"
-      >
-        {RANGES.map((r) => (
-          <option key={r} value={r}>
-            {RANGE_LABELS[r]}
-          </option>
+    <div className="flex max-w-full flex-wrap items-center gap-2">
+      <div role="radiogroup" aria-label="Date range" className="inline-flex max-w-full gap-1 overflow-x-auto rounded-full bg-sunken p-1 [scrollbar-width:none]">
+        {SEG_RANGES.map((r) => (
+          <button
+            key={r}
+            type="button"
+            role="radio"
+            aria-checked={q.range === r}
+            onClick={() => set(r)}
+            className={`h-9 shrink-0 whitespace-nowrap rounded-full px-4 text-sm font-semibold transition ${q.range === r ? "bg-surface text-foreground shadow-[0_1px_2px_rgba(0,0,0,.08)]" : "text-ink-2 hover:text-foreground"}`}
+          >
+            {SEG_LABEL[r]}
+          </button>
         ))}
-      </select>
+        <label className="relative shrink-0">
+          <span className="sr-only">More ranges</span>
+          <select
+            value={inMore ? q.range : ""}
+            onChange={(e) => e.target.value && set(e.target.value as AnalyticsQuery["range"])}
+            className={`h-9 cursor-pointer appearance-none rounded-full bg-transparent pl-4 pr-8 text-sm font-semibold ${inMore ? "bg-surface text-foreground shadow-[0_1px_2px_rgba(0,0,0,.08)]" : "text-ink-2"}`}
+          >
+            <option value="">More</option>
+            {more.map((r) => (
+              <option key={r} value={r}>
+                {RANGE_LABELS[r]}
+              </option>
+            ))}
+          </select>
+          <span aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
+            ▾
+          </span>
+        </label>
+      </div>
       {q.range === "custom" ? (
         <div className="flex items-center gap-1.5 text-sm">
           <label className="sr-only" htmlFor="from">
             From
           </label>
-          <input id="from" type="date" max={q.to ?? today} value={q.from ?? ""} onChange={(e) => e.target.value && onChange({ ...q, from: e.target.value })} className="min-h-10 rounded-lg border border-line bg-surface px-2" />
+          <input id="from" type="date" max={q.to ?? today} value={q.from ?? ""} onChange={(e) => e.target.value && onChange({ ...q, from: e.target.value })} className="h-[38px] rounded-k-s bg-background px-3 shadow-[inset_0_0_0_1px_var(--line)]" />
           <span className="text-muted">to</span>
           <label className="sr-only" htmlFor="to">
             To
           </label>
-          <input id="to" type="date" min={q.from} max={today} value={q.to ?? ""} onChange={(e) => e.target.value && onChange({ ...q, to: e.target.value })} className="min-h-10 rounded-lg border border-line bg-surface px-2" />
+          <input id="to" type="date" min={q.from} max={today} value={q.to ?? ""} onChange={(e) => e.target.value && onChange({ ...q, to: e.target.value })} className="h-[38px] rounded-k-s bg-background px-3 shadow-[inset_0_0_0_1px_var(--line)]" />
         </div>
       ) : null}
-      <div role="radiogroup" aria-label="Interval" className="flex rounded-lg border border-line bg-surface p-1">
-        {(["hour", "day", "week"] as Interval[]).map((i) => {
-          const on = (q.interval ?? interval) === i;
-          return (
-            <button
-              key={i}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              disabled={!allowed.includes(i)}
-              onClick={() => onChange({ ...q, interval: i })}
-              className={`min-h-8 rounded-md px-2.5 text-sm font-medium capitalize transition disabled:opacity-30 ${on ? "bg-foreground text-background" : "text-muted hover:text-foreground"}`}
-            >
-              {i}
-            </button>
-          );
-        })}
-      </div>
-      <button type="button" onClick={onExport} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-sm font-medium hover:border-muted">
-        <Download className="h-4 w-4" aria-hidden /> Export CSV
-      </button>
     </div>
   );
 }
 
-const KPI: { key: keyof Totals; label: string; fmt: (n: number) => string; swatch?: string; hint?: string }[] = [
-  { key: "visitors", label: "Visitors", fmt: fmtInt, swatch: SERIES_V2.visitors.color },
-  { key: "views", label: "Views", fmt: fmtInt, swatch: SERIES_V2.views.color },
-  { key: "clicks", label: "Clicks", fmt: fmtInt, swatch: SERIES_V2.clicks.color },
-  { key: "ctr", label: "Click-through", fmt: fmtPct, hint: "clicks ÷ views" },
-  { key: "engagement", label: "Engagement", fmt: fmtPct, hint: "visitors who clicked" },
+/** One plain-language line about the period: the best bucket and where taps went. */
+export function highlightText(data: Overview, rangeKey: string): string {
+  if (!data.totals.views && !data.totals.clicks) return "No visits in this period yet. Share your page link or QR code and the first ones will show up here.";
+  const best = data.series.reduce<Overview["series"][number] | null>((b, p) => (!b || p.visitors > b.visitors ? p : b), null);
+  const interval = data.range.interval;
+  const unit = interval === "hour" ? "hour" : interval === "week" ? "week" : "day";
+  let when = "";
+  if (best && best.visitors > 0) {
+    if (interval === "hour") when = fmtBucket(best.t, "hour", true);
+    else if (interval === "week") when = `The week of ${fmtBucket(best.t, "day")}`;
+    else if (rangeKey === "7d" || rangeKey === "today" || rangeKey === "yesterday")
+      when = new Intl.DateTimeFormat("en-GB", { weekday: "long", timeZone: "UTC" }).format(new Date(`${best.t.slice(0, 10)}T00:00:00Z`));
+    else when = fmtBucket(best.t, "day", true);
+  }
+  const head = when ? `${when} was your best ${unit}: ${fmtInt(best!.visitors)} visitor${best!.visitors === 1 ? "" : "s"} and ${fmtInt(best!.clicks)} tap${best!.clicks === 1 ? "" : "s"}.` : `${fmtInt(data.totals.visitors)} visitors so far.`;
+  const tail = data.top_link && data.top_link.clicks > 0 ? ` Most taps went to “${data.top_link.title}”.` : "";
+  return head + tail;
+}
+
+function Highlight({ data, rangeKey }: { data: Overview; rangeKey: string }) {
+  return (
+    <div className="flex items-center gap-3.5 rounded-[24px] bg-foreground px-5 py-4 text-white">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-brand" aria-hidden>
+        <TrendingUp className="h-5 w-5" strokeWidth={2.2} />
+      </span>
+      <p className="flex-1 text-base font-semibold">{highlightText(data, rangeKey)}</p>
+    </div>
+  );
+}
+
+const KPI: { key: keyof Totals; label: string; fmt: (n: number) => string; tile: string; hint?: string; points?: boolean }[] = [
+  { key: "visitors", label: "Unique visitors", fmt: fmtInt, tile: "bg-blush" },
+  { key: "views", label: "Page views", fmt: fmtInt, tile: "bg-sky" },
+  { key: "clicks", label: "Card taps", fmt: fmtInt, tile: "bg-butter" },
+  { key: "ctr", label: "Tap rate", fmt: fmtPct, tile: "bg-mint", hint: "taps ÷ page views", points: true },
+  { key: "engagement", label: "Visitors who tapped", fmt: fmtPct, tile: "bg-peach", hint: "share of visitors who tapped a card", points: true },
 ];
 
 function Kpis({ data }: { data: Overview }) {
   return (
     <section aria-label="Totals" className="grid grid-cols-2 gap-3 md:grid-cols-5">
       {KPI.map((k) => {
-        const ch = fmtChange(data.change[k.key]);
+        const prev = data.previous[k.key];
+        // rates read better as a change in points ("+3.1 pts") than as a % of a %
+        const ch = k.points ? pointsChange(data.totals[k.key], prev) : fmtChange(data.change[k.key]);
+        const tone = ch.dir === "up" ? "text-ok" : ch.dir === "down" ? "text-[#a3392b]" : "text-ink-2";
         return (
-          <div key={k.key} className="rounded-xl border border-line bg-surface p-4">
-            <div className="flex items-center gap-1.5 text-sm text-muted" title={k.hint}>
-              {k.swatch ? <span className="h-2 w-2 rounded-full" style={{ background: k.swatch }} aria-hidden /> : null}
-              {k.label}
-            </div>
-            <div className="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">{k.fmt(data.totals[k.key])}</div>
-            <div className="mt-1 flex items-center gap-1 text-xs text-muted">
-              {ch.dir === "up" ? <ArrowUpRight className="h-3.5 w-3.5" aria-hidden /> : ch.dir === "down" ? <ArrowDownRight className="h-3.5 w-3.5" aria-hidden /> : null}
-              <span className="font-mono tabular-nums text-foreground">{ch.text}</span>
-              <span>vs previous {k.fmt(data.previous[k.key])}</span>
-            </div>
+          <div key={k.key} className={`flex flex-col gap-1 rounded-[24px] p-[18px] ${k.tile}`} title={k.hint}>
+            <span className="text-[13px] font-semibold text-ink-2">{k.label}</span>
+            <b className="text-[36px] font-bold leading-[1.1] tracking-[-0.035em] text-foreground tabular-nums">{k.fmt(data.totals[k.key])}</b>
+            <span className={`font-mono text-xs font-medium ${tone}`}>
+              {ch.text}
+              <span className="text-ink-2"> vs {k.fmt(prev)}</span>
+            </span>
           </div>
         );
       })}
@@ -219,55 +244,65 @@ function Kpis({ data }: { data: Overview }) {
   );
 }
 
-function SeriesCard({ data }: { data: Overview }) {
+function pointsChange(now: number, prev: number): { text: string; dir: "up" | "down" | "flat" | "new" } {
+  const d = (now - prev) * 100;
+  if (Math.abs(d) < 0.05) return { text: "±0 pts", dir: "flat" };
+  return { text: `${d > 0 ? "+" : ""}${d.toFixed(1)} pts`, dir: d > 0 ? "up" : "down" };
+}
+
+function SeriesCard({ data, q, onChange }: { data: Overview; q: AnalyticsQuery; onChange: (q: AnalyticsQuery) => void }) {
   const [view, setView] = useState<"chart" | "table">("chart");
-  const keys = ["visitors", "views", "clicks"] as const;
+  const keys = ["visitors", "clicks"] as const;
   const empty = data.totals.views === 0 && data.totals.clicks === 0;
+  const allowed = allowedIntervals(q);
+  const interval = q.interval ?? data.range.interval;
   return (
-    <section className="rounded-xl border border-line bg-surface p-5" aria-labelledby="series-h">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 id="series-h" className="text-base font-semibold text-foreground">
-            Visitors, views and clicks
-          </h2>
-          <p className="text-xs text-muted">
-            Per {data.range.interval}
-            {data.top_link ? ` · top link: ${data.top_link.title} (${fmtInt(data.top_link.clicks)} clicks)` : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <ul className="flex items-center gap-4 text-sm text-muted" aria-label="Legend">
-            {keys.map((k) => (
-              <li key={k} className="flex items-center gap-2">
-                <svg width="16" height="4" aria-hidden>
-                  <line x1="0" y1="2" x2="16" y2="2" stroke={SERIES_V2[k].color} strokeWidth="2" strokeDasharray={SERIES_V2[k].dash} />
-                </svg>
-                {SERIES_V2[k].label}
-              </li>
-            ))}
-          </ul>
-          <div role="radiogroup" aria-label="Display" className="flex rounded-md bg-black/5 p-0.5 text-xs">
-            {(["chart", "table"] as const).map((v) => (
-              <button key={v} type="button" role="radio" aria-checked={view === v} onClick={() => setView(v)} className={`min-h-8 rounded px-2.5 font-medium capitalize ${view === v ? "bg-surface text-foreground shadow-sm" : "text-muted"}`}>
-                {v}
+    <section className="flex h-full flex-col gap-3 rounded-k-l bg-surface p-5 shadow-card" aria-labelledby="series-h">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <h2 id="series-h" className="mr-auto text-xl font-bold tracking-[-0.015em] text-foreground">
+          Visitors and taps per {data.range.interval}
+        </h2>
+        <ul className="flex items-center gap-3.5 text-[13px] font-semibold" aria-label="Legend">
+          {keys.map((k) => (
+            <li key={k} className="flex items-center gap-1.5">
+              <i className="h-[3px] w-3.5 rounded-full" style={{ background: SERIES_V2[k].color }} aria-hidden />
+              {SERIES_V2[k].label}
+            </li>
+          ))}
+        </ul>
+        <div role="radiogroup" aria-label="Interval" className="inline-flex gap-1 rounded-full bg-sunken p-1">
+          {(["hour", "day", "week"] as Interval[])
+            .filter((i) => allowed.includes(i))
+            .map((i) => (
+              <button
+                key={i}
+                type="button"
+                role="radio"
+                aria-checked={interval === i}
+                onClick={() => onChange({ ...q, interval: i })}
+                className={`h-8 rounded-full px-3.5 text-[13px] font-semibold capitalize ${interval === i ? "bg-surface text-foreground shadow-[0_1px_2px_rgba(0,0,0,.08)]" : "text-ink-2"}`}
+              >
+                {i}
               </button>
             ))}
-          </div>
         </div>
+        <button type="button" onClick={() => setView(view === "chart" ? "table" : "chart")} className="text-[13px] font-bold text-muted hover:text-foreground" aria-pressed={view === "table"}>
+          {view === "chart" ? "Show table" : "Show chart"}
+        </button>
       </div>
       {empty ? (
         <p className="py-16 text-center text-sm text-muted">No visits in this period yet. Share your page link or QR code and visits will show up here.</p>
       ) : view === "chart" ? (
-        <SeriesChart data={data.series} keys={[...keys]} interval={data.range.interval} />
+        <SeriesChart data={data.series} keys={[...keys]} interval={data.range.interval} height={420} />
       ) : (
-        <div className="max-h-72 overflow-auto">
+        <div className="max-h-[420px] overflow-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-surface text-left text-xs text-muted">
               <tr>
-                <th className="py-2 font-medium">Time</th>
-                <th className="py-2 text-right font-medium">Visitors</th>
-                <th className="py-2 text-right font-medium">Views</th>
-                <th className="py-2 text-right font-medium">Clicks</th>
+                <th className="py-2 font-semibold">Time</th>
+                <th className="py-2 text-right font-semibold">Visitors</th>
+                <th className="py-2 text-right font-semibold">Page views</th>
+                <th className="py-2 text-right font-semibold">Taps</th>
               </tr>
             </thead>
             <tbody className="font-mono tabular-nums">
