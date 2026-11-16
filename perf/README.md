@@ -40,3 +40,10 @@ The fixture serves originals for `?w=` (no variants), so image numbers are pessi
 - No third-party request before interaction: embeds are facades with re-hosted posters, and
   GA4/Pixel load on first interaction or 3 s after load.
 - The public route has its own layout: no Tailwind utilities, no React Query, no Geist preload.
+
+## CI budget check
+
+`pnpm check:budget` (scripts/check-public-budget.mjs) fails when `/[username]` first-load JS goes over
+110 kB gzip; run it after `pnpm build`. `perf/ci.example.yml` is a ready GitHub Actions workflow
+(typecheck, lint, test, build, budget). Copy it to `.github/workflows/ci.yml` to enable it; pushing
+workflow files needs a token with the `workflow` scope.

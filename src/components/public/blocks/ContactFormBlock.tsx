@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import type { BlockOf } from "@/lib/types";
 import { ApiError, api } from "@/lib/api";
 import { checkContact, type ContactErrors, type ContactFields } from "@/lib/contact-validate";
-import s from "../public.module.css";
+import s from "../forms.module.css";
 
 function contactErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
