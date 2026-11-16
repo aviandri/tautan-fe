@@ -11,6 +11,9 @@ import { ContactFormIsland, EmailSignupIsland, FormIsland } from "./islands";
 import { MarketplaceBlock, ProductBlock, ShopBlock, WhatsAppBlock } from "./blocks/SellBlocksA";
 import { BrandsBlock, CommunityBlock, EventsBlock, GalleryBlock, LatestVideoBlock, MediaKitBlock, PodcastBlock, PostGridBlock, RateCardBlock, ShopTheLookBlock } from "./blocks/CreatorBlocks";
 import { PaymentBlock, PriceListBlock, ReviewsBlock, StoreInfoBlock, TipJarBlock } from "./blocks/SellBlocksB";
+import { AskMeBlock, GiveawayBlock, LeadMagnetBlock, PollBlock } from "./blocks/EngageBlocks";
+import { LockedCard } from "./blocks/GateBlocks";
+import { BeforeAfterBlock, DiscountCodesBlock, DonateIconsBlock, MapBlock, MarqueeBlock, ResumeBlock, SpotlightBlock, StyledText, TimelineBlock } from "./blocks/LayoutBlocks";
 
 // Server-safe: no hooks, no context. On the public route every card here renders as server HTML;
 // only the form islands ship React code (lazily). In the editor preview the same tree renders on the client.
@@ -25,13 +28,14 @@ export interface RenderOpts {
 
 export function BlockRenderer({ block, childBlocks = [], opts }: { block: Block; childBlocks?: Block[]; opts: RenderOpts }) {
   const { env } = opts;
-  // gated card the visitor hasn't unlocked: the API sends data:null (lock UI is tautan-27's P3-C/D work)
-  if ((block as { locked?: boolean }).locked || block.data == null) return null;
+  // gated card the visitor hasn't unlocked: the API sends data:null; the stub's unlock form and the
+  // re-open from a saved token run in the lazy runtime-p3cd
+  if (block.locked || block.data == null) return block.locked ? <LockedCard block={block} /> : null;
   switch (block.type) {
     case "link":
       return <LinkBlock block={block} env={env} />;
     case "text":
-      return <TextBlock block={block} />;
+      return block.data.style ? <StyledText block={block} style={block.data.style} /> : <TextBlock block={block} />;
     case "image":
       return <ImageBlock block={block} env={env} priority={block.id === opts.priorityId} />;
     case "video":
@@ -39,7 +43,7 @@ export function BlockRenderer({ block, childBlocks = [], opts }: { block: Block;
     case "music":
       return <MusicBlock block={block} env={env} />;
     case "social_icons":
-      return <SocialIconsBlock block={block} />;
+      return block.data.variant === "donate" ? <DonateIconsBlock block={block} /> : <SocialIconsBlock block={block} />;
     case "folder":
       return (
         <FolderBlock block={block} env={env}>
@@ -59,7 +63,7 @@ export function BlockRenderer({ block, childBlocks = [], opts }: { block: Block;
     case "file":
       return <FileBlock block={block} env={env} />;
     case "discount_code":
-      return <DiscountCodeBlock block={block} />;
+      return block.data.codes?.length ? <DiscountCodesBlock block={block} /> : <DiscountCodeBlock block={block} />;
     case "countdown":
       return <CountdownBlock block={block} now={opts.now} />;
     case "booking":
@@ -109,6 +113,28 @@ export function BlockRenderer({ block, childBlocks = [], opts }: { block: Block;
       return <PodcastBlock block={block} env={env} />;
     case "community":
       return <CommunityBlock block={block} />;
+    // P3-C engage
+    case "poll":
+      return <PollBlock block={block} />;
+    case "ask_me":
+      return <AskMeBlock block={block} />;
+    case "lead_magnet":
+      return <LeadMagnetBlock block={block} env={env} />;
+    case "giveaway":
+      return <GiveawayBlock block={block} />;
+    // P3-D text and layout
+    case "spotlight":
+      return <SpotlightBlock block={block} env={env} priority={block.id === opts.priorityId} />;
+    case "marquee":
+      return <MarqueeBlock block={block} />;
+    case "timeline":
+      return <TimelineBlock block={block} />;
+    case "resume":
+      return <ResumeBlock block={block} />;
+    case "before_after":
+      return <BeforeAfterBlock block={block} env={env} />;
+    case "map":
+      return <MapBlock block={block} />;
     default:
       // unknown type from a newer API: skip rather than crash the page
       return null;
