@@ -17,8 +17,6 @@ import type {
   ImportResponse,
   UnfurlResult,
   UploadResult,
-  AnalyticsRange,
-  AnalyticsSummary,
   ApiErrorBody,
   AuthResponse,
   Block,
@@ -273,11 +271,6 @@ export const api = {
       fd.append("file", file);
       return request<UploadResult>(`/uploads${kind === "file" ? "?kind=file" : ""}`, { method: "POST", body: fd });
     },
-  },
-
-  analytics: {
-    summary: (range: AnalyticsRange) =>
-      request<AnalyticsSummary>(`/analytics/summary?range=${range}`),
   },
 
   contactSubmissions: {

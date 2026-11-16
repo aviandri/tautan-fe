@@ -8,7 +8,6 @@
  */
 import type { Transport } from "../api";
 import type {
-  AnalyticsSummary,
   Block,
   BlockType,
   ContactSubmission,
@@ -406,31 +405,6 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       if (url.searchParams.get("kind") === "file")
         return ok({ url: `https://example.com/files/${encodeURIComponent(name)}`, file_name: name, size: file.size, content_type: file.type }, 201);
       return ok({ url: `https://picsum.photos/seed/${uid().slice(0, 8)}/600/600`, file_name: name, size: file.size, content_type: file.type }, 201);
-    }
-
-    if (p === "/analytics/summary") {
-      const days = Number((url.searchParams.get("range") ?? "7d").replace("d", "")) || 7;
-      const series = Array.from({ length: days }, (_, i) => {
-        const date = new Date(Date.now() - (days - 1 - i) * 864e5).toISOString().slice(0, 10);
-        const views = Math.round(80 + 40 * Math.sin(i / 3) + ((i * 37) % 23));
-        return { date, views, clicks: Math.round(views * (0.3 + ((i * 13) % 10) / 50)) };
-      });
-      const views = series.reduce((s, x) => s + x.views, 0);
-      const clicks = series.reduce((s, x) => s + x.clicks, 0);
-      const links = live().filter((b) => b.type === "link");
-      const summary: AnalyticsSummary = {
-        views, clicks, ctr: views ? clicks / views : 0, series,
-        top_links: links.slice(0, 5).map((b, i) => ({
-          block_id: b.id, title: (b.data as { title: string }).title, clicks: Math.round(clicks / (i + 2)),
-        })),
-        top_referrers: [
-          { referrer: "instagram.com", count: Math.round(views * 0.46) },
-          { referrer: "direct", count: Math.round(views * 0.28) },
-          { referrer: "tiktok.com", count: Math.round(views * 0.17) },
-          { referrer: "google.com", count: Math.round(views * 0.09) },
-        ],
-      };
-      return ok(summary);
     }
 
     // P2-6: import preview/apply (no network in the mock)

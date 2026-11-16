@@ -1,10 +1,9 @@
 "use client";
 
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, type TooltipContentProps } from "recharts";
-import type { AnalyticsSummary } from "@/lib/types";
 import { SERIES, fmtCompact, fmtDay, fmtInt, fmtPct } from "./format";
 
-type Point = AnalyticsSummary["series"][number];
+type Point = { date: string; views: number; clicks: number };
 
 function ChartTooltip({ active, payload }: TooltipContentProps<number, string>) {
   const p = payload?.[0]?.payload as Point | undefined;
