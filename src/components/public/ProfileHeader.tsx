@@ -5,7 +5,7 @@ import { isTempUsername } from "@/lib/page-extras";
 import { SocialIcon } from "./blocks/SocialIconsBlock";
 import { Img } from "./Img";
 import { mediaFor, type MediaMap } from "./env";
-import s from "./public.module.css";
+import { s } from "./cls";
 
 /** Header socials row (profile.socials). "divider" entries are spacers. */
 export function SocialRow({ socials }: { socials: NonNullable<Profile["socials"]> }) {

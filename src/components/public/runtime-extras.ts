@@ -1,6 +1,6 @@
 // Rarely used parts of PageRuntime, split into their own chunk and imported on demand
 // (share panel, lightbox, third-party tags), so they don't count toward first-load JS.
-import s from "./public.module.css";
+import { s } from "./cls";
 
 export function injectTags(ga4?: string, pixel?: string) {
   {

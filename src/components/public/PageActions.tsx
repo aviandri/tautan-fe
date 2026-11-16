@@ -1,6 +1,6 @@
 import { Share2, UserPlus } from "./icons";
 import { API_BASE } from "@/lib/api";
-import s from "./public.module.css";
+import { s } from "./cls";
 
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
 

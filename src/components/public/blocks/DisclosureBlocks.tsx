@@ -3,7 +3,7 @@ import type { Block, BlockOf } from "@/lib/types";
 import { safeHref, safeImageSrc } from "@/lib/safe-url";
 import { LinkBlock } from "./LinkBlock";
 import type { PageEnv } from "../env";
-import s from "../public.module.css";
+import { s } from "../cls";
 
 // Folder and FAQ use <details>/<summary>: they open without JavaScript and are keyboard
 // accessible out of the box.

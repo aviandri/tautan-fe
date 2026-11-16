@@ -11,7 +11,7 @@ import { COURIER_LABELS, TIPS } from "@/lib/sell/platforms";
 import { mediaFor, track, type PageEnv } from "../env";
 import { Img } from "../Img";
 import { BrandMark } from "./SellBlocksA";
-import p from "../public.module.css";
+import { s as p } from "../cls";
 import s from "./sell-b.module.css";
 
 function waHref(number: string, text: string): string | undefined {

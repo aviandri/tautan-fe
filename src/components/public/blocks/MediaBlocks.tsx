@@ -7,7 +7,7 @@ import { MiniMarkdown } from "@/lib/mini-markdown";
 import { mediaFor, track, type PageEnv } from "../env";
 import { Img } from "../Img";
 import { LinkBlock } from "./LinkBlock";
-import s from "../public.module.css";
+import { s } from "../cls";
 
 // Server-safe (no hooks): interactivity comes from PageRuntime via data-* attributes.
 

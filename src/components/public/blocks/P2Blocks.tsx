@@ -4,7 +4,7 @@ import { safeHref } from "@/lib/safe-url";
 import { bookingEmbedSrc } from "@/lib/embeds";
 import { formatBytes } from "@/lib/format";
 import { track, type PageEnv } from "../env";
-import s from "../public.module.css";
+import { s } from "../cls";
 
 const align = (a?: "left" | "center" | "right") => (a === "left" ? s.alignLeft : a === "right" ? s.alignRight : "");
 
