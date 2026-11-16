@@ -58,7 +58,8 @@ export function readSettings(profile: Profile): PageSettings {
   if (GA4.test(str(s.ga4_id))) out.ga4_id = str(s.ga4_id);
   if (PIXEL.test(str(s.meta_pixel_id))) out.meta_pixel_id = str(s.meta_pixel_id);
   if (LANG.test(str(s.language))) out.language = str(s.language);
-  if (s.show_share === true) out.show_share = true;
+  // Share is on by default (user decision, 2026-11-17): only an explicit false hides it
+  if (s.show_share !== false) out.show_share = true;
   if (s.show_save_contact === true) out.show_save_contact = true;
   return out;
 }

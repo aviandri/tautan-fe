@@ -14,10 +14,11 @@ describe("readSettings", () => {
       show_share: true,
     });
     const evil = readSettings(prof({ settings: { ga4_id: "G-1');alert(1);//", meta_pixel_id: "12;alert(1)", language: "en\"><script>", show_save_contact: "yes" as never } }));
-    expect(evil).toEqual({});
+    // bad values are dropped; Share stays on because it's on unless explicitly false
+    expect(evil).toEqual({ show_share: true });
   });
   it("handles a missing settings object", () => {
-    expect(readSettings(prof({}))).toEqual({});
+    expect(readSettings(prof({}))).toEqual({ show_share: true });
   });
 });
 
@@ -53,3 +54,13 @@ describe("formErrorMessage", async () => {
     expect(formErrorMessage(new TypeError("Failed to fetch"))).toMatch(/Couldn't reach/);
   });
 });
+
+describe("share button default", () => {
+  it("shows Share unless the owner explicitly turned it off", () => {
+    expect(readSettings(prof({})).show_share).toBe(true);
+    expect(readSettings(prof({ settings: {} })).show_share).toBe(true);
+    expect(readSettings(prof({ settings: { show_share: true } })).show_share).toBe(true);
+    expect(readSettings(prof({ settings: { show_share: false } })).show_share).toBeUndefined();
+  });
+});
+
