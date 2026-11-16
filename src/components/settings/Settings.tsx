@@ -70,7 +70,7 @@ function SettingsInner({ profile, email }: { profile: Profile; email: string }) 
   const st = profile.settings ?? {};
   const pageOpts = useSection({
     language: st.language ?? "",
-    show_share: !!st.show_share,
+    show_share: st.show_share !== false, // on unless explicitly turned off
     show_save_contact: !!st.show_save_contact,
     contact_email: st.contact_email ?? "",
     contact_phone: st.contact_phone ?? "",

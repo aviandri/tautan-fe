@@ -8,10 +8,13 @@ describe("page settings", () => {
       ["contact_email", "ga4_id", "language", "meta_pixel_id"],
     );
   });
-  it("compacts: drops empties and false toggles, uppercases GA4", () => {
+  it("compacts: drops empties and false toggles, uppercases GA4; show_share is always explicit", () => {
     expect(compactSettings({ ga4_id: " g-abc1234 ", language: "", show_share: false, show_save_contact: true, contact_email: "" })).toEqual({
       ga4_id: "G-ABC1234",
+      show_share: false,
       show_save_contact: true,
     });
+    // Share defaults to on: unset is saved as true
+    expect(compactSettings({ ga4_id: "G-ABC1234" })).toEqual({ ga4_id: "G-ABC1234", show_share: true });
   });
 });
