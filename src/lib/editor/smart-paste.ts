@@ -3,8 +3,9 @@
  * The server classifies the URL (media → video/music, Calendly/Cal.com →
  * booking, images → image, emails → mailto link) and scrapes OG metadata.
  */
-import type { CreateBlockInput, UnfurlResult } from "../types";
-import { urlError } from "../url";
+import type { CreateBlockInput, MarketplacePlatform, ProductData, UnfurlResult } from "../types";
+import { normalizeUrl, urlError } from "../url";
+import { detectMarketplace, isProductUrl, MARKETPLACES } from "../sell/platforms";
 
 const clip = (s: string | undefined, n: number) => {
   const t = (s ?? "").trim().replace(/\s+/g, " ");
@@ -47,4 +48,50 @@ export function blockFromUnfurl(r: UnfurlResult, tabId: string, parentId: string
       };
     }
   }
+}
+
+// ---------- P3-A: marketplace links ----------
+
+/** A pasted link on a known marketplace: the editor asks what to make of it. */
+export interface SellSuggestion {
+  platform: MarketplacePlatform;
+  url: string;
+  /** a single product (vs a whole store) */
+  isProduct: boolean;
+  /** prefill for a product card (from OG tags, best effort) */
+  product: Partial<ProductData>;
+  /** what the server would otherwise make (a link) */
+  unfurl: UnfurlResult | null;
+}
+
+/**
+ * Turn an /unfurl result (or, when the call failed, just the pasted text) into a sell suggestion.
+ * Returns null for links that aren't on a known marketplace.
+ */
+export function sellSuggestion(r: UnfurlResult | null, pasted: string): SellSuggestion | null {
+  const url = r?.url || normalizeUrl(pasted.trim());
+  const platform = r?.platform ?? detectMarketplace(url);
+  if (!platform) return null;
+  const isProduct = r?.suggested_type === "product" || isProductUrl(platform, url);
+  const name = clip(r?.title, 100).replace(new RegExp(`\\s*[|·–-]\\s*${MARKETPLACES[platform].label}.*$`, "i"), "");
+  const image = r?.image_url && /^https?:\/\//i.test(r.image_url) ? r.image_url : undefined;
+  const product: Partial<ProductData> = {
+    name,
+    images: image ? [image] : [],
+    ...(r?.price != null ? { price: r.price, currency: r.currency ?? "IDR" } : {}),
+    ...(clip(r?.description, 1000) ? { description: clip(r?.description, 1000) } : {}),
+    action: { kind: "marketplace", marketplace: platform, url },
+  };
+  return { platform, url, isProduct, product, unfurl: r };
+}
+
+/** A marketplace card with one store. */
+export function marketplaceBlock(s: SellSuggestion, tabId: string): CreateBlockInput {
+  return { tab_id: tabId, parent_id: null, type: "marketplace", data: { stores: [{ platform: s.platform, url: s.url }] } };
+}
+
+/** A plain link for the same URL (what P2 smart paste made). */
+export function linkBlock(s: SellSuggestion, tabId: string): CreateBlockInput {
+  if (s.unfurl) return blockFromUnfurl({ ...s.unfurl, suggested_type: "link" }, tabId);
+  return { tab_id: tabId, parent_id: null, type: "link", data: { title: MARKETPLACES[s.platform].label, url: s.url } };
 }
