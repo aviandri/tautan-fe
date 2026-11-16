@@ -1,8 +1,9 @@
 "use client";
 
 import type { Theme } from "@/lib/types";
+import { getPreset, hasOverrides } from "@/lib/theme/presets";
 import { ThemePicker } from "./ThemePicker";
-import { ThemeCustomizer } from "./ThemeCustomizer";
+import { Group, ThemeCustomizer } from "./ThemeCustomizer";
 
 export interface ThemeEditorProps {
   value: Theme;
@@ -10,18 +11,19 @@ export interface ThemeEditorProps {
   onUploadImage?: (file: File) => Promise<string>;
 }
 
-/** Presets on top, advanced overrides below. Controlled: the dashboard owns saving. */
+/**
+ * Kartu "Design" groups: the theme row across the top, then header, fonts, buttons, colours and more.
+ * Renders grid items; the parent supplies the 2-column grid (and can add its own groups after).
+ * Controlled: the dashboard owns saving.
+ */
 export function ThemeEditor({ value, onChange, onUploadImage }: ThemeEditorProps) {
+  const name = getPreset(value.preset).name;
   return (
-    <div className="flex flex-col gap-8">
-      <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-semibold text-foreground">Themes</h3>
-        <ThemePicker value={value} onChange={onChange} />
-      </section>
-      <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-semibold text-foreground">Customise</h3>
-        <ThemeCustomizer value={value} onChange={onChange} onUploadImage={onUploadImage} />
-      </section>
-    </div>
+    <>
+      <Group title="Theme" wide action={<span className="text-sm font-semibold text-muted">{hasOverrides(value) ? `${name}, with your changes` : name}</span>}>
+        <ThemePicker value={value} onChange={onChange} variant="row" />
+      </Group>
+      <ThemeCustomizer value={value} onChange={onChange} onUploadImage={onUploadImage} />
+    </>
   );
 }

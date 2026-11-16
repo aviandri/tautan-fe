@@ -2587,3 +2587,23 @@ textarea.tp-input {
   font-size: 17px;
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ann-text) 22%, transparent);
 }
+/* the editor's inline preview popup sizes to the phone frame (left/right insets), not to 440px */
+.tp-annPopupInline {
+  width: auto;
+}
+/* editor/landing previews (not full-height) are phone frames on a wide screen: keep the phone-style
+   round icon buttons there, whatever the viewport */
+.tp-page:not(.tp-fullHeight) .tp-pageAction {
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+}
+.tp-page:not(.tp-fullHeight) .tp-pageAction span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
