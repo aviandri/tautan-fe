@@ -49,6 +49,13 @@ export const ThemeSchema = z.object({
   header: z
     .object({ layout: z.enum(["classic", "banner", "headshot", "business"]), banner_image_url: z.string().optional() })
     .optional(),
+  /** Multi-colour palette (themes v3): 4–6 card surfaces, 1–2 accents, ink colours. Absent = single colour (today). */
+  palette: z
+    .object({ surfaces: z.array(z.string()), accents: z.array(z.string()), ink: z.string(), ink_on_accent: z.string() })
+    .nullable()
+    .optional(),
+  /** How surfaces are assigned to cards; ignored without a palette. */
+  palette_mode: z.enum(["cycle", "by_type", "mono"]).optional(),
 });
 export type Theme = z.infer<typeof ThemeSchema>;
 export type HeaderLayout = NonNullable<Theme["header"]>["layout"];

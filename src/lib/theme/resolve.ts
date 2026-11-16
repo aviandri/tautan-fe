@@ -187,3 +187,65 @@ export function isDarkColor(c: string): boolean {
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) / 255);
   return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.5;
 }
+
+// ---------- palettes (themes v3) ----------
+
+function lin(c: number) {
+  const v = c / 255;
+  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+}
+/** WCAG relative luminance of a hex colour (null for non-hex). */
+export function luminance(c: string): number | null {
+  const h = c.replace("#", "");
+  if (!/^[0-9a-f]+$/i.test(h) || ![3, 4, 6, 8].includes(h.length)) return null;
+  const full = h.length <= 4 ? h.slice(0, 3).split("").map((x) => x + x).join("") : h.slice(0, 6);
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+export function contrast(a: string, b: string): number {
+  const la = luminance(a) ?? 0;
+  const lb = luminance(b) ?? 1;
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+/** Text for a surface: the preferred ink when it passes 4.5:1, else whichever of near-black/white reads better. */
+export function textOn(surface: string, ink?: string): string {
+  if (ink && contrast(ink, surface) >= 4.5) return ink;
+  return contrast("#111111", surface) >= contrast("#ffffff", surface) ? "#111111" : "#ffffff";
+}
+
+export interface ResolvedPalette {
+  surfaces: { bg: string; text: string }[];
+  accent: { bg: string; text: string };
+  ink: string;
+  mode: "cycle" | "by_type" | "mono";
+}
+
+/** Validated palette, or null when the theme has none (single-colour behaviour, unchanged). */
+export function resolvePalette(t: Theme): ResolvedPalette | null {
+  const p = t.palette;
+  if (!p || t.palette_mode === "mono") return null;
+  const surfaces = (p.surfaces ?? []).filter(isColor).slice(0, 6);
+  const accent = (p.accents ?? []).find(isColor);
+  if (surfaces.length < 4 || !accent) return null;
+  const ink = isColor(p.ink) ? p.ink : t.text_color;
+  return {
+    surfaces: surfaces.map((bg) => ({ bg, text: textOn(bg, ink) })),
+    accent: { bg: accent, text: textOn(accent, isColor(p.ink_on_accent) ? p.ink_on_accent : undefined) },
+    ink,
+    mode: t.palette_mode === "by_type" ? "by_type" : "cycle",
+  };
+}
+
+/** CSS variables for a palette: --t-surface-N(-text), accent for inner buttons, and the header band. */
+export function paletteCssVars(pal: ResolvedPalette): Record<string, string> {
+  const v: Record<string, string> = {};
+  pal.surfaces.forEach((s, i) => {
+    v[`--t-surface-${i + 1}`] = s.bg;
+    v[`--t-surface-${i + 1}-text`] = s.text;
+  });
+  v["--t-accent"] = pal.accent.bg;
+  v["--t-accent-text"] = pal.accent.text;
+  v["--t-hero"] = `linear-gradient(160deg, ${pal.surfaces[0].bg}, ${pal.surfaces[1].bg})`;
+  v["--t-hero-text"] = pal.surfaces[0].text;
+  return v;
+}
