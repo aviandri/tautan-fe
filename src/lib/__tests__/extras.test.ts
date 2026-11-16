@@ -42,3 +42,14 @@ describe("readAnnouncement", () => {
     expect(isTempUsername("studio")).toBe(false);
   });
 });
+
+describe("formErrorMessage", async () => {
+  const { formErrorMessage } = await import("@/lib/form-validate");
+  const { ApiError } = await import("@/lib/api");
+  it("shows BE validation text, rate limits and network failures distinctly", () => {
+    expect(formErrorMessage(new ApiError(400, "invalid_email", "Enter a valid email."))).toBe("Enter a valid email.");
+    expect(formErrorMessage(new ApiError(429, "rate_limited", "x"))).toMatch(/Too many tries/);
+    expect(formErrorMessage(new ApiError(500, "internal", "pq: boom"))).not.toMatch(/pq/);
+    expect(formErrorMessage(new TypeError("Failed to fetch"))).toMatch(/Couldn't reach/);
+  });
+});
