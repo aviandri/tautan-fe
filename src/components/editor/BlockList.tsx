@@ -9,6 +9,7 @@ import type { Block, BlockType, Tab } from "@/lib/types";
 import { BlockPicker, NewBlockDraft, useQuickCreate } from "./AddBlock";
 import { BlockCard } from "./BlockCard";
 import { DeletedBlocks } from "./DeletedBlocks";
+import { SmartPaste } from "./SmartPaste";
 import { SortableItem, SortableList } from "./Sortable";
 
 type Adding = { type: BlockType; parentId: string | null } | null;
@@ -49,6 +50,7 @@ export function BlockList({ blocks, tab, tabs }: { blocks: Block[]; tab: Tab; ta
 
   return (
     <div className="flex flex-col gap-3">
+      {!picking && !adding && <SmartPaste tabId={tab.id} onCreated={onCreated} />}
       {picking ? (
         <BlockPicker onPick={(t) => pick(t)} onClose={() => setPicking(false)} />
       ) : adding && !adding.parentId ? null : (

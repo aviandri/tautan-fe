@@ -403,6 +403,23 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       return ok(summary);
     }
 
+    // P2-5: classify only (no network fetch in the mock)
+    if (p === "/unfurl" && method === "POST") {
+      const raw = String(B.url ?? "").trim();
+      if (!raw) return err(400, "invalid_url", "url is required");
+      const addr = raw.replace(/^mailto:/, "");
+      if (!addr.includes("/") && addr.includes("@"))
+        return ok({ url: `mailto:${addr}`, suggested_type: "link", dest_kind: "email", fetched: false, title: addr, description: "", image_url: "", site_name: "" });
+      let u: URL;
+      try {
+        u = new URL(raw.includes("://") ? raw : `https://${raw}`);
+      } catch {
+        return err(400, "invalid_url", "not a valid http(s) URL");
+      }
+      const host = u.hostname.replace(/^www\./, "");
+      const t = /youtube\.com|youtu\.be|vimeo\.com/.test(host) ? "video" : /spotify\.com|soundcloud\.com/.test(host) ? "music" : /^(calendly\.com|cal\.com|app\.cal\.com)$/.test(host) ? "booking" : /\.(png|jpe?g|gif|webp)$/i.test(u.pathname) ? "image" : "link";
+      return ok({ url: u.toString(), suggested_type: t, fetched: false, title: "", description: "", image_url: t === "image" ? u.toString() : "", site_name: host });
+    }
     // P2-3 (minimal): forms list from blocks, no stored submissions/contacts in the mock.
     if (p === "/forms") {
       const items = live()
