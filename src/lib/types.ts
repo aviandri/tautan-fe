@@ -211,7 +211,8 @@ export interface AnalyticsSummary {
 export interface ContactSubmission {
   id: string;
   profile_id: string;
-  block_id: string;
+  /** null when the form block was deleted */
+  block_id: string | null;
   name: string;
   email: string;
   message: string;

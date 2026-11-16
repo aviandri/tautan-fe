@@ -1,5 +1,10 @@
-import { Placeholder } from "@/components/dashboard/PageHeader";
+import { Suspense } from "react";
+import { Editor } from "@/components/editor/Editor";
 
-export default function Page() {
-  return <Placeholder title="Page">The block editor lands in the next PR.</Placeholder>;
+export default function EditorPage() {
+  return (
+    <Suspense>
+      <Editor />
+    </Suspense>
+  );
 }

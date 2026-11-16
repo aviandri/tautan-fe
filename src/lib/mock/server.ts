@@ -166,6 +166,9 @@ const err = (status: number, code: string, message: string) => ({
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "tab";
 
+const sameSet = (a: string[], b: string[]) =>
+  a.length === b.length && new Set(a).size === a.length && b.every((x) => a.includes(x));
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export const mockTransport: Transport = async (path, { method, body, token }) => {
@@ -231,7 +234,7 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
           id: uid(), profile_id: prof.id, block_id: String(B.block_id), name: String(B.name),
           email: String(B.email), message: String(B.message), created_at: now(),
         });
-        return ok(null, 204);
+        return ok(null, 201);
       }
       return ok({
         profile: prof,
@@ -274,6 +277,8 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       return ok(tab, 201);
     }
     if (p === "/tabs/order" && method === "PUT") {
+      if (!sameSet(B.ids as string[], mine(d.tabs).map((t) => t.id)))
+        return err(400, "order_mismatch", "ids must list every tab exactly once");
       (B.ids as string[]).forEach((id, i) => {
         const t = d.tabs.find((x) => x.id === id && x.profile_id === profile.id);
         if (t) t.position = i;
@@ -285,6 +290,8 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       const tab = mine(d.tabs).find((t) => t.id === tabM[1]);
       if (!tab) return err(404, "not_found", "Tab not found.");
       if (method === "PATCH") {
+        if (B.slug && mine(d.tabs).some((t) => t.id !== tab.id && t.slug === B.slug))
+          return err(409, "slug_taken", "another tab already uses this slug");
         Object.assign(tab, B);
         return ok(tab);
       }
@@ -307,7 +314,12 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       return ok(block, 201);
     }
     if (p === "/blocks/order" && method === "PUT") {
-      (B.ids as string[]).forEach((id, i) => {
+      const ids = B.ids as string[];
+      const first = mine(d.blocks).find((b) => b.id === ids[0]);
+      const group = first ? mine(d.blocks).filter((b) => b.tab_id === B.tab_id && b.parent_id === first.parent_id) : [];
+      if (!first || !sameSet(ids, group.map((b) => b.id)))
+        return err(400, "order_mismatch", "ids must list the whole sibling group exactly once");
+      ids.forEach((id, i) => {
         const b = d.blocks.find((x) => x.id === id && x.profile_id === profile.id);
         if (b) b.position = i;
       });
@@ -332,8 +344,8 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     if (p === "/uploads" && method === "POST") {
       const file = body instanceof FormData ? body.get("file") : null;
       if (!(file instanceof Blob)) return err(400, "no_file", "No file uploaded.");
-      // Object URLs don't survive reloads; fine for a mock.
-      return ok({ url: isBrowser ? URL.createObjectURL(file) : "/uploads/mock.png" }, 201);
+      // The mock can't store files; return a stable placeholder image URL that passes URL validation.
+      return ok({ url: `https://picsum.photos/seed/${uid().slice(0, 8)}/600/600` }, 201);
     }
 
     if (p === "/analytics/summary") {

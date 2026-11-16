@@ -3,6 +3,7 @@
 import { Sidebar, MobileNav } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { Spinner } from "@/components/ui";
+import { Toaster } from "@/components/ui/toast";
 import { useRequireSession } from "@/lib/session";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -24,6 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1">{children}</main>
       </div>
       <MobileNav />
+      <Toaster />
     </div>
   );
 }
