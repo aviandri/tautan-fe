@@ -30,9 +30,12 @@ export function referrerLabel(r: string): string {
 // Three-series palette, validated with the dataviz checker (all pairs; worst protan ΔE 8.5).
 // Visitors also draws dashed, so the green/blue pair never relies on colour alone.
 export const SERIES_V2 = {
-  visitors: { label: "Visitors", color: "#2f6fb3", dash: "5 4" },
-  views: { label: "Views", color: "#24876a", dash: undefined },
-  clicks: { label: "Clicks", color: "#cf5d26", dash: undefined },
+  // Kartu: visitors in ink, taps in magenta (contrast 21:1 and 5.3:1 on the white card, L* gap 46,
+  // so the pair stays apart for every colour-vision type). Views is a dashed grey for the table and
+  // per-block charts.
+  visitors: { label: "Visitors", color: "#000000", dash: undefined },
+  views: { label: "Views", color: "#66665f", dash: "5 4" },
+  clicks: { label: "Taps", color: "#d0106f", dash: undefined },
 } as const;
 export type SeriesKey = keyof typeof SERIES_V2;
 
