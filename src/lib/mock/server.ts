@@ -264,7 +264,11 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
         return err(409, "username_taken", "That username is taken.");
       if (B.is_published && !B.username && profile.onboarding && !profile.onboarding.username_claimed)
         return err(400, "username_not_claimed", "claim a username before publishing");
-      const { onboarding, ...rest } = B as { onboarding?: Record<string, unknown> };
+      const { onboarding, ...rest } = B as { onboarding?: Record<string, unknown>; announcement?: Profile["announcement"] };
+      if (rest.announcement) {
+        // like the BE: id is stable across edits, new only after null + re-create
+        rest.announcement = { layout: "banner", ...rest.announcement, id: profile.announcement?.id ?? Math.random().toString(16).slice(2, 18) };
+      }
       Object.assign(profile, rest, { updated_at: now() });
       if (onboarding || B.username) {
         const ob = { ...(profile.onboarding ?? { completed: true, username_claimed: true }), ...(onboarding ?? {}) } as NonNullable<Profile["onboarding"]>;
