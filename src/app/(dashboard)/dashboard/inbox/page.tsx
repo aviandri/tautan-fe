@@ -1,5 +1,5 @@
-import { Placeholder } from "@/components/dashboard/PageHeader";
+import { Inbox } from "@/components/inbox/Inbox";
 
-export default function Page() {
-  return <Placeholder title="Inbox">Contact form messages will show up here.</Placeholder>;
+export default function InboxPage() {
+  return <Inbox />;
 }
