@@ -92,28 +92,81 @@ export const BLOCK_TYPES = [
   "faq",
   "testimonial",
   "contact_form",
+  // Phase 2 (P2-1)
+  "heading",
+  "divider",
+  "file",
+  "discount_code",
+  "countdown",
+  "booking",
+  "quote",
+  "email_signup",
 ] as const;
 export type BlockType = (typeof BLOCK_TYPES)[number];
+
+/** P2-1: any block may carry a schedule (RFC 3339). Public reads drop blocks outside it. */
+export const ScheduleSchema = z.object({
+  start_at: z.string().optional(),
+  end_at: z.string().optional(),
+});
+export type Schedule = z.infer<typeof ScheduleSchema>;
+const schedule = { schedule: ScheduleSchema.optional() };
+
+export const TEXT_ALIGNS = ["left", "center", "right"] as const;
+export type TextAlign = (typeof TEXT_ALIGNS)[number];
+
+export const LINK_LAYOUTS = [
+  "button",
+  "thumbnail",
+  "thumbnail_highlight",
+  "grid2",
+  "grid3",
+  "image_background",
+  "carousel",
+] as const;
+export type LinkLayout = (typeof LINK_LAYOUTS)[number];
 
 export const LinkDataSchema = z.object({
   title: z.string(),
   url: z.string(),
   thumbnail_url: z.string().optional(),
+  // P2-1
+  description: z.string().max(300).optional(),
+  layout: z.enum(LINK_LAYOUTS).optional(),
+  /** emoji (≤8 chars) or an image URL */
+  icon: z.string().optional(),
+  label: z.string().max(24).optional(),
+  text_align: z.enum(TEXT_ALIGNS).optional(),
+  dest_kind: z.enum(["url", "email", "file", "tab"]).optional(),
+  /** required when dest_kind = "tab" */
+  tab_id: z.string().optional(),
+  ...schedule,
 });
-export const TextDataSchema = z.object({ content: z.string() });
+export const TextDataSchema = z.object({ content: z.string(), ...schedule });
 export const ImageDataSchema = z.object({
   url: z.string(),
   alt: z.string().optional(),
   link_url: z.string().optional(),
+  full_bleed: z.boolean().optional(),
+  lightbox: z.boolean().optional(),
+  ...schedule,
 });
-export const VideoDataSchema = z.object({ url: z.string() });
-export const MusicDataSchema = z.object({ url: z.string() });
+export const VideoDataSchema = z.object({ url: z.string(), ...schedule });
+export const MusicDataSchema = z.object({ url: z.string(), ...schedule });
 export const SocialIconsDataSchema = z.object({
   items: z.array(z.object({ platform: z.string(), url: z.string() })),
+  ...schedule,
 });
-export const FolderDataSchema = z.object({ title: z.string() });
+export const FolderDataSchema = z.object({
+  title: z.string(),
+  style: z.enum(["collapsible", "inline"]).optional(),
+  ...schedule,
+});
 export const FaqDataSchema = z.object({
   items: z.array(z.object({ q: z.string(), a: z.string() })),
+  heading: z.string().optional(),
+  description: z.string().optional(),
+  ...schedule,
 });
 export const TestimonialDataSchema = z.object({
   items: z.array(
@@ -121,12 +174,69 @@ export const TestimonialDataSchema = z.object({
       quote: z.string(),
       author: z.string(),
       avatar_url: z.string().optional(),
+      role: z.string().optional(),
+      url: z.string().optional(),
     }),
   ),
+  heading: z.string().optional(),
+  description: z.string().optional(),
+  ...schedule,
 });
 export const ContactFormDataSchema = z.object({
   title: z.string(),
   button_label: z.string(),
+  ...schedule,
+});
+
+// ---- P2-1 new block types ----
+export const HeadingDataSchema = z.object({ title: z.string(), text_align: z.enum(TEXT_ALIGNS).optional(), ...schedule });
+export const DividerDataSchema = z.object({
+  style: z.enum(["solid", "dashed", "dotted", "double", "none"]).optional(),
+  ...schedule,
+});
+export const FileDataSchema = z.object({
+  title: z.string(),
+  url: z.string(),
+  file_name: z.string().optional(),
+  /** bytes */
+  size: z.number().optional(),
+  ...schedule,
+});
+export const DiscountCodeDataSchema = z.object({
+  /** "" = no code needed */
+  code: z.string().max(40),
+  description: z.string().optional(),
+  brand: z.string().optional(),
+  discount: z.string().optional(),
+  url: z.string().optional(),
+  button_label: z.string().optional(),
+  ...schedule,
+});
+export const CountdownDataSchema = z.object({
+  /** RFC 3339 */
+  ends_at: z.string(),
+  label: z.string().optional(),
+  description: z.string().optional(),
+  ended_message: z.string().optional(),
+  hide_after_end: z.boolean().optional(),
+  ...schedule,
+});
+/** https on calendly.com, cal.com or app.cal.com only (validated by the BE) */
+export const BookingDataSchema = z.object({ url: z.string(), ...schedule });
+export const QuoteDataSchema = z.object({
+  quote: z.string(),
+  name: z.string().optional(),
+  role: z.string().optional(),
+  heading: z.string().optional(),
+  ...schedule,
+});
+export const EmailSignupDataSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  placeholder: z.string().optional(),
+  button_label: z.string().optional(),
+  success_message: z.string().optional(),
+  ...schedule,
 });
 
 export const BlockDataSchemas = {
@@ -140,6 +250,14 @@ export const BlockDataSchemas = {
   faq: FaqDataSchema,
   testimonial: TestimonialDataSchema,
   contact_form: ContactFormDataSchema,
+  heading: HeadingDataSchema,
+  divider: DividerDataSchema,
+  file: FileDataSchema,
+  discount_code: DiscountCodeDataSchema,
+  countdown: CountdownDataSchema,
+  booking: BookingDataSchema,
+  quote: QuoteDataSchema,
+  email_signup: EmailSignupDataSchema,
 } satisfies Record<BlockType, z.ZodType>;
 
 export type BlockDataMap = {
@@ -155,6 +273,14 @@ export type FolderData = BlockDataMap["folder"];
 export type FaqData = BlockDataMap["faq"];
 export type TestimonialData = BlockDataMap["testimonial"];
 export type ContactFormData = BlockDataMap["contact_form"];
+export type HeadingData = BlockDataMap["heading"];
+export type DividerData = BlockDataMap["divider"];
+export type FileData = BlockDataMap["file"];
+export type DiscountCodeData = BlockDataMap["discount_code"];
+export type CountdownData = BlockDataMap["countdown"];
+export type BookingData = BlockDataMap["booking"];
+export type QuoteData = BlockDataMap["quote"];
+export type EmailSignupData = BlockDataMap["email_signup"];
 
 interface BlockBase {
   id: string;
