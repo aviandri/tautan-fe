@@ -9,7 +9,7 @@ import { ChevronDown, FolderClosed, Mail, Music2, PlaySquare } from "lucide-reac
 import { useState } from "react";
 import { assetUrl } from "@/lib/api";
 import { byPosition } from "@/lib/editor/queries";
-import type { Block, Profile, Tab } from "@/lib/types";
+import { isTempUsername, type Block, type Profile, type Tab } from "@/lib/types";
 import { prettyUrl } from "@/lib/url";
 
 export interface PublicPageProps {
@@ -51,10 +51,10 @@ export function PlaceholderPage({ profile, tabs, blocks, activeTabSlug, onTabCha
           <img src={avatar} alt="" className="size-20 rounded-full object-cover" />
         ) : (
           <div className="flex size-20 items-center justify-center rounded-full text-2xl font-semibold" style={{ background: t.button.color, color: t.button.text_color }}>
-            {(profile.display_name || profile.username).slice(0, 1).toUpperCase()}
+            {(profile.display_name || (isTempUsername(profile.username) ? "?" : profile.username)).slice(0, 1).toUpperCase()}
           </div>
         )}
-        <p className="mt-3 text-lg font-semibold">{profile.display_name || `@${profile.username}`}</p>
+        <p className="mt-3 text-lg font-semibold">{profile.display_name || (isTempUsername(profile.username) ? "Your name" : `@${profile.username}`)}</p>
         {profile.bio && <p className="mt-1 whitespace-pre-line text-sm opacity-75">{profile.bio}</p>}
       </div>
 

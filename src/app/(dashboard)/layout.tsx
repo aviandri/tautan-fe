@@ -4,12 +4,19 @@ import { Sidebar, MobileNav } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { Spinner } from "@/components/ui";
 import { Toaster } from "@/components/ui/toast";
-import { useRequireSession } from "@/lib/session";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { homeFor, useRequireSession } from "@/lib/session";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = useRequireSession();
+  const router = useRouter();
+  const needsOnboarding = homeFor(session.data?.profile) === "/onboarding";
+  useEffect(() => {
+    if (needsOnboarding) router.replace("/onboarding");
+  }, [needsOnboarding, router]);
 
-  if (!session.data) {
+  if (!session.data || needsOnboarding) {
     return (
       <div className="grid min-h-dvh place-items-center">
         <Spinner />
