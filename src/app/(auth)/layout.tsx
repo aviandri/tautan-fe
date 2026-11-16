@@ -3,18 +3,17 @@ import { Logo } from "@/components/brand";
 import { Providers } from "../providers";
 import "../globals.css";
 
+/** Kartu auth: the form on the left, a blush panel with a page taking shape on the right. */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <Providers>
-      <div className="grid min-h-dvh lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="flex flex-col px-6 py-6 sm:px-10">
+      <div className="flex min-h-dvh flex-wrap bg-background">
+        <div className="flex min-w-0 flex-[1_1_560px] flex-col px-6 py-6 sm:px-12 sm:py-7">
           <Link href="/" className="w-fit" aria-label="Tautan home">
             <Logo />
           </Link>
-          <main className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-12">
-            {children}
-          </main>
-          <p className="text-[13px] text-muted">© {new Date().getFullYear()} Tautan</p>
+          <main className="k-enter mx-auto my-auto flex w-full max-w-[440px] flex-col py-12">{children}</main>
+          <p className="text-[13px] text-muted">By continuing you agree to the Tautan Terms and Privacy policy.</p>
         </div>
         <AuthAside />
       </div>
@@ -22,36 +21,43 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   );
 }
 
-/** A small rendering of a real Tautan page, so the right side shows the product. */
+/** A page taking shape: blank avatar, pastel rows, a floating phone. Decorative. */
 function AuthAside() {
-  const rows = ["Latest episode", "Book a session", "Shop prints", "Newsletter"];
   return (
-    <aside
-      aria-hidden
-      className="relative hidden overflow-hidden bg-brand lg:flex lg:items-center lg:justify-center"
-    >
-      <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_80%_10%,#2f7a63_0%,transparent_60%)]" />
-      <div className="relative w-[300px] rotate-[-4deg] rounded-[40px] border border-white/15 bg-[#f4efe4] p-3 shadow-[0_40px_80px_-20px_rgba(0,0,0,.45)]">
-        <div className="rounded-[30px] bg-[#f4efe4] px-5 pb-8 pt-10 text-center">
-          <div className="mx-auto size-16 rounded-full bg-[conic-gradient(from_200deg,#e8743b,#f2b46d,#1f5c4a,#e8743b)]" />
-          <p className="mt-3 text-[15px] font-semibold text-[#1d1b16]">Raka Pratama</p>
-          <p className="text-[12px] text-[#6b6858]">Photographer · Bandung</p>
-          <div className="mt-5 flex flex-col gap-2.5">
-            {rows.map((r) => (
-              <div
-                key={r}
-                className="rounded-2xl bg-[#1d1b16] px-4 py-3 text-[13px] font-medium text-[#f4efe4]"
-              >
-                {r}
-              </div>
-            ))}
+    <aside aria-hidden className="relative m-3.5 hidden min-w-0 flex-[1_1_560px] items-center justify-center overflow-hidden rounded-[36px] bg-blush lg:flex">
+      <svg className="absolute inset-0 size-full" viewBox="0 0 600 860" preserveAspectRatio="xMidYMid slice">
+        <g opacity=".55">
+          <rect x="40" y="60" width="150" height="90" rx="26" fill="var(--mint)" />
+          <rect x="420" y="120" width="130" height="130" rx="30" fill="var(--butter)" />
+          <rect x="60" y="640" width="170" height="110" rx="28" fill="var(--sky)" />
+          <rect x="410" y="660" width="140" height="80" rx="24" fill="#fff" />
+        </g>
+      </svg>
+      <div className="relative flex flex-col items-center gap-[18px]">
+        <div className="k-float w-[290px] rounded-[48px] bg-[#111] p-[10px] shadow-lift">
+          <div className="flex h-[560px] flex-col items-center gap-2.5 rounded-[39px] bg-white px-[18px] pb-[18px] pt-11">
+            <span className="flex size-[76px] items-center justify-center rounded-full bg-sunken text-muted">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21c1-4 4-6 8-6s7 2 8 6" />
+              </svg>
+            </span>
+            <span className="mt-1.5 h-3.5 w-[120px] rounded-full bg-sunken" />
+            <span className="mb-2.5 h-2.5 w-[170px] rounded-full bg-background" />
+            <span className="h-[50px] w-full rounded-full bg-blush" />
+            <span className="h-[50px] w-full rounded-full bg-sunken" />
+            <span className="h-[50px] w-full rounded-full bg-sunken" />
+            <span className="grid w-full grid-cols-2 gap-2">
+              <span className="aspect-square rounded-[20px] bg-mint" />
+              <span className="aspect-square rounded-[20px] bg-sky" />
+            </span>
           </div>
         </div>
+        <span className="flex items-center gap-2.5 rounded-full bg-surface px-[18px] py-3 font-semibold shadow-card">
+          <span className="k-live" />
+          Your page takes shape in the next step
+        </span>
       </div>
-      <p className="absolute bottom-8 left-10 right-10 text-[15px] leading-relaxed text-white/80">
-        tautan.id/<span className="text-white">yourname</span> holds your links, music, videos and a
-        contact form, on one page you edit in minutes.
-      </p>
     </aside>
   );
 }
