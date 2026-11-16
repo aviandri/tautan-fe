@@ -441,15 +441,6 @@ function embedHint(kind: "video" | "music", url: string): string | null {
 }
 
 /** The "Add block" picker, grouped. */
-export const PICKER_GROUPS: { title: string; types: BlockType[] }[] = [
-  { title: "Sell", types: ["product", "shop", "whatsapp", "marketplace", "price_list", "store_info", "payment", "tip_jar", "reviews"] },
-  { title: "Links", types: ["link", "folder", "file", "social_icons"] },
-  { title: "Content", types: ["heading", "text", "image", "quote", "divider", "faq", "testimonial"] },
-  { title: "Media", types: ["video", "music"] },
-  { title: "Grow", types: ["form", "email_signup", "contact_form", "booking", "discount_code", "countdown"] },
-];
-
-export const PICKER_ORDER: BlockType[] = PICKER_GROUPS.flatMap((g) => g.types);
 
 // ---------- forms (P2-3) ----------
 

@@ -8,7 +8,7 @@ import { useCreateBlock } from "@/lib/editor/queries";
 import { blockFromUnfurl, looksPasteable } from "@/lib/editor/smart-paste";
 import type { Block } from "@/lib/types";
 
-function pasteError(e: unknown): string {
+export function pasteError(e: unknown): string {
   if (e instanceof ApiError) {
     if (e.code === "invalid_url") return "That doesn't look like a link or email address.";
     if (e.code === "blocked_url") return "That address can't be added.";
@@ -22,29 +22,42 @@ function pasteError(e: unknown): string {
  * "Paste a link" input: unfurls the URL and creates the suggested block
  * (link with title/description/thumbnail, video, music, booking, image, email).
  */
+/** Unfurl a pasted link and create the suggested block. Resolves to the block, or throws. */
+export function usePasteToBlock(tabId: string) {
+  const [busy, setBusy] = useState(false);
+  const create = useCreateBlock();
+  return {
+    busy,
+    run: async (text: string): Promise<Block> => {
+      setBusy(true);
+      try {
+        const r = await api.unfurl(text.trim());
+        return await create.mutateAsync(blockFromUnfurl(r, tabId));
+      } finally {
+        setBusy(false);
+      }
+    },
+  };
+}
+
 export function SmartPaste({ tabId, onCreated }: { tabId: string; onCreated: (b: Block) => void }) {
   const [value, setValue] = useState("");
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const create = useCreateBlock();
+  const paste = usePasteToBlock(tabId);
+  const busy = paste.busy;
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function run(text: string) {
     const s = text.trim();
     if (!s || busy) return;
     setError(null);
-    setBusy(true);
     try {
-      const r = await api.unfurl(s);
-      const input = blockFromUnfurl(r, tabId);
-      const block = await create.mutateAsync(input);
+      const block = await paste.run(s);
       setValue("");
       onCreated(block);
     } catch (e) {
       setError(pasteError(e));
       inputRef.current?.focus();
-    } finally {
-      setBusy(false);
     }
   }
 
