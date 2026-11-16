@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand";
 import { Providers } from "../providers";
+import "../globals.css";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (

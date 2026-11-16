@@ -1,7 +1,7 @@
 import { Play } from "lucide-react";
 
 import type { BlockOf } from "@/lib/types";
-import { toMusicEmbed, toVideoEmbed, youtubeId } from "@/lib/embeds";
+import { toMusicEmbed, toVideoEmbed } from "@/lib/embeds";
 import { safeHref, safeImageSrc } from "@/lib/safe-url";
 import { MiniMarkdown } from "@/lib/mini-markdown";
 import { mediaFor, track, type PageEnv } from "../env";
@@ -59,10 +59,14 @@ function Fallback({ block, env }: { block: BlockOf<"video"> | BlockOf<"music">; 
  * Click-to-load facade: a poster and a play button in the iframe's exact box. The third-party
  * player (≈1 MB of script for YouTube) loads only when the visitor presses play.
  */
-export function VideoBlock({ block, env }: { block: BlockOf<"video">; env: PageEnv }) {
+export function VideoBlock({ block, env, priority = false }: { block: BlockOf<"video">; env: PageEnv; priority?: boolean }) {
   const e = toVideoEmbed(block.data.url);
   if (!e) return <Fallback block={block} env={env} />;
-  const yt = e.provider === "youtube" ? youtubeId(block.data.url) : null;
+  // Until the BE re-hosts a poster, the facade is a CSS poster (theme surface + play button):
+  // the visitor's browser never calls i.ytimg.com or vimeocdn before pressing play.
+  const resolved = (block.data as { resolved?: { poster?: string; title?: string } }).resolved;
+  const poster = safeImageSrc(resolved?.poster);
+  const title = resolved?.title?.trim() || e.title;
   return (
     <div className={s.embedVideo}>
       <button
@@ -70,14 +74,13 @@ export function VideoBlock({ block, env }: { block: BlockOf<"video">; env: PageE
         className={s.facade}
         data-embed={e.src}
         data-autoplay="autoplay=1"
-        data-title={e.title}
-        aria-label={`Play ${e.title}`}
+        data-title={title}
+        aria-label={`Play ${title}`}
         {...track(block.id, "play")}
       >
-        {yt ? (
-          // poster from YouTube's image CDN (an image, not script), lazy below the fold
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className={s.facadePoster} src={`https://i.ytimg.com/vi/${yt}/hqdefault.jpg`} alt="" loading="lazy" decoding="async" width={480} height={360} />
+        {poster ? (
+          // re-hosted by the BE (data.resolved.poster, with variants in `media`): first-party, sized
+          <Img className={s.facadePoster} src={poster} alt="" media={mediaFor(env, poster)} sizes="(max-width: 600px) 100vw, 560px" priority={priority} />
         ) : null}
         <span className={s.facadePlay} aria-hidden>
           <Play />
@@ -92,6 +95,7 @@ export function MusicBlock({ block, env }: { block: BlockOf<"music">; env: PageE
   const e = toMusicEmbed(block.data.url);
   if (!e) return <Fallback block={block} env={env} />;
   const provider = e.provider === "spotify" ? "Spotify" : "SoundCloud";
+  const cover = safeImageSrc((block.data as { resolved?: { poster?: string } }).resolved?.poster);
   return (
     <div className={s.audioFacadeBox} style={{ height: e.height }}>
       <button
@@ -108,6 +112,7 @@ export function MusicBlock({ block, env }: { block: BlockOf<"music">; env: PageE
         <span className={s.facadePlay} aria-hidden>
           <Play />
         </span>
+        {cover ? <Img className={s.audioCover} src={cover} alt="" media={mediaFor(env, cover)} sizes="64px" /> : null}
         <span className={s.audioFacadeText}>
           <span className={s.linkTitle}>Listen on {provider}</span>
           <span className={s.linkDesc}>{e.title}</span>

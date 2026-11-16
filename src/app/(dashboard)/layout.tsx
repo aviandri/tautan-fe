@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { homeFor, useRequireSession } from "@/lib/session";
 import { Providers } from "../providers";
+import "../globals.css";
 
 // React Query lives here (and in the auth/onboarding layouts), not in the root layout, so the
 // public /[username] page doesn't download it.

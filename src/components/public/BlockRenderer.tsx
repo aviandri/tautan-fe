@@ -1,5 +1,6 @@
 import type { Block } from "@/lib/types";
 import { groupBlocks } from "@/lib/page-structure";
+export { firstImageId } from "@/lib/page-structure";
 import type { PageEnv } from "./env";
 import { LinkBlock, LinkGroup } from "./blocks/LinkBlock";
 import { ImageBlock, MusicBlock, TextBlock, VideoBlock } from "./blocks/MediaBlocks";
@@ -29,7 +30,7 @@ export function BlockRenderer({ block, childBlocks = [], opts }: { block: Block;
     case "image":
       return <ImageBlock block={block} env={env} priority={block.id === opts.priorityId} />;
     case "video":
-      return <VideoBlock block={block} env={env} />;
+      return <VideoBlock block={block} env={env} priority={block.id === opts.priorityId} />;
     case "music":
       return <MusicBlock block={block} env={env} />;
     case "social_icons":
@@ -82,9 +83,4 @@ export function BlockList({ blocks, childrenOf, opts }: { blocks: Block[]; child
       )}
     </>
   );
-}
-
-/** The LCP candidate: an image block among the first few top-level cards. */
-export function firstImageId(top: Block[]): string | undefined {
-  return top.slice(0, 3).find((b) => b.type === "image")?.id;
 }

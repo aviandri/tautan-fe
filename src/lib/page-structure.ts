@@ -60,3 +60,11 @@ export function groupBlocks(blocks: Block[]): ListItem[] {
   }
   return out;
 }
+
+/**
+ * The LCP candidate: the first image or video poster among the cards that fit in a phone's first
+ * viewport (header + about six cards). It loads eagerly with fetchpriority=high and a preload.
+ */
+export function firstImageId(top: Block[]): string | undefined {
+  return top.slice(0, 6).find((b) => b.type === "image" || b.type === "video")?.id;
+}

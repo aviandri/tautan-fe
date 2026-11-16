@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+// No global CSS here: the app areas import ./globals.css (Tailwind + tokens) from their own layouts,
+// and /[username] gets only a reset (its layout), so visitors never download the dashboard's utilities.
 
 // preload:false: public pages render in their theme font and must not fetch these (perf budget);
 // the dashboard still gets them, just without the high-priority preload.

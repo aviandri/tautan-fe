@@ -1406,3 +1406,10 @@ textarea.input {
 .page [hidden] {
   display: none !important;
 }
+.audioCover {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 8px;
+  object-fit: cover;
+}
