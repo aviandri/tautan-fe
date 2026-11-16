@@ -1,13 +1,14 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check, Download, Link2, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Download, Link2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { UsernameStatusLine } from "@/components/auth/UsernameStatusLine";
 import { Logo, PUBLIC_HOST } from "@/components/brand";
 import { ImageField, TextField } from "@/components/editor/fields";
 import { PhonePreview } from "@/components/editor/preview/Preview";
 import { SmartPaste } from "@/components/editor/SmartPaste";
+import { ThemePicker } from "@/components/theme";
 import { Alert, Button, cx, Field, Input, PrefixInput, Spinner, Switch } from "@/components/ui";
 import { toast, Toaster } from "@/components/ui/toast";
 import { api, ApiError } from "@/lib/api";
@@ -15,7 +16,7 @@ import { byPosition, useEditorData } from "@/lib/editor/queries";
 import { INTENTS, STARTERS, starterBlock } from "@/lib/onboarding/starters";
 import { setProfileEverywhere, useUpdateProfile } from "@/lib/profile";
 import { qk, useLogout } from "@/lib/session";
-import type { ImportPreview, OnboardingIntent, Profile } from "@/lib/types";
+import type { ImportPreview, OnboardingIntent, Profile, Theme } from "@/lib/types";
 import { isTempUsername } from "@/lib/types";
 import { useUsernameCheck } from "@/lib/use-username-check";
 
@@ -55,10 +56,14 @@ export function Wizard({ profile }: { profile: Profile }) {
   const update = useUpdateProfile();
   const logout = useLogout();
   const [step, setStepState] = useState<Step>(() => resumeStep(profile));
+  /** Look step: unsaved theme pick, shown in the preview, saved on Continue. */
+  const [themeDraft, setThemeDraft] = useState<Theme | null>(null);
+  const shown = themeDraft ? { ...profile, theme: themeDraft } : profile;
   const idx = STEPS.indexOf(step);
 
   const go = (s: Step, extra: Parameters<typeof update.mutate>[0] = {}) => {
     setStepState(s);
+    setThemeDraft(null);
     update.mutate({ ...extra, onboarding: { ...(extra.onboarding ?? {}), step: s } });
     window.scrollTo({ top: 0 });
   };
@@ -95,7 +100,7 @@ export function Wizard({ profile }: { profile: Profile }) {
           {step === "start" && <StartStep profile={profile} tabId={firstTab?.id} onNext={next} />}
           {step === "profile" && <ProfileStep profile={profile} onNext={next} onBack={back} />}
           {step === "sections" && firstTab && <SectionsStep profile={profile} tabId={firstTab.id} onNext={next} onBack={back} />}
-          {step === "theme" && <ThemeStep onNext={next} onBack={back} />}
+          {step === "theme" && <ThemeStep value={themeDraft ?? profile.theme} onChange={setThemeDraft} dirty={!!themeDraft} onNext={next} onBack={back} />}
           {step === "claim" && <ClaimStep profile={profile} onBack={back} />}
         </main>
       </div>
@@ -103,7 +108,7 @@ export function Wizard({ profile }: { profile: Profile }) {
       <aside className="hidden border-l border-line bg-surface/50 lg:flex lg:items-center lg:justify-center">
         {editor.data ? (
           <div className="sticky top-8">
-            <PhonePreview profile={profile} tabs={tabs} blocks={editor.data.blocks} />
+            <PhonePreview profile={shown} tabs={tabs} blocks={editor.data.blocks} />
             <p className="mt-4 text-center text-[13px] text-muted">Your page, as you build it</p>
           </div>
         ) : (
@@ -402,19 +407,25 @@ function SectionsStep({ profile, tabId, onNext, onBack }: { profile: Profile; ta
  * Swap point: renders tautan-c6's <ThemePicker> once it's on main (#2).
  * Until then the step explains where to change the look and moves on.
  */
-function ThemeStep({ onNext, onBack }: { onNext: NextFn; onBack: () => void }) {
+function ThemeStep({
+  value,
+  onChange,
+  dirty,
+  onNext,
+  onBack,
+}: {
+  value: Theme;
+  onChange: (t: Theme) => void;
+  dirty: boolean;
+  onNext: NextFn;
+  onBack: () => void;
+}) {
   return (
     <>
-      <StepHeader title="Choose a look" description="Colours, fonts and button styles." />
-      <div className="flex items-start gap-3 rounded-2xl border border-line bg-surface p-5">
-        <Sparkles className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden />
-        <p className="text-sm text-muted">
-          Your page starts with a clean default look. Pick a theme and fine-tune colours and fonts any time under{" "}
-          <span className="font-medium text-foreground">Appearance</span> in your dashboard.
-        </p>
-      </div>
+      <StepHeader title="Choose a look" description="Pick a starting theme. You can fine-tune colours, fonts and buttons later under Appearance." />
+      <ThemePicker value={value} onChange={onChange} />
       <Footer onBack={onBack}>
-        <Button size="lg" onClick={() => onNext()}>
+        <Button size="lg" onClick={() => onNext(dirty ? { theme: value } : undefined)}>
           Continue <ArrowRight className="size-4" />
         </Button>
       </Footer>
