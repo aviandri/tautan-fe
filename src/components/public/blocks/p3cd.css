@@ -526,11 +526,21 @@
 }
 .tpx [data-p="row"] {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-}
-.tpx [data-p="row"] [data-p="input"] {
-  flex: 1;
   min-width: 0;
+}
+/* The input keeps at least 220px and takes nearly all spare width; a button whose label doesn't
+   fit beside it wraps to its own full-width line (flex-grow) instead of squeezing the input. */
+.tpx [data-p="row"] [data-p="input"] {
+  flex: 999 1 220px;
+  min-width: 0;
+}
+/* .tp-btn is width:100% (full-width page buttons); in a row it must size to its label. */
+.tpx [data-p="row"] [data-p="submit"] {
+  flex: 1 0 auto;
+  width: auto;
+  padding-inline: 16px;
 }
 .tpx [data-p="input"] {
   width: 100%;
