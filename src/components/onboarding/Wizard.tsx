@@ -2,7 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Check, Download, Link2, Loader2, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UsernameStatusLine } from "@/components/auth/UsernameStatusLine";
 import { Logo, PUBLIC_HOST } from "@/components/brand";
 import { ImageField, TextField } from "@/components/editor/fields";
@@ -21,10 +21,10 @@ import { Alert, Button, cx, Field, Input, PrefixInput, Spinner, Switch } from "@
 import { toast, Toaster } from "@/components/ui/toast";
 import { api, ApiError } from "@/lib/api";
 import { byPosition, useEditorData } from "@/lib/editor/queries";
-import { INTENTS, STARTERS, starterBlock } from "@/lib/onboarding/starters";
+import { INTENTS, STARTERS, starterBlock, type Starter } from "@/lib/onboarding/starters";
 import { setProfileEverywhere, useUpdateProfile } from "@/lib/profile";
 import { qk, useLogout } from "@/lib/session";
-import type { ImportPreview, OnboardingIntent, Profile, Theme } from "@/lib/types";
+import type { Block, ImportPreview, OnboardingIntent, Profile, Theme } from "@/lib/types";
 import { isTempUsername } from "@/lib/constants";
 import { useUsernameCheck } from "@/lib/use-username-check";
 
@@ -66,12 +66,23 @@ export function Wizard({ profile }: { profile: Profile }) {
   const [step, setStepState] = useState<Step>(() => resumeStep(profile));
   /** Look step: unsaved theme pick, shown in the preview, saved on Continue. */
   const [themeDraft, setThemeDraft] = useState<Theme | null>(null);
-  const shown = themeDraft ? { ...profile, theme: themeDraft } : profile;
+  /**
+   * What the current step has typed or ticked but not saved yet. The phone preview renders the saved
+   * profile and cards with this on top, so it follows every keystroke without a network round trip.
+   */
+  const [previewDraft, setPreviewDraft] = useState<PreviewDraft>({});
+  const shown: Profile = {
+    ...profile,
+    ...previewDraft.profile,
+    ...(previewDraft.username ? { username: previewDraft.username } : {}),
+    ...(themeDraft ? { theme: themeDraft } : {}),
+  };
   const idx = STEPS.indexOf(step);
 
   const go = (s: Step, extra: Parameters<typeof update.mutate>[0] = {}) => {
     setStepState(s);
     setThemeDraft(null);
+    setPreviewDraft({});
     update.mutate({ ...extra, onboarding: { ...(extra.onboarding ?? {}), step: s } });
     window.scrollTo({ top: 0 });
   };
@@ -80,6 +91,8 @@ export function Wizard({ profile }: { profile: Profile }) {
 
   const tabs = editor.data ? [...editor.data.tabs].sort(byPosition) : [];
   const firstTab = tabs[0];
+  const savedBlocks = editor.data?.blocks ?? [];
+  const previewBlocks = previewDraft.starters?.length && firstTab ? [...savedBlocks, ...draftBlocks(previewDraft.starters, firstTab.id, profile.id, savedBlocks)] : savedBlocks;
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -114,19 +127,48 @@ export function Wizard({ profile }: { profile: Profile }) {
       <div className="flex flex-1 flex-wrap gap-10 px-5 pb-8 pt-3 sm:px-8">
         <main className="k-enter mx-auto flex w-full min-w-0 max-w-[720px] flex-[1_1_620px] flex-col justify-center" key={step}>
           {step === "start" && <StartStep profile={profile} tabId={firstTab?.id} onNext={next} />}
-          {step === "profile" && <ProfileStep profile={profile} onNext={next} onBack={back} />}
-          {step === "sections" && firstTab && <SectionsStep profile={profile} tabId={firstTab.id} onNext={next} onBack={back} />}
+          {step === "profile" && <ProfileStep profile={profile} onNext={next} onBack={back} onPreview={(p) => setPreviewDraft({ profile: p })} />}
+          {step === "sections" && firstTab && <SectionsStep profile={profile} tabId={firstTab.id} onNext={next} onBack={back} onPreview={(starters) => setPreviewDraft({ starters })} />}
           {step === "theme" && <ThemeStep value={themeDraft ?? profile.theme} onChange={setThemeDraft} dirty={!!themeDraft} onNext={next} onBack={back} />}
-          {step === "claim" && <ClaimStep profile={profile} onBack={back} />}
+          {step === "claim" && <ClaimStep profile={profile} onBack={back} onPreview={(username) => setPreviewDraft(username ? { username } : {})} />}
         </main>
 
         <aside aria-label="Live preview" className="hidden min-w-[320px] flex-[0_1_440px] flex-col items-center justify-center gap-4 rounded-[36px] bg-blush p-7 lg:flex">
-          {editor.data ? <PhonePreview profile={shown} tabs={tabs} blocks={editor.data.blocks} width={290} height={600} /> : <Spinner />}
+          {editor.data ? <PhonePreview profile={shown} tabs={tabs} blocks={previewBlocks} width={290} height={600} /> : <Spinner />}
           <span className="rounded-full bg-surface px-3 py-1 font-mono text-[12px] text-ink-2">Your page, as you build it</span>
         </aside>
       </div>
       <Toaster />
     </div>
+  );
+}
+
+interface PreviewDraft {
+  profile?: Pick<Profile, "display_name" | "bio" | "avatar_url">;
+  /** ticked starter sections, not created yet */
+  starters?: Starter[];
+  /** a valid address being claimed */
+  username?: string;
+}
+
+/** Ticked starters as preview-only blocks after the saved ones, in order (ids never reach the API). */
+function draftBlocks(starters: Starter[], tabId: string, profileId: string, saved: Block[]): Block[] {
+  const top = saved.filter((b) => b.tab_id === tabId && !b.parent_id);
+  const start = top.length ? Math.max(...top.map((b) => b.position)) + 1 : 0;
+  return starters.map(
+    (st, i) =>
+      ({
+        id: `draft-${st.key}`,
+        profile_id: profileId,
+        tab_id: tabId,
+        parent_id: null,
+        position: start + i,
+        is_visible: true,
+        created_at: "",
+        updated_at: "",
+        type: st.type,
+        data: st.data(),
+      }) as Block,
   );
 }
 
@@ -327,10 +369,14 @@ function StartStep({ profile, tabId, onNext }: { profile: Profile; tabId?: strin
 
 // ---------- 2. profile ----------
 
-function ProfileStep({ profile, onNext, onBack }: { profile: Profile; onNext: NextFn; onBack: () => void }) {
+function ProfileStep({ profile, onNext, onBack, onPreview }: { profile: Profile; onNext: NextFn; onBack: () => void; onPreview: (p: NonNullable<PreviewDraft["profile"]>) => void }) {
   const [name, setName] = useState(isTempUsername(profile.display_name) ? "" : profile.display_name);
   const [bio, setBio] = useState(profile.bio);
   const [avatar, setAvatar] = useState(profile.avatar_url ?? "");
+  useEffect(() => {
+    onPreview({ display_name: name.trim(), bio: bio.trim(), avatar_url: avatar || null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onPreview is a fresh closure each render; the values are what matter
+  }, [name, bio, avatar]);
   return (
     <>
       <StepHeader title="Introduce yourself" description="This goes at the top of your page." />
@@ -350,7 +396,7 @@ function ProfileStep({ profile, onNext, onBack }: { profile: Profile; onNext: Ne
 
 // ---------- 3. sections ----------
 
-function SectionsStep({ profile, tabId, onNext, onBack }: { profile: Profile; tabId: string; onNext: NextFn; onBack: () => void }) {
+function SectionsStep({ profile, tabId, onNext, onBack, onPreview }: { profile: Profile; tabId: string; onNext: NextFn; onBack: () => void; onPreview: (starters: Starter[]) => void }) {
   const qc = useQueryClient();
   const editor = useEditorData();
   const intent = profile.onboarding?.intent ?? "other";
@@ -360,6 +406,10 @@ function SectionsStep({ profile, tabId, onNext, onBack }: { profile: Profile; ta
   const [picked, setPicked] = useState<Set<string>>(() => new Set(imported ? [] : starters.filter((s) => !existing.has(s.type)).map((s) => s.key)));
   const [busy, setBusy] = useState(false);
   const linkCount = (editor.data?.blocks ?? []).filter((b) => b.type === "link").length;
+  useEffect(() => {
+    onPreview(starters.filter((st) => picked.has(st.key)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see ProfileStep
+  }, [picked, starters]);
 
   async function finish() {
     setBusy(true);
@@ -458,7 +508,7 @@ function ThemeStep({
 
 // ---------- 5. claim ----------
 
-function ClaimStep({ profile, onBack }: { profile: Profile; onBack: () => void }) {
+function ClaimStep({ profile, onBack, onPreview }: { profile: Profile; onBack: () => void; onPreview: (username: string | null) => void }) {
   const update = useUpdateProfile();
   const claimed = profile.onboarding?.username_claimed !== false && !isTempUsername(profile.username);
   const [username, setUsername] = useState(claimed ? profile.username : (profile.onboarding?.suggested_username ?? ""));
@@ -466,6 +516,11 @@ function ClaimStep({ profile, onBack }: { profile: Profile; onBack: () => void }
   const [error, setError] = useState<string | null>(null);
   const check = useUsernameCheck(username, { current: claimed ? profile.username : undefined });
   const busy = update.isPending;
+  const previewName = check.status.state === "available" || check.status.state === "unchanged" ? check.value : null;
+  useEffect(() => {
+    onPreview(previewName);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see ProfileStep
+  }, [previewName]);
 
   function finish() {
     setError(null);
