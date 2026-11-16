@@ -8,6 +8,7 @@ import { siblings, useReorderBlocks } from "@/lib/editor/queries";
 import type { Block, BlockType, Tab } from "@/lib/types";
 import { BlockPicker, NewBlockDraft, useQuickCreate } from "./AddBlock";
 import { BlockCard } from "./BlockCard";
+import { DeletedBlocks } from "./DeletedBlocks";
 import { SortableItem, SortableList } from "./Sortable";
 
 type Adding = { type: BlockType; parentId: string | null } | null;
@@ -60,6 +61,7 @@ export function BlockList({ blocks, tab, tabs }: { blocks: Block[]; tab: Tab; ta
         <NewBlockDraft
           type={adding.type}
           tabId={tab.id}
+          tabs={tabs}
           onDone={(b) => (b ? onCreated(b) : setAdding(null))}
         />
       )}
@@ -101,6 +103,8 @@ export function BlockList({ blocks, tab, tabs }: { blocks: Block[]; tab: Tab; ta
           ))}
         </div>
       </SortableList>
+
+      <DeletedBlocks tabs={tabs} />
     </div>
   );
 }
@@ -154,6 +158,7 @@ function FolderChildren({
             type="link"
             tabId={folder.tab_id}
             parentId={folder.id}
+            tabs={tabs}
             onDone={(b) => {
               onAddDone();
               if (b) setExpanded(null);

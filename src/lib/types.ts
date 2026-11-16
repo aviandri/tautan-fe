@@ -449,5 +449,86 @@ export interface UpdateBlockInput {
 }
 
 export interface ApiErrorBody {
-  error: { code: string; message: string };
+  error: { code: string; message: string; details?: Record<string, string> };
+}
+
+// ---------- Phase 2 API shapes owned by the editor session (uploads, unfurl, forms, audience) ----------
+
+/** POST /uploads[?kind=file] */
+export interface UploadResult {
+  url: string;
+  file_name?: string;
+  size?: number;
+  content_type?: string;
+}
+
+/** POST /unfurl (P2-5). fetched=false means the site was unreachable: fall back to a plain link. */
+export interface UnfurlResult {
+  url: string;
+  suggested_type: "link" | "video" | "music" | "booking" | "image";
+  dest_kind?: "url" | "email" | "file" | "tab";
+  fetched: boolean;
+  title: string;
+  description: string;
+  image_url: string;
+  site_name: string;
+}
+
+/** GET /forms */
+export interface FormSummary {
+  block_id: string;
+  type: "form" | "email_signup";
+  title: string;
+  tab_id: string;
+  is_visible: boolean;
+  responses: number;
+  last_response_at: string | null;
+}
+
+/** Stored answer; label and type are snapshotted at submit time. */
+export interface FormAnswer {
+  field_id: string;
+  label: string;
+  type: string;
+  value: unknown;
+}
+
+/** GET /forms/{block_id}/submissions */
+export interface FormSubmission {
+  id: string;
+  block_id: string | null;
+  contact_id: string | null;
+  answers: FormAnswer[];
+  created_at: string;
+}
+
+export type AudienceStatus = "all" | "subscribed" | "unsubscribed";
+
+export interface Contact {
+  id: string;
+  email: string;
+  name: string;
+  subscribed: boolean;
+  subscribed_at: string | null;
+  sources: { block_id: string; type: string; title: string }[];
+  responses: number;
+  first_seen_at: string;
+  last_activity_at: string;
+}
+
+/** GET /audience */
+export interface AudienceList extends Paginated<Contact> {
+  counts: { all: number; subscribed: number; unsubscribed: number };
+}
+
+/** GET /audience/{id} */
+export interface ContactDetail {
+  contact: Contact;
+  activity: {
+    kind: "form" | "contact";
+    block_id: string | null;
+    answers?: FormAnswer[];
+    message?: string;
+    created_at: string;
+  }[];
 }
