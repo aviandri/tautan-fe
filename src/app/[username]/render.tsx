@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { preload } from "react-dom";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata, Viewport } from "next";
 import { PublicPageView } from "@/components/public/PublicPageView";
@@ -6,6 +7,8 @@ import { getPublicPageCached } from "@/lib/get-public-page";
 import { resolveTheme } from "@/lib/theme/resolve";
 import { selectTab, tabQuery } from "@/lib/page-structure";
 import { safeImageSrc } from "@/lib/safe-url";
+import { findFont } from "@/lib/theme/fonts-meta";
+import { latinFontUrl } from "@/lib/font-preload";
 
 // Shared by /[username] and /[username]/t/[tab] (the middleware rewrites ?tab=… to the latter),
 // so each tab is its own statically cached (ISR) page and the route never reads searchParams.
@@ -77,6 +80,10 @@ export async function renderPage(rawUsername: string, tabSlug: string | null) {
   }
   if (result.kind !== "page") notFound();
   const data = result.data;
+  // the theme's body font is otherwise found only after the CSS is parsed
+  const t = resolveTheme(data.profile.theme);
+  const font = latinFontUrl(findFont(t.fonts?.body ?? t.font)?.label);
+  if (font) preload(font, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   return (
     <>
       <PublicPageView

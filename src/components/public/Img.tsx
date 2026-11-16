@@ -14,6 +14,7 @@ export function Img({
   width,
   height,
   sizes,
+  maxVariant,
   priority = false,
   className,
   style,
@@ -25,15 +26,21 @@ export function Img({
   width?: number;
   height?: number;
   sizes: string;
+  /** largest variant to offer (caps device-pixel-ratio overfetch, e.g. 640 for a ~380 px poster) */
+  maxVariant?: number;
   priority?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }) {
   const w = media?.width ?? width;
   const h = media?.height ?? height;
-  const variants = (media?.widths ?? []).filter((x) => x < (media?.width ?? Infinity));
+  const cap = maxVariant ?? Infinity;
+  const variants = (media?.widths ?? []).filter((x) => x < (media?.width ?? Infinity) && x <= cap);
   const join = src.includes("?") ? "&" : "?";
-  const srcSet = variants.length ? [...variants.map((x) => `${src}${join}w=${x} ${x}w`), `${src} ${media!.width}w`].join(", ") : undefined;
+  // the original goes in the srcset only when it's within the cap; otherwise the largest variant is the src
+  const capped = media != null && media.width > cap && variants.length > 0;
+  const srcSet = variants.length ? [...variants.map((x) => `${src}${join}w=${x} ${x}w`), ...(capped ? [] : [`${src} ${media!.width}w`])].join(", ") : undefined;
+  if (capped) src = `${src}${join}w=${variants[variants.length - 1]}`;
   if (priority) preload(src, { as: "image", fetchPriority: "high", ...(srcSet ? { imageSrcSet: srcSet, imageSizes: sizes } : {}) });
   return (
     // eslint-disable-next-line @next/next/no-img-element

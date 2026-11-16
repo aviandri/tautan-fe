@@ -5,7 +5,7 @@ import type { BlockOf, FormField } from "@/lib/types";
 import { validateAnswers, type RawAnswers } from "@/lib/form-validate";
 import { api, ApiError } from "@/lib/api";
 import { formErrorMessage } from "@/lib/form-validate";
-import s from "../public.module.css";
+import s from "../forms.module.css";
 
 type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent"; message: string } | { kind: "error"; message: string };
 

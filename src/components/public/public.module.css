@@ -347,63 +347,7 @@
 }
 
 /* contact form */
-.form {
-  composes: card;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.formTitle {
-  font-family: var(--t-font-title, var(--t-font));
-  margin: 0 0 2px;
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-.input {
-  font: inherit;
-  font-weight: 400;
-  font-size: 1rem;
-  color: var(--t-text);
-  background: color-mix(in srgb, var(--t-bg-solid) 70%, transparent);
-  border: 1px solid var(--t-line);
-  border-radius: 10px;
-  padding: 11px 12px;
-  min-height: 44px;
-}
-.input:focus {
-  outline: 2px solid var(--t-text);
-  outline-offset: 1px;
-}
-.input::placeholder {
-  color: var(--t-muted);
-}
-textarea.input {
-  resize: vertical;
-  min-height: 110px;
-}
-.fieldError {
-  font-weight: 500;
-  font-size: 0.8rem;
-}
-.honeypot {
-  position: absolute;
-  left: -10000px;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-}
-.formStatus {
-  margin: 0;
-  font-size: 0.9rem;
-  text-align: center;
-}
+
 .btn:disabled {
   opacity: 0.6;
   cursor: default;
@@ -879,46 +823,6 @@ textarea.input {
 }
 
 /* forms */
-.formDesc {
-  margin: -4px 0 4px;
-  font-size: 0.92rem;
-  color: var(--t-muted);
-}
-.signupRow {
-  display: flex;
-  gap: 8px;
-}
-.signupRow .input {
-  flex: 1;
-  min-width: 0;
-}
-.signupRow .btn {
-  flex: none;
-  min-height: 44px;
-}
-@media (max-width: 380px) {
-  .signupRow {
-    flex-direction: column;
-  }
-  .signupRow .btn {
-    width: 100% !important;
-  }
-}
-.checkRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-weight: 500;
-  font-size: 0.92rem;
-  cursor: pointer;
-}
-.checkRow input {
-  width: 20px;
-  height: 20px;
-  margin: 1px 0 0;
-  accent-color: var(--t-text);
-  flex: none;
-}
 
 /* image extras */
 .fullBleed {
@@ -1764,79 +1668,4 @@ textarea.input {
   width: 20px;
   height: 20px;
 }
-.waForm {
-  gap: 8px;
-}
-.waItems {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.waItem {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 6px 6px 14px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
-}
-.waItemName {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-.waItemPrice {
-  font-weight: 500;
-  font-size: 0.8rem;
-  opacity: 0.75;
-}
-.waStepper {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-}
-.waStepper button {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  border-radius: 999px;
-  cursor: pointer;
-  color: var(--t-bg-solid);
-  background: var(--t-block-text);
-}
-.waStepper button:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
-.waStepper svg {
-  width: 16px;
-  height: 16px;
-}
-.waStepper output {
-  min-width: 2ch;
-  text-align: center;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.waField input,
-.waField textarea {
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 14px;
-  border: 1px solid color-mix(in srgb, var(--t-block-text) 15%, transparent);
-  border-radius: 14px;
-  font: inherit;
-  color: var(--t-block-text);
-  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
-  resize: vertical;
-}
-.waTotal {
-  font-weight: 700;
-}
+

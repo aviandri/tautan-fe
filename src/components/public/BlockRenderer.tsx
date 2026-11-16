@@ -24,6 +24,8 @@ export interface RenderOpts {
 
 export function BlockRenderer({ block, childBlocks = [], opts }: { block: Block; childBlocks?: Block[]; opts: RenderOpts }) {
   const { env } = opts;
+  // gated card the visitor hasn't unlocked: the API sends data:null (lock UI is tautan-27's P3-C/D work)
+  if ((block as { locked?: boolean }).locked || block.data == null) return null;
   switch (block.type) {
     case "link":
       return <LinkBlock block={block} env={env} />;
