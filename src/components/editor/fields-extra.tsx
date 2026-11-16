@@ -7,49 +7,7 @@ import { api, assetUrl } from "@/lib/api";
 import type { LinkLayout, Schedule } from "@/lib/types";
 import { uploadErrorMessage } from "./fields";
 
-// ---------- Segmented control ----------
-
-export function Segmented<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-  size = "md",
-}: {
-  label: string;
-  value: T;
-  options: { value: T; label: React.ReactNode; title?: string }[];
-  onChange: (v: T) => void;
-  size?: "sm" | "md";
-}) {
-  const id = useId();
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span id={id} className="text-[13px] font-medium">
-        {label}
-      </span>
-      <div role="radiogroup" aria-labelledby={id} className="inline-flex w-fit flex-wrap gap-1 rounded-xl bg-black/[.045] p-1">
-        {options.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            role="radio"
-            aria-checked={value === o.value}
-            title={o.title}
-            onClick={() => onChange(o.value)}
-            className={cx(
-              "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors",
-              size === "sm" ? "h-7 px-2.5 text-[12px]" : "h-8 px-3 text-[13px]",
-              value === o.value ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground",
-            )}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
+export { Segmented } from "@/components/ui/segmented";
 
 // ---------- Toggle row ----------
 
@@ -178,18 +136,18 @@ export function MoreOptions({
 }) {
   const [open, setOpen] = useState(!!defaultOpen);
   return (
-    <div className="rounded-xl border border-line">
+    <div className="rounded-[20px] bg-background">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-[13px] font-medium"
+        className="flex w-full items-center gap-2 rounded-[20px] px-4 py-3.5 text-left text-[15px] font-bold"
       >
         {title}
         {badge}
         <ChevronDown className={cx("ml-auto size-4 text-muted transition-transform", open && "rotate-180")} />
       </button>
-      {open && <div className="flex flex-col gap-4 border-t border-line px-3.5 py-4">{children}</div>}
+      {open && <div className="flex flex-col gap-4 px-4 pb-4 pt-1">{children}</div>}
     </div>
   );
 }
@@ -431,7 +389,7 @@ export function LayoutPicker({ value, onChange }: { value: LinkLayout; onChange:
             onClick={() => onChange(l.value)}
             className={cx(
               "flex flex-col items-center gap-1.5 rounded-xl border px-2 pb-1.5 pt-2.5 transition-colors",
-              value === l.value ? "border-brand bg-brand/[.06] text-brand" : "border-line text-[#a29e8e] hover:border-[#cfcbbd]",
+              value === l.value ? "border-brand bg-brand/[.06] text-brand" : "border-line text-[#a29e8e] hover:border-line-2",
             )}
           >
             <div className="flex h-6 w-full items-center">{l.art}</div>

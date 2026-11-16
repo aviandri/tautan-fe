@@ -57,3 +57,18 @@ body {
   from { opacity: 0; transform: translateY(6px) scale(.98); }
   to { opacity: 1; transform: none; }
 }
+
+/* Kartu motion: one-shot entrances and gentle loops; all off for reduced motion. */
+@keyframes k-pop { 0% { transform: scale(.6); opacity: 0 } 60% { transform: scale(1.08); opacity: 1 } 100% { transform: scale(1) } }
+@keyframes k-rise { from { transform: translateY(14px); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes k-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(29, 122, 74, .45) } 50% { box-shadow: 0 0 0 6px rgba(29, 122, 74, 0) } }
+@keyframes k-float { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+@keyframes k-fall { 0% { transform: translateY(-40px) rotate(0); opacity: 0 } 15% { opacity: 1 } 100% { transform: translateY(110vh) rotate(260deg); opacity: 0 } }
+.k-enter { animation: k-rise .6s var(--ease) both }
+.k-pop { animation: k-pop .5s var(--ease) both }
+.k-live { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); animation: k-pulse 2.8s ease-in-out infinite; flex: none }
+.k-float { animation: k-float 3.6s ease-in-out infinite }
+.k-stage { background-color: var(--surface); background-image: radial-gradient(var(--line-2) 1px, transparent 1px); background-size: 18px 18px }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important }
+}

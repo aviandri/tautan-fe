@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BLOCK_META } from "./block-meta";
 import { ALL_TYPES, CATALOG, CATEGORIES, searchCards } from "./catalog";
-import { BLOCK_TYPES } from "../types";
+import { BLOCK_TYPES } from "../constants";
 
 const SELL = ["product", "shop", "whatsapp", "marketplace", "price_list", "payment", "store_info", "tip_jar", "reviews"];
 

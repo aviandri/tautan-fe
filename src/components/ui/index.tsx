@@ -12,19 +12,22 @@ export const cx = clsx;
 
 // ---------- Button ----------
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonVariant = "primary" | "dark" | "secondary" | "soft" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
+/** Kartu buttons: pills that step up on hover and press in on click. */
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-brand text-brand-ink hover:bg-[#184a3c] shadow-[0_1px_0_rgba(0,0,0,.12)]",
-  secondary: "bg-surface text-foreground border border-line hover:border-[#cfcbbd]",
-  ghost: "text-foreground hover:bg-black/[.04]",
-  danger: "bg-danger text-white hover:bg-[#962a1a]",
+  primary: "bg-brand text-brand-ink hover:bg-brand-hover",
+  dark: "bg-foreground text-background hover:bg-ink-2",
+  secondary: "bg-surface text-foreground shadow-[inset_0_0_0_1px_var(--line-2)] hover:shadow-[inset_0_0_0_1px_var(--ink)]",
+  soft: "bg-sunken text-foreground hover:bg-line",
+  ghost: "text-foreground hover:bg-sunken",
+  danger: "bg-danger text-white hover:brightness-90",
 };
 const sizes: Record<ButtonSize, string> = {
-  sm: "h-8 px-3 text-[13px] gap-1.5 rounded-lg",
-  md: "h-10 px-4 text-sm gap-2 rounded-xl",
-  lg: "h-12 px-5 text-[15px] gap-2 rounded-xl",
+  sm: "h-[38px] px-4 text-[14px] gap-1.5",
+  md: "h-12 px-[22px] text-[15px] gap-2",
+  lg: "h-14 px-7 text-[17px] gap-2",
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -42,9 +45,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       disabled={disabled || loading}
       className={cx(
-        "inline-flex select-none items-center justify-center whitespace-nowrap font-medium",
-        "transition-[background-color,border-color,transform,opacity] duration-150",
-        "active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "inline-flex select-none items-center justify-center whitespace-nowrap rounded-full font-semibold",
+        "transition-[background-color,box-shadow,transform,opacity,filter] duration-150 ease-k",
+        "hover:-translate-y-px active:translate-y-0 active:scale-[.97]",
+        "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand",
         "disabled:pointer-events-none disabled:opacity-50",
         variants[variant],
         sizes[size],
@@ -70,9 +74,9 @@ export function IconButton({
       aria-label={label}
       title={label}
       className={cx(
-        "inline-flex size-8 items-center justify-center rounded-lg text-muted transition-colors",
-        "hover:bg-black/[.05] hover:text-foreground active:translate-y-px",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+        "inline-flex size-9 items-center justify-center rounded-full text-ink-2 transition-[background-color,transform] duration-150 ease-k",
+        "hover:bg-sunken hover:text-foreground active:scale-[.92]",
+        "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand",
         "disabled:pointer-events-none disabled:opacity-40",
         className,
       )}
@@ -85,15 +89,17 @@ export function IconButton({
 
 // ---------- Fields ----------
 
+/** Kartu inputs: soft fill with a hairline, white with an ink ring when focused. */
+const ring = "shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-[inset_0_0_0_1px_var(--line-2)]";
+const ringFocus = "focus:bg-surface focus:shadow-[inset_0_0_0_2px_var(--ink)] focus:outline-none";
+const ringBad = "aria-[invalid=true]:shadow-[inset_0_0_0_2px_var(--danger)]";
 const inputBase =
-  "w-full rounded-xl border border-line bg-surface px-3.5 text-[15px] text-foreground placeholder:text-[#a8a493] " +
-  "transition-[border-color,box-shadow] duration-150 hover:border-[#cfcbbd] " +
-  "focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10 " +
-  "aria-[invalid=true]:border-danger aria-[invalid=true]:focus:ring-danger/10 disabled:opacity-60";
+  `w-full rounded-2xl border-0 bg-background px-4 text-[15px] font-medium text-foreground placeholder:font-normal placeholder:text-muted/70 ` +
+  `transition-[box-shadow,background-color] duration-150 ${ring} ${ringFocus} ${ringBad} disabled:opacity-60`;
 
 export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   function Input({ className, ...rest }, ref) {
-    return <input ref={ref} className={cx(inputBase, "h-11", className)} {...rest} />;
+    return <input ref={ref} className={cx(inputBase, "h-12", className)} {...rest} />;
   },
 );
 
@@ -105,10 +111,11 @@ export const PrefixInput = forwardRef<
   return (
     <div
       className={cx(
-        "flex h-11 w-full items-center rounded-xl border border-line bg-surface pl-3.5 text-[15px]",
-        "transition-[border-color,box-shadow] duration-150 hover:border-[#cfcbbd]",
-        "focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10",
-        "has-[[aria-invalid=true]]:border-danger has-[[aria-invalid=true]]:focus-within:ring-danger/10",
+        "flex h-12 w-full items-center rounded-2xl bg-background pl-4 text-[15px] font-medium",
+        "transition-[box-shadow,background-color] duration-150",
+        ring,
+        "focus-within:bg-surface focus-within:shadow-[inset_0_0_0_2px_var(--ink)]",
+        "has-[[aria-invalid=true]]:shadow-[inset_0_0_0_2px_var(--danger)]",
       )}
     >
       <span className="select-none text-muted">{prefix}</span>
@@ -125,7 +132,7 @@ export const Textarea = forwardRef<
   HTMLTextAreaElement,
   React.TextareaHTMLAttributes<HTMLTextAreaElement>
 >(function Textarea({ className, ...rest }, ref) {
-  return <textarea ref={ref} className={cx(inputBase, "min-h-24 py-2.5 leading-relaxed", className)} {...rest} />;
+  return <textarea ref={ref} className={cx(inputBase, "min-h-24 py-3 leading-relaxed", className)} {...rest} />;
 });
 
 export function Field({
@@ -147,8 +154,8 @@ export function Field({
   const id = htmlFor ?? auto;
   const msgId = `${id}-msg`;
   return (
-    <div className={cx("flex flex-col gap-1.5", className)}>
-      <label htmlFor={id} className="text-[13px] font-medium text-foreground">
+    <div className={cx("flex flex-col gap-[7px]", className)}>
+      <label htmlFor={id} className="text-[13px] font-semibold text-ink-2">
         {label}
       </label>
       {children({ id, "aria-invalid": !!error, "aria-describedby": error || hint ? msgId : undefined })}
@@ -185,16 +192,16 @@ export function Switch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cx(
-        "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors duration-200",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2",
+        "relative inline-flex h-7 w-[46px] shrink-0 items-center rounded-full transition-colors duration-200",
+        "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand",
         "disabled:opacity-50",
-        checked ? "bg-brand" : "bg-[#d9d5c7]",
+        checked ? "bg-brand" : "bg-line-2",
       )}
     >
       <span
         className={cx(
-          "inline-block size-5 rounded-full bg-white shadow-sm transition-transform duration-200",
-          checked ? "translate-x-[18px]" : "translate-x-0.5",
+          "inline-block size-[22px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,.2)] transition-transform duration-200 ease-k",
+          checked ? "translate-x-[21px]" : "translate-x-[3px]",
         )}
       />
     </button>
@@ -206,7 +213,7 @@ export function Spinner({ className }: { className?: string }) {
 }
 
 export function Card({ className, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("rounded-2xl border border-line bg-surface", className)} {...rest} />;
+  return <div className={cx("rounded-[28px] bg-surface shadow-card", className)} {...rest} />;
 }
 
 export function Alert({ children, tone = "danger" }: { children: React.ReactNode; tone?: "danger" | "info" }) {
@@ -214,8 +221,8 @@ export function Alert({ children, tone = "danger" }: { children: React.ReactNode
     <div
       role={tone === "danger" ? "alert" : "status"}
       className={cx(
-        "rounded-xl px-3.5 py-2.5 text-sm",
-        tone === "danger" ? "bg-danger/[.07] text-danger" : "bg-brand/[.07] text-brand",
+        "rounded-[18px] px-4 py-3 text-sm font-medium",
+        tone === "danger" ? "bg-danger/[.08] text-danger" : "bg-brand-soft text-brand-hover",
       )}
     >
       {children}

@@ -5,7 +5,7 @@
  */
 import type { CreateBlockInput, MarketplacePlatform, ProductData, UnfurlResult } from "../types";
 import { normalizeUrl, urlError } from "../url";
-import { detectMarketplace, isProductUrl, MARKETPLACES } from "../sell/platforms";
+import { detectMarketplace, isProductUrl, MARKETPLACES } from "../sell/platforms-meta";
 
 const clip = (s: string | undefined, n: number) => {
   const t = (s ?? "").trim().replace(/\s+/g, " ");

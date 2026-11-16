@@ -45,10 +45,6 @@ export function TabsBar({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <p className="text-[13px] font-medium text-muted">Tabs</p>
-        <p className="text-[12px] text-muted">{tabs.length > 1 ? "Drag to reorder" : "Add tabs to split your page into sections"}</p>
-      </div>
       <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
         <SortableList items={tabs} axis="x" onReorder={(ids) => reorder.mutate(ids)}>
           <div className="flex items-center gap-1.5">
@@ -102,7 +98,7 @@ export function TabsBar({
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-dashed border-line px-3.5 text-sm font-medium text-muted transition-colors hover:border-brand hover:text-brand"
+            className="inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-full bg-sunken px-3.5 text-[14px] font-semibold text-ink-2 transition-colors hover:bg-line hover:text-foreground"
           >
             <Plus className="size-3.5" /> Tab
           </button>
@@ -140,9 +136,9 @@ function TabChip({
   return (
     <div
       className={cx(
-        "flex h-9 shrink-0 items-center rounded-full border text-sm font-medium transition-colors",
-        active ? "border-foreground bg-foreground text-background" : "border-line bg-surface hover:border-[#cfcbbd]",
-        isDragging && "shadow-lg",
+        "flex h-[34px] shrink-0 items-center rounded-full text-[14px] font-semibold transition-colors",
+        active ? "bg-foreground text-background" : "bg-sunken text-foreground hover:bg-line",
+        isDragging && "shadow-lift",
       )}
     >
       <button
@@ -164,7 +160,7 @@ function TabChip({
             aria-label={`${tab.title} tab options`}
             className={cx(
               "mr-1 flex size-7 items-center justify-center rounded-full",
-              active ? "hover:bg-white/15" : "text-muted hover:bg-black/[.05]",
+              active ? "hover:bg-white/15" : "text-muted hover:bg-black/[.06]",
             )}
           >
             <MoreHorizontal className="size-3.5" />

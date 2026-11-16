@@ -38,7 +38,7 @@ export function ContactDetail({ id }: { id: string }) {
 
       <Card className="p-5 sm:p-6">
         <div className="flex items-start gap-4">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent/15 text-lg font-semibold text-[#9a4a1d]">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-lg font-semibold text-warn">
             {(c.name || c.email).slice(0, 1).toUpperCase()}
           </span>
           <div className="min-w-0 flex-1">
@@ -59,7 +59,7 @@ export function ContactDetail({ id }: { id: string }) {
           </div>
           <a
             href={`mailto:${encodeURIComponent(c.email)}`}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-brand px-3 text-sm font-medium text-brand-ink hover:bg-[#184a3c]"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-brand px-3 text-sm font-medium text-brand-ink hover:bg-brand-hover"
           >
             <Mail className="size-3.5" /> Email
           </a>

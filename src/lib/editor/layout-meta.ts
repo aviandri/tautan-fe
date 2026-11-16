@@ -3,7 +3,7 @@
  */
 import { Briefcase, Columns2, ListOrdered, MapPin, Megaphone, Sparkle } from "lucide-react";
 import type { BlockDataMap } from "../types";
-import { MARQUEE_SPEEDS } from "../types";
+import { MARQUEE_SPEEDS } from "../constants";
 import { compact, maxLen, plural, put, required, withSchedule, type BlockMeta, type FieldErrors } from "./meta-core";
 import { stripKeys } from "./engage-meta";
 import { httpUrlError, imageUrlError } from "./sell-meta";

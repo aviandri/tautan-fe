@@ -11,18 +11,8 @@ import { useEditorData } from "@/lib/editor/queries";
 import { getMeta, type FieldErrors } from "@/lib/editor/block-meta";
 import { formatMoney, type Currency } from "@/lib/sell/money";
 import { COURIER_LABELS, detectMarketplace, detectTipPlatform, MARKETPLACES, TIPS } from "@/lib/sell/platforms";
-import {
-  COURIERS,
-  MARKETPLACE_PLATFORMS,
-  PRODUCT_BADGES,
-  TIP_PLATFORMS,
-  WA_ORDER_FIELDS,
-  type BlockDataMap,
-  type MarketplacePlatform,
-  type ProductAction,
-  type ProductData,
-  type ShopItem,
-} from "@/lib/types";
+import type { BlockDataMap, MarketplacePlatform, ProductAction, ProductData, ShopItem } from "@/lib/types";
+import { COURIERS, MARKETPLACE_PLATFORMS, PRODUCT_BADGES, TIP_PLATFORMS, WA_ORDER_FIELDS } from "@/lib/constants";
 import { ImageField, ItemsEditor, TextField, UrlField } from "../fields";
 import { MoreOptions, Segmented, ToggleRow } from "../fields-extra";
 import type { FormProps } from "../BlockForm";
@@ -479,7 +469,7 @@ export function PriceListForm({ data, onChange, errors, autoFocus }: FormProps<"
                     </div>
                     <TextField label="Description (optional)" value={it.desc ?? ""} onChange={(desc) => upd({ desc })} maxLength={200} error={errors[`${p}.desc`]} />
                     <label className="flex items-center gap-2 text-[13px]">
-                      <input type="checkbox" checked={!!it.price_from} onChange={(e) => upd({ price_from: e.target.checked || undefined })} className="size-4 accent-[var(--color-brand)]" />
+                      <input type="checkbox" checked={!!it.price_from} onChange={(e) => upd({ price_from: e.target.checked || undefined })} className="size-4 accent-[var(--accent)]" />
                       Show as “from” price
                     </label>
                     <ImageField label="Photo (optional)" shape="square" allowUrl={false} value={it.image_url} onChange={(image_url) => upd({ image_url })} error={errors[`${p}.image_url`]} />

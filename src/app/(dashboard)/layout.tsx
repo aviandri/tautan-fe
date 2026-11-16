@@ -1,7 +1,6 @@
 "use client";
 
-import { Sidebar, MobileNav } from "@/components/dashboard/Sidebar";
-import { TopBar } from "@/components/dashboard/TopBar";
+import { TopNav } from "@/components/dashboard/TopNav";
 import { Spinner } from "@/components/ui";
 import { Toaster } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
@@ -30,20 +29,16 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   if (!session.data || needsOnboarding) {
     return (
-      <div className="grid min-h-dvh place-items-center">
+      <div className={`grid min-h-dvh place-items-center`}>
         <Spinner />
       </div>
     );
   }
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[232px_minmax(0,1fr)]">
-      <Sidebar />
-      <div className="flex min-w-0 flex-col pb-20 lg:pb-0">
-        <TopBar profile={session.data.profile} />
-        <main className="flex-1">{children}</main>
-      </div>
-      <MobileNav />
+    <div className={`flex min-h-dvh flex-col`} data-kartu-root>
+      <TopNav profile={session.data.profile} />
+      <main className="flex min-w-0 flex-1 flex-col">{children}</main>
       <Toaster />
     </div>
   );

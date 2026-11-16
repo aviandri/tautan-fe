@@ -2,10 +2,21 @@
 
 import { AlertCircle, Mail, Share2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { QrCard } from "@/components/qr";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui";
 import { Popover } from "@/components/ui/popover";
-import { profileUrl } from "@/lib/qr";
+// The QR code (and its encoder) loads when the panel opens, not with every dashboard page.
+const QrCard = dynamic(() => import("@/components/qr").then((m) => m.QrCard), {
+  ssr: false,
+  loading: () => <div className="mx-auto size-40 animate-pulse rounded-lg bg-sunken" aria-label="Loading QR code" />,
+});
+
+/** Public URL for a username (same rule as lib/qr profileUrl, without importing the encoder). */
+function profileUrl(username: string): string {
+  const env = process.env.NEXT_PUBLIC_SITE_URL;
+  const origin = env ? env.replace(/\/$/, "") : window.location.origin;
+  return `${origin}/${username}`;
+}
 import type { Profile } from "@/lib/types";
 
 /** Share targets: plain intent URLs, no third-party scripts. */
@@ -53,7 +64,7 @@ function ShareBody({ profile }: { profile: Profile }) {
         <p className="text-[13px] text-muted">Scan, copy or send your link.</p>
       </div>
       {!profile.is_published && (
-        <p className="flex items-start gap-2 rounded-xl bg-accent/10 px-3 py-2 text-[13px] text-[#8a3f17]">
+        <p className="flex items-start gap-2 rounded-xl bg-accent px-3 py-2 text-[13px] text-accent-ink">
           <AlertCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
           Your page is a draft. Visitors see “page not found” until you publish.
         </p>

@@ -5,7 +5,7 @@ import { isColor } from "./theme/resolve";
 // P2-7 page extras (SPEC "P2-7 Page extras"). The stored shapes are the shared zod types in types.ts;
 // these readers validate them for display, because the values reach scripts and visitor-facing UI.
 
-export { isTempUsername } from "./types";
+export { isTempUsername } from "./constants";
 export type { PageSettings };
 
 /** An announcement that is safe to show: id present (dismissals key on it), URLs and colours checked. */

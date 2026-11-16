@@ -1,19 +1,18 @@
 /**
  * Phase 3-C (Engage), 3-D (Text and layout) and card-level gates.
  * Mirrors SPEC "P3-C/D: implemented (BE)" and "Card-level gates: implemented (BE)".
- * Self-contained (no imports from ./types) so types.ts can re-export it without a cycle.
+ * No imports from ./types (only ./constants) so types.ts can re-export it without a cycle.
  */
 import { z } from "zod";
+import { SUBSCRIBE_MODES, SHOW_RESULTS, MARQUEE_SPEEDS, TEXT_STYLES, GATE_KINDS } from "./constants";
 
 const ScheduleSchema = z.object({ start_at: z.string().optional(), end_at: z.string().optional() });
 const schedule = { schedule: ScheduleSchema.optional() };
 
-export const SUBSCRIBE_MODES = ["everyone", "ask", "none"] as const;
 export type SubscribeMode = (typeof SUBSCRIBE_MODES)[number];
 
 // ---------- P3-C Engage ----------
 
-export const SHOW_RESULTS = ["after_vote", "always", "never"] as const;
 export type ShowResults = (typeof SHOW_RESULTS)[number];
 
 export const PollResultsSchema = z.object({ counts: z.record(z.string(), z.number()), total: z.number() });
@@ -80,7 +79,6 @@ export const SpotlightDataSchema = z.object({
   ...schedule,
 });
 
-export const MARQUEE_SPEEDS = ["slow", "normal", "fast"] as const;
 export const MarqueeDataSchema = z.object({
   text: z.string(),
   separator: z.string().optional(),
@@ -140,7 +138,6 @@ export const MapDataSchema = z.object({
 
 // ---------- additions to existing types (merged in types.ts) ----------
 
-export const TEXT_STYLES = ["card", "sticky_note", "speech_bubble", "torn_paper", "chalkboard"] as const;
 export type TextStyle = (typeof TEXT_STYLES)[number];
 
 export const DiscountCodeEntrySchema = z.object({
@@ -152,11 +149,9 @@ export const DiscountCodeEntrySchema = z.object({
 });
 export type DiscountCodeEntry = z.infer<typeof DiscountCodeEntrySchema>;
 
-export const DONATE_PLATFORMS = ["saweria", "trakteer", "kofi", "paypal", "buymeacoffee"] as const;
 
 // ---------- card-level gates ----------
 
-export const GATE_KINDS = ["password", "email", "age_18", "follow"] as const;
 export type GateKind = (typeof GATE_KINDS)[number];
 
 /** What reads return (`block.gate`). The editor also gets subscribe and has_password. */
@@ -213,5 +208,3 @@ export const P3CD_SCHEMAS = {
   map: MapDataSchema,
 } as const;
 
-export const ENGAGE_TYPES = ["poll", "ask_me", "lead_magnet", "giveaway"] as const;
-export const LAYOUT_TYPES = ["spotlight", "marquee", "timeline", "resume", "before_after", "map"] as const;

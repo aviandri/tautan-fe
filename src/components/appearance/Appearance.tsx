@@ -13,7 +13,8 @@ import { api, ApiError } from "@/lib/api";
 import { byPosition, errorMessage, useEditorData } from "@/lib/editor/queries";
 import { useUpdateProfile } from "@/lib/profile";
 import { DEFAULT_THEME } from "@/lib/theme/presets";
-import { isTempUsername, type Block, type Profile, type ProfilePatch, type Social, type Tab, type Theme } from "@/lib/types";
+import type { Block, Profile, ProfilePatch, Social, Tab, Theme } from "@/lib/types";
+import { isTempUsername } from "@/lib/constants";
 
 type Draft = { theme: Theme; socials: Social[]; socials_position: "top" | "bottom" };
 

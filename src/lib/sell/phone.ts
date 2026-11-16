@@ -1,5 +1,5 @@
 /** WhatsApp numbers: stored as E.164 with the plus. */
-import { E164_RE } from "../types";
+import { E164_RE } from "../constants";
 
 /**
  * Forgiving input → E.164. Local Indonesian forms are the default:
