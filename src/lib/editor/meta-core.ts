@@ -55,7 +55,10 @@ export function withSchedule<K extends BlockType>(
   return (d: BlockDataMap[K]) => {
     const r = fn(d);
     const sched = validateSchedule((d as { schedule?: Schedule }).schedule);
-    const data = { ...r.data } as BlockDataMap[K] & { schedule?: Schedule };
+    const data = { ...r.data } as BlockDataMap[K] & { schedule?: Schedule; resolved?: unknown; computed?: unknown };
+    // server-only read fields (P3-B resolved/computed, video/music resolved) are never sent back
+    delete data.resolved;
+    delete data.computed;
     if (sched.value) data.schedule = sched.value;
     else delete data.schedule;
     if (sched.error) r.errors.schedule = sched.error;

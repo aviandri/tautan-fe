@@ -254,8 +254,12 @@ export const ImageDataSchema = z.object({
   lightbox: z.boolean().optional(),
   ...schedule,
 });
-export const VideoDataSchema = z.object({ url: z.string(), ...schedule });
-export const MusicDataSchema = z.object({ url: z.string(), ...schedule });
+/** Read only (BE #23): oEmbed facts for the click-to-load facade. Never sent back. */
+const mediaResolved = z
+  .object({ provider: z.string().optional(), title: z.string().optional(), author: z.string().optional(), poster: z.string().optional(), video_id: z.string().optional() })
+  .optional();
+export const VideoDataSchema = z.object({ url: z.string(), resolved: mediaResolved, ...schedule });
+export const MusicDataSchema = z.object({ url: z.string(), resolved: mediaResolved, ...schedule });
 export const SocialIconsDataSchema = z.object({
   items: z.array(z.object({ platform: z.string(), url: z.string() })),
   ...schedule,
@@ -944,8 +948,8 @@ export interface UploadResult {
 /** POST /unfurl (P2-5). fetched=false means the site was unreachable: fall back to a plain link. */
 export interface UnfurlResult {
   url: string;
-  /** "marketplace" | "product" are P3-A: a store or a product page on a known marketplace */
-  suggested_type: "link" | "video" | "music" | "booking" | "image" | "marketplace" | "product";
+  /** "marketplace" | "product" are P3-A; "latest_video" is a YouTube channel URL (P3-B) */
+  suggested_type: "link" | "video" | "music" | "booking" | "image" | "marketplace" | "product" | "latest_video";
   dest_kind?: "url" | "email" | "file" | "tab";
   fetched: boolean;
   title: string;
@@ -955,6 +959,9 @@ export interface UnfurlResult {
   /** P3-A: set for marketplace hosts (incl. short links), even when the page couldn't be read */
   kind?: "marketplace";
   platform?: MarketplacePlatform;
+  /** P3-B: YouTube channel URLs (@handle, /c/, /user/, /channel/UC…) */
+  youtube_channel_id?: string;
+  channel_title?: string;
   /** P3-A: minor units, from product:price tags when the currency is supported */
   price?: number;
   currency?: (typeof CURRENCIES)[number];
