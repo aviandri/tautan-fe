@@ -113,7 +113,7 @@ function Row({ s, form, open, onToggle }: { s: ContactSubmission; form: string; 
   return (
     <article className={cx("transition-colors", open ? "bg-background/60" : "hover:bg-background/40")}>
       <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-start gap-3.5 px-5 py-4 text-left">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-sm font-semibold text-[#9a4a1d]">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-warn">
           {initial}
         </span>
         <span className="min-w-0 flex-1">
@@ -135,7 +135,7 @@ function Row({ s, form, open, onToggle }: { s: ContactSubmission; form: string; 
         <div className="flex items-center gap-2 px-5 pb-4 pl-[68px]">
           <a
             href={replyHref}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-brand px-3 text-[13px] font-medium text-brand-ink transition-colors hover:bg-[#184a3c]"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-brand px-3 text-[13px] font-medium text-brand-ink transition-colors hover:bg-brand-hover"
           >
             <Mail className="size-3.5" /> Reply by email
           </a>
@@ -170,7 +170,7 @@ function EmptyState({ hasForm }: { hasForm: boolean }) {
       {!hasForm && (
         <Link
           href="/dashboard"
-          className="mt-5 inline-flex h-9 items-center rounded-xl border border-line bg-surface px-3.5 text-sm font-medium hover:border-[#cfcbbd]"
+          className="mt-5 inline-flex h-9 items-center rounded-xl border border-line bg-surface px-3.5 text-sm font-medium hover:border-line-2"
         >
           Go to the editor
         </Link>

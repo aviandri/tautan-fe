@@ -613,7 +613,7 @@ export function BlockForm<K extends BlockType>({ type, ...props }: FormProps<K> 
         defaultOpen={!!props.errors.schedule}
         badge={
           state ? (
-            <span className="rounded-full bg-accent/15 px-2 text-[11px] font-medium text-[#9a4a1d]">
+            <span className="rounded-full bg-accent px-2 text-[11px] font-medium text-warn">
               {state === "scheduled" ? "Scheduled" : state === "ended" ? "Ended" : "Live now"}
             </span>
           ) : null

@@ -268,7 +268,7 @@ function StartStep({ profile, tabId, onNext }: { profile: Profile; tabId?: strin
             onClick={() => setIntent(it.value)}
             className={cx(
               "flex flex-col items-start rounded-2xl border p-4 text-left transition-[border-color,box-shadow,transform] active:translate-y-px",
-              intent === it.value ? "border-brand shadow-[0_0_0_3px_rgba(31,92,74,.12)]" : "border-line bg-surface hover:border-[#cfcbbd]",
+              intent === it.value ? "border-brand shadow-[0_0_0_3px_rgba(31,92,74,.12)]" : "border-line bg-surface hover:border-line-2",
             )}
           >
             <span className="flex w-full items-center justify-between">
@@ -369,7 +369,7 @@ function SectionsStep({ profile, tabId, onNext, onBack }: { profile: Profile; ta
           const on = picked.has(st.key);
           return (
             <li key={st.key}>
-              <label className={cx("flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition-colors", on ? "border-brand bg-brand/[.04]" : "border-line bg-surface hover:border-[#cfcbbd]")}>
+              <label className={cx("flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition-colors", on ? "border-brand bg-brand/[.04]" : "border-line bg-surface hover:border-line-2")}>
                 <input
                   type="checkbox"
                   className="size-4 accent-[var(--accent)]"

@@ -25,10 +25,10 @@ export function Segmented<T extends string>({
   const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
-      <span id={id} className="text-[13px] font-medium">
+      <span id={id} className="text-[13px] font-semibold text-ink-2">
         {label}
       </span>
-      <div role="radiogroup" aria-labelledby={id} className="inline-flex w-fit flex-wrap gap-1 rounded-xl bg-black/[.045] p-1">
+      <div role="radiogroup" aria-labelledby={id} className="inline-flex w-fit flex-wrap gap-1 rounded-full bg-sunken p-1">
         {options.map((o) => (
           <button
             key={o.value}
@@ -38,9 +38,9 @@ export function Segmented<T extends string>({
             title={o.title}
             onClick={() => onChange(o.value)}
             className={cx(
-              "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors",
-              size === "sm" ? "h-7 px-2.5 text-[12px]" : "h-8 px-3 text-[13px]",
-              value === o.value ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground",
+              "inline-flex items-center justify-center gap-1.5 rounded-full font-semibold transition-colors",
+              size === "sm" ? "h-8 px-3 text-[13px]" : "h-9 px-4 text-[14px]",
+              value === o.value ? "bg-surface text-foreground shadow-[0_1px_2px_rgba(0,0,0,.08)]" : "text-ink-2 hover:text-foreground",
             )}
           >
             {o.label}
@@ -431,7 +431,7 @@ export function LayoutPicker({ value, onChange }: { value: LinkLayout; onChange:
             onClick={() => onChange(l.value)}
             className={cx(
               "flex flex-col items-center gap-1.5 rounded-xl border px-2 pb-1.5 pt-2.5 transition-colors",
-              value === l.value ? "border-brand bg-brand/[.06] text-brand" : "border-line text-[#a29e8e] hover:border-[#cfcbbd]",
+              value === l.value ? "border-brand bg-brand/[.06] text-brand" : "border-line text-[#a29e8e] hover:border-line-2",
             )}
           >
             <div className="flex h-6 w-full items-center">{l.art}</div>

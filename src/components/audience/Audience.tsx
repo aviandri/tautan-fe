@@ -114,7 +114,7 @@ export function Audience() {
           <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
             Add an Email signup or a Form block. People who leave their email show up here.
           </p>
-          <Link href="/dashboard" className="mt-5 inline-flex h-9 items-center rounded-xl border border-line bg-surface px-3.5 text-sm font-medium hover:border-[#cfcbbd]">
+          <Link href="/dashboard" className="mt-5 inline-flex h-9 items-center rounded-xl border border-line bg-surface px-3.5 text-sm font-medium hover:border-line-2">
             Go to the editor
           </Link>
         </div>
@@ -155,7 +155,7 @@ function ContactRow({ c }: { c: Contact }) {
   const sources = [...new Set(c.sources.map((s) => s.title || s.type))];
   return (
     <Link href={`/dashboard/audience/${c.id}`} className="flex items-center gap-3.5 px-5 py-3.5 transition-colors hover:bg-background/50">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-sm font-semibold text-[#9a4a1d]">{initial}</span>
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-warn">{initial}</span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className="truncate text-[15px] font-medium">{c.name || c.email}</span>

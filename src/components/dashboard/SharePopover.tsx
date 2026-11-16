@@ -53,7 +53,7 @@ function ShareBody({ profile }: { profile: Profile }) {
         <p className="text-[13px] text-muted">Scan, copy or send your link.</p>
       </div>
       {!profile.is_published && (
-        <p className="flex items-start gap-2 rounded-xl bg-accent/10 px-3 py-2 text-[13px] text-[#8a3f17]">
+        <p className="flex items-start gap-2 rounded-xl bg-accent px-3 py-2 text-[13px] text-accent-ink">
           <AlertCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
           Your page is a draft. Visitors see “page not found” until you publish.
         </p>

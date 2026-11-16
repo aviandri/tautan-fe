@@ -80,7 +80,7 @@ export function Editor() {
           </div>
           <Link
             href="/dashboard/settings"
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-line px-3 text-sm font-medium transition-colors hover:border-[#cfcbbd]"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-line px-3 text-sm font-medium transition-colors hover:border-line-2"
           >
             <Settings2 className="size-3.5" /> Edit profile
           </Link>

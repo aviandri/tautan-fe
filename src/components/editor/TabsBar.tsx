@@ -141,7 +141,7 @@ function TabChip({
     <div
       className={cx(
         "flex h-9 shrink-0 items-center rounded-full border text-sm font-medium transition-colors",
-        active ? "border-foreground bg-foreground text-background" : "border-line bg-surface hover:border-[#cfcbbd]",
+        active ? "border-foreground bg-foreground text-background" : "border-line bg-surface hover:border-line-2",
         isDragging && "shadow-lg",
       )}
     >

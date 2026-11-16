@@ -45,7 +45,7 @@ export function FormsList() {
           <ClipboardList className="mx-auto size-6 text-muted" aria-hidden />
           <p className="mt-3 text-[15px] font-medium">No forms yet</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-muted">Add a Form or Email signup block to your page to start collecting responses.</p>
-          <Link href="/dashboard" className="mt-5 inline-flex h-9 items-center rounded-xl border border-line bg-surface px-3.5 text-sm font-medium hover:border-[#cfcbbd]">
+          <Link href="/dashboard" className="mt-5 inline-flex h-9 items-center rounded-xl border border-line bg-surface px-3.5 text-sm font-medium hover:border-line-2">
             Go to the editor
           </Link>
         </div>

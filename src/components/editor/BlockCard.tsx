@@ -86,7 +86,7 @@ export function BlockCard({
             {...(drag.listeners as React.HTMLAttributes<HTMLButtonElement>)}
             type="button"
             aria-label={`Reorder ${summary}`}
-            className="flex h-8 w-6 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-[#b3af9f] hover:text-foreground active:cursor-grabbing"
+            className="flex h-8 w-6 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-line-2 hover:text-foreground active:cursor-grabbing"
           >
             <GripVertical className="size-4" />
           </button>
@@ -112,7 +112,7 @@ export function BlockCard({
               )}
               <GateBadge gate={block.gate} />
               {sched && (
-                <span className={cx("inline-flex items-center gap-1", sched === "ended" ? "text-danger" : "text-[#9a4a1d]")}>
+                <span className={cx("inline-flex items-center gap-1", sched === "ended" ? "text-danger" : "text-warn")}>
                   · <Clock className="size-3" aria-hidden />
                   {sched === "scheduled" ? "Scheduled" : sched === "ended" ? "Schedule ended" : "Scheduled, live now"}
                 </span>
@@ -141,7 +141,7 @@ export function BlockCard({
                 {block.type === "folder" && <p className="mt-0.5 text-[13px] text-muted">Links inside it are deleted too.</p>}
                 <div className="mt-2.5 flex gap-1.5">
                   <button
-                    className="rounded-lg bg-danger px-2.5 py-1.5 text-[13px] font-medium text-white hover:bg-[#962a1a]"
+                    className="rounded-lg bg-danger px-2.5 py-1.5 text-[13px] font-medium text-white hover:brightness-90"
                     onClick={() => {
                       remove.mutate(block.id);
                       close();

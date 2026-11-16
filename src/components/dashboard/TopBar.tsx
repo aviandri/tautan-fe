@@ -54,7 +54,7 @@ export function TopBar({ profile }: { profile: Profile }) {
           )}
         >
           <span
-            className={cx("size-1.5 rounded-full", profile.is_published ? "bg-brand" : "bg-[#b9b5a6]")}
+            className={cx("size-1.5 rounded-full", profile.is_published ? "bg-brand" : "bg-line-2")}
             aria-hidden
           />
           {profile.is_published ? "Published" : "Draft, only you can see it"}

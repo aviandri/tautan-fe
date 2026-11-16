@@ -183,7 +183,7 @@ export function CardPicker({
             ) : (
               !query.trim() &&
               onPaste && (
-                <p className="mb-4 flex items-center gap-2.5 rounded-2xl bg-accent/10 px-4 py-3 text-[13px] font-medium text-[#8a3f17]">
+                <p className="mb-4 flex items-center gap-2.5 rounded-2xl bg-accent px-4 py-3 text-[13px] font-medium text-accent-ink">
                   <Link2 className="size-4 shrink-0" aria-hidden />
                   Tip: paste a link here and we pick the card. A YouTube link becomes a video, a Shopee link a marketplace card.
                 </p>

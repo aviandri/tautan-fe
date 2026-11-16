@@ -91,7 +91,7 @@ export function SmartPaste({ tabId, onCreated, onSell }: { tabId: string; onCrea
         className={cx(
           "flex h-12 items-center gap-2 rounded-xl border bg-surface pl-3.5 pr-1.5 transition-[border-color,box-shadow]",
           "focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10",
-          error ? "border-danger" : "border-line hover:border-[#cfcbbd]",
+          error ? "border-danger" : "border-line hover:border-line-2",
         )}
       >
         {busy ? <Loader2 className="size-4 shrink-0 animate-spin text-brand" aria-hidden /> : <Sparkles className="size-4 shrink-0 text-muted" aria-hidden />}
@@ -118,7 +118,7 @@ export function SmartPaste({ tabId, onCreated, onSell }: { tabId: string; onCrea
           inputMode="url"
           autoCapitalize="none"
           spellCheck={false}
-          className="h-full min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-[#a8a493]"
+          className="h-full min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted/70"
         />
         <button
           type="submit"

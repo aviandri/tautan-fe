@@ -172,7 +172,7 @@ function SettingsInner({ profile, email }: { profile: Profile; email: string }) 
           )}
         </Field>
         {addr.dirty && (
-          <p className="flex items-start gap-2 rounded-xl bg-accent/10 px-3.5 py-2.5 text-[13px] text-[#8a3f17]">
+          <p className="flex items-start gap-2 rounded-xl bg-accent px-3.5 py-2.5 text-[13px] text-accent-ink">
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
             <span>
               {PUBLIC_HOST}/{profile.username} will keep working: it redirects to your new address, and no one else can take it.
