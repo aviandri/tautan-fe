@@ -1,13 +1,12 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { UsernameStatusLine } from "@/components/auth/UsernameStatusLine";
 import { PUBLIC_HOST } from "@/components/brand";
-import { PageHeader } from "@/components/dashboard/PageHeader";
 import { ImageField, TextField } from "@/components/editor/fields";
-import { Button, Field, PrefixInput, Spinner, Switch } from "@/components/ui";
-import { Section, useSection } from "./section";
+import { Button, cx, Field, PrefixInput, Spinner, Switch } from "@/components/ui";
+import { Section, sectionId, useSection } from "./section";
 import { AnnouncementSection } from "./AnnouncementSection";
 import { toast } from "@/components/ui/toast";
 import { API_BASE, ApiError, assetUrl } from "@/lib/api";
@@ -101,8 +100,9 @@ function SettingsInner({ profile, email }: { profile: Profile; email: string }) 
   const shareImg = assetUrl(seo.v.image_url || basics.v.avatar_url);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
-      <PageHeader title="Settings" description="Your profile, page address, visibility and how your link looks when shared." />
+    <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-4 pb-10 pt-2 sm:px-7 lg:flex-row lg:items-start">
+      <SettingsNav />
+      <div className="grid min-w-0 flex-1 items-start gap-[14px] xl:grid-cols-2">
 
       <Section
         title="Profile"
@@ -366,6 +366,62 @@ function SettingsInner({ profile, email }: { profile: Profile; email: string }) 
           </Button>
         </div>
       </Section>
+      </div>
     </div>
+  );
+}
+
+const SECTIONS = ["Profile", "Page address", "Visibility", "Announcement", "Search and sharing", "Page options", "Tracking", "Account"];
+
+/** Kartu settings nav: sticky section links on large screens (current one highlighted), chips on phones. */
+function SettingsNav() {
+  const [current, setCurrent] = useState(sectionId(SECTIONS[0]));
+  // after a click, the clicked section wins while the page scrolls there (two columns share the top band)
+  const lockUntil = useRef(0);
+  useEffect(() => {
+    const els = SECTIONS.map((t) => document.getElementById(sectionId(t))).filter((e): e is HTMLElement => !!e);
+    // entries only list what changed, so keep the visible set and pick the first in page order
+    const visible = new Set<string>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) visible.add(e.target.id);
+          else visible.delete(e.target.id);
+        }
+        const first = SECTIONS.map(sectionId).find((id) => visible.has(id));
+        if (first && Date.now() > lockUntil.current) setCurrent(first);
+      },
+      { rootMargin: "-90px 0px -55% 0px" },
+    );
+    els.forEach((e) => io.observe(e));
+    return () => io.disconnect();
+  }, []);
+  return (
+    <nav aria-label="Settings sections" className="lg:sticky lg:top-[84px] lg:w-[240px] lg:shrink-0">
+      <h1 className="px-1 pb-3 text-[32px] font-semibold leading-none tracking-[-0.045em] lg:px-4 lg:pb-4 lg:text-[36px]">Settings</h1>
+      <div className="-mx-4 flex gap-1 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0">
+        {SECTIONS.map((t) => {
+          const id = sectionId(t);
+          const on = current === id;
+          return (
+            <a
+              key={id}
+              href={`#${id}`}
+              aria-current={on ? "location" : undefined}
+              onClick={() => {
+                lockUntil.current = Date.now() + 1200;
+                setCurrent(id);
+              }}
+              className={cx(
+                "inline-flex h-10 shrink-0 items-center whitespace-nowrap rounded-full px-4 text-[15px] font-semibold transition-colors lg:h-11",
+                on ? "bg-surface text-foreground shadow-card" : "text-ink-2 hover:bg-sunken hover:text-foreground",
+              )}
+            >
+              {t}
+            </a>
+          );
+        })}
+      </div>
+    </nav>
   );
 }

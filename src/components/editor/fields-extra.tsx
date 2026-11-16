@@ -23,9 +23,9 @@ export function ToggleRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex items-center justify-between gap-4 rounded-[18px] bg-background px-4 py-3.5">
       <div>
-        <p className="text-sm font-medium">{label}</p>
+        <p className="text-[15px] font-bold">{label}</p>
         {hint && <p className="text-[13px] text-muted">{hint}</p>}
       </div>
       <Switch label={label} checked={checked} onChange={onChange} />

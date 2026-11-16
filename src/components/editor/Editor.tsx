@@ -7,7 +7,8 @@
  */
 import { Eye, Monitor, Smartphone, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useMedia } from "@/lib/use-media";
 import { Alert, Button, cx, Spinner } from "@/components/ui";
 import { toast } from "@/components/ui/toast";
 import { getMeta } from "@/lib/editor/block-meta";
@@ -35,17 +36,6 @@ type Selection =
   | { kind: "sell"; suggestion: SellSuggestion }
   | null;
 
-function useMedia(query: string) {
-  return useSyncExternalStore(
-    (cb) => {
-      const m = window.matchMedia(query);
-      m.addEventListener("change", cb);
-      return () => m.removeEventListener("change", cb);
-    },
-    () => window.matchMedia(query).matches,
-    () => true,
-  );
-}
 
 function Segment<T extends string>({ value, options, onChange, label }: { value: T; options: { value: T; label: string; icon: React.ReactNode }[]; onChange: (v: T) => void; label: string }) {
   return (

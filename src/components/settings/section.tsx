@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Button, Card } from "@/components/ui";
 
+/** Anchor id for a section title ("Page address" → "page-address"). */
+export const sectionId = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
 /** Shared section wrapper with its own Save button, enabled when dirty. */
 export function Section({
   title,
@@ -29,23 +32,24 @@ export function Section({
   onReset?: () => void;
 }) {
   return (
-    <Card>
+    <Card id={sectionId(title)} className="scroll-mt-[96px]">
       <form
         onSubmit={(e) => {
           e.preventDefault();
           onSave?.();
         }}
+        className="flex flex-col gap-4 p-6"
       >
-        <div className="border-b border-line px-5 py-4 sm:px-6">
+        <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-[15px] font-semibold">{title}</h2>
-            {badge && <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand">{badge}</span>}
+            <h2 className="text-[20px] font-bold tracking-[-0.015em]">{title}</h2>
+            {badge && <span className="rounded-full bg-brand-soft px-2.5 py-0.5 font-mono text-[11px] font-medium text-brand-hover">{badge}</span>}
           </div>
-          {description && <p className="mt-0.5 text-sm text-muted">{description}</p>}
+          {description && <p className="mt-1 text-sm text-muted">{description}</p>}
         </div>
-        <div className="flex flex-col gap-5 px-5 py-5 sm:px-6">{children}</div>
+        <div className="flex flex-col gap-5">{children}</div>
         {onSave && (
-          <div className="flex items-center justify-end gap-2 border-t border-line px-5 py-3 sm:px-6">
+          <div className="flex items-center justify-end gap-2 pt-1">
             {extraActions}
             {dirty && onReset && (
               <Button type="button" variant="ghost" size="sm" onClick={onReset}>
