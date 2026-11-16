@@ -19,6 +19,17 @@ import {
   ToggleRow,
 } from "./fields-extra";
 import { FormBuilder } from "./FormBuilder";
+import {
+  MarketplaceForm,
+  PaymentForm,
+  PriceListForm,
+  ProductForm,
+  ReviewsForm,
+  ShopForm,
+  StoreInfoForm,
+  TipJarForm,
+  WhatsAppForm,
+} from "./sell/SellForms";
 import { SOCIAL_PLATFORMS } from "@/lib/social";
 
 export interface FormContext {
@@ -472,6 +483,15 @@ const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   contact_form: ContactFormForm,
   divider: DividerForm,
   form: FormForm,
+  product: ProductForm,
+  shop: ShopForm,
+  marketplace: MarketplaceForm,
+  whatsapp: WhatsAppForm,
+  price_list: PriceListForm,
+  store_info: StoreInfoForm,
+  payment: PaymentForm,
+  tip_jar: TipJarForm,
+  reviews: ReviewsForm,
 };
 
 export function BlockForm<K extends BlockType>({ type, ...props }: FormProps<K> & { type: K }) {

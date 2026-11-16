@@ -58,6 +58,11 @@ export function errorMessage(err: unknown): string {
         return "Your page changed somewhere else. Reloaded the latest version.";
       case "not_found":
         return "That item no longer exists.";
+      case "invalid_data": {
+        // details: {"items.1.price": "..."}, one entry for the first failing field
+        const msg = Object.values(err.details ?? {})[0];
+        return msg ? `Check this card: ${msg}` : err.message;
+      }
       default:
         return err.message || "Couldn't save. Try again.";
     }
