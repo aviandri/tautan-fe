@@ -190,13 +190,17 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     }
     if (p === "/auth/signup" && method === "POST") {
       const email = String(B.email ?? "").toLowerCase();
-      const username = String(B.username ?? "").toLowerCase();
+      // P2-6: username optional → temporary name + suggestion
+      const claimed = !!B.username;
+      const username = claimed ? String(B.username).toLowerCase() : `tmp.${uid().replace(/-/g, "").slice(0, 10)}`;
+      const suggested = email.split("@")[0].replace(/[^a-z0-9_.]/g, ".").slice(0, 30);
       if (d.users.some((u) => u.email === email)) return err(409, "email_taken", "That email is already registered.");
       if (d.profiles.some((x) => x.username === username)) return err(409, "username_taken", "That username is taken.");
       const user = { id: uid(), email, password: String(B.password), created_at: now() };
       const profile: Profile = {
-        id: uid(), user_id: user.id, username, display_name: username, bio: "", avatar_url: null,
+        id: uid(), user_id: user.id, username, display_name: claimed ? username : "", bio: "", avatar_url: null,
         theme: DEFAULT_THEME, seo: {}, is_published: false, created_at: now(), updated_at: now(),
+        onboarding: { completed: false, username_claimed: claimed, ...(claimed ? {} : { suggested_username: suggested }) },
       };
       d.users.push(user);
       d.profiles.push(profile);
@@ -258,7 +262,19 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     if (p === "/profile" && method === "PATCH") {
       if (B.username && B.username !== profile.username && d.profiles.some((x) => x.username === B.username))
         return err(409, "username_taken", "That username is taken.");
-      Object.assign(profile, B, { updated_at: now() });
+      if (B.is_published && !B.username && profile.onboarding && !profile.onboarding.username_claimed)
+        return err(400, "username_not_claimed", "claim a username before publishing");
+      const { onboarding, ...rest } = B as { onboarding?: Record<string, unknown> };
+      Object.assign(profile, rest, { updated_at: now() });
+      if (onboarding || B.username) {
+        const ob = { ...(profile.onboarding ?? { completed: true, username_claimed: true }), ...(onboarding ?? {}) } as NonNullable<Profile["onboarding"]>;
+        if (B.username) {
+          ob.username_claimed = true;
+          delete ob.suggested_username;
+        }
+        if (onboarding?.completed) ob.completed_at = now();
+        profile.onboarding = ob;
+      }
       return ok(profile);
     }
     if (p === "/profile/editor") {
@@ -403,6 +419,24 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       return ok(summary);
     }
 
+    // P2-6: import preview/apply (no network in the mock)
+    if (p === "/import" && method === "POST") {
+      const preview = {
+        source_url: String(B.url ?? ""),
+        profile: { display_name: "Imported Name", bio: "Imported bio", avatar_url: "" },
+        links: [{ title: "My shop", url: "https://example.com/shop" }, { title: "Latest video", url: "https://example.com/video" }],
+        socials: [{ platform: "instagram", url: "https://instagram.com/example" }],
+      };
+      if (!B.apply) return ok({ preview });
+      const tabId = String(B.tab_id ?? mine(d.tabs)[0]?.id);
+      preview.links.forEach((l) => {
+        d.blocks.push({ id: uid(), profile_id: profile.id, tab_id: tabId, parent_id: null, type: "link", data: l, position: live().filter((b) => b.tab_id === tabId && !b.parent_id).length, is_visible: true, created_at: now(), updated_at: now() } as Block);
+      });
+      if (!profile.display_name || profile.display_name === profile.username) profile.display_name = preview.profile.display_name;
+      if (!profile.bio) profile.bio = preview.profile.bio;
+      profile.onboarding = { ...(profile.onboarding ?? { completed: false, username_claimed: true }), source: "import" };
+      return ok({ preview, applied: { links: 2, socials: 0, display_name: true, bio: true, avatar: false }, profile });
+    }
     // P2-5: classify only (no network fetch in the mock)
     if (p === "/unfurl" && method === "POST") {
       const raw = String(B.url ?? "").trim();

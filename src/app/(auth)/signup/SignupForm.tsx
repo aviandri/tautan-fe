@@ -8,7 +8,7 @@ import { UsernameStatusLine } from "@/components/auth/UsernameStatusLine";
 import { PUBLIC_HOST } from "@/components/brand";
 import { Alert, Button, Field, Input, PrefixInput } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
-import { useAcceptAuth } from "@/lib/session";
+import { homeFor, useAcceptAuth } from "@/lib/session";
 import { useRedirectIfSignedIn } from "@/lib/use-redirect-if-signed-in";
 import { useUsernameCheck } from "@/lib/use-username-check";
 
@@ -23,6 +23,9 @@ export function SignupForm() {
   const accept = useAcceptAuth();
   useRedirectIfSignedIn();
 
+  // Coming from the landing page's "claim your name" box (?u=) reserves the name now;
+  // otherwise the username is claimed at the end of onboarding (P2-6).
+  const withUsername = params.has("u");
   const [username, setUsername] = useState(params.get("u") ?? "");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,12 +45,12 @@ export function SignupForm() {
       return;
     }
     setErrors({});
-    if (!check.ok) return;
+    if (withUsername && !check.ok) return;
     setSubmitting(true);
     try {
-      const r = await api.auth.signup({ ...parsed.data, username: check.value });
+      const r = await api.auth.signup({ ...parsed.data, ...(withUsername ? { username: check.value } : {}) });
       accept(r);
-      router.replace("/dashboard");
+      router.replace(homeFor(r.profile));
     } catch (err) {
       if (err instanceof ApiError && err.code === "email_taken") {
         setErrors({ email: "That email already has an account." });
@@ -62,12 +65,15 @@ export function SignupForm() {
 
   return (
     <>
-      <h1 className="text-[28px] font-semibold tracking-tight">Claim your Tautan</h1>
-      <p className="mt-2 text-[15px] text-muted">Pick a username. You can change it later.</p>
+      <h1 className="text-[28px] font-semibold tracking-tight">{withUsername ? "Claim your Tautan" : "Create your Tautan"}</h1>
+      <p className="mt-2 text-[15px] text-muted">
+        {withUsername ? "Your username becomes your page address. You can change it later." : "Free to start. You'll pick your page address at the end of setup."}
+      </p>
 
       <form onSubmit={onSubmit} noValidate className="mt-8 flex flex-col gap-5">
         {formError && <Alert>{formError}</Alert>}
 
+        {withUsername && (
         <Field
           label="Username"
           hint={<UsernameStatusLine status={check.status} host={PUBLIC_HOST} />}
@@ -87,6 +93,7 @@ export function SignupForm() {
             />
           )}
         </Field>
+        )}
 
         <Field label="Email" error={errors.email}>
           {(p) => (
@@ -106,8 +113,8 @@ export function SignupForm() {
           )}
         </Field>
 
-        <Button type="submit" size="lg" loading={submitting} disabled={!check.ok} className="mt-1">
-          Create my page
+        <Button type="submit" size="lg" loading={submitting} disabled={withUsername && !check.ok} className="mt-1">
+          {withUsername ? "Create my page" : "Create account"}
         </Button>
       </form>
 

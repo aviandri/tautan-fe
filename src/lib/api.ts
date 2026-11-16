@@ -14,6 +14,7 @@ import type {
   ContactDetail,
   FormSubmission,
   FormSummary,
+  ImportResponse,
   UnfurlResult,
   UploadResult,
   AnalyticsRange,
@@ -192,7 +193,8 @@ const withToken = <T extends { access_token: string }>(r: T) => {
 
 export const api = {
   auth: {
-    signup: (b: { email: string; password: string; username: string }) =>
+    /** username optional since P2-6: without it the account gets a tmp. name + onboarding.suggested_username */
+    signup: (b: { email: string; password: string; username?: string }) =>
       request<AuthResponse>("/auth/signup", { method: "POST", body: b, auth: false }).then(withToken),
     login: (b: { email: string; password: string }) =>
       request<AuthResponse>("/auth/login", { method: "POST", body: b, auth: false }).then(withToken),
@@ -238,6 +240,10 @@ export const api = {
     deleted: () => request<{ blocks: Block[] }>("/blocks/deleted"),
     restore: (id: string) => request<Block>(`/blocks/${id}/restore`, { method: "POST" }),
   },
+
+  /** P2-6: preview (apply=false) or import links/socials/profile from another link page */
+  import: (b: { url: string; apply?: boolean; tab_id?: string }) =>
+    request<ImportResponse>("/import", { method: "POST", body: b }),
 
   /** P2-5 smart paste */
   unfurl: (url: string) => request<UnfurlResult>("/unfurl", { method: "POST", body: { url } }),

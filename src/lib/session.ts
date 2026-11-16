@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import { api, refreshAccessToken, tokenStore } from "./api";
-import type { AuthResponse, MeResponse } from "./types";
+import type { AuthResponse, MeResponse, Profile } from "./types";
 
 export const qk = {
   me: ["me"] as const,
@@ -88,4 +88,9 @@ export function useLogout() {
 /** Only allow same-origin relative redirects. */
 export function safeNext(next: string | null | undefined, fallback = "/dashboard") {
   return next && next.startsWith("/") && !next.startsWith("//") ? next : fallback;
+}
+
+/** Where a signed-in user belongs: unfinished onboarding (P2-6) goes to the wizard. */
+export function homeFor(profile: Pick<Profile, "onboarding"> | undefined | null): string {
+  return profile?.onboarding && !profile.onboarding.completed ? "/onboarding" : "/dashboard";
 }
