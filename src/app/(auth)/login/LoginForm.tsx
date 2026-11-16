@@ -27,7 +27,7 @@ export function LoginForm() {
     try {
       const r = await api.auth.login({ email: email.trim(), password });
       accept(r);
-      router.replace(safeNext(params.get("next")));
+      router.replace(r.profile.onboarding && !r.profile.onboarding.completed ? "/onboarding" : safeNext(params.get("next")));
     } catch (err) {
       setError(
         err instanceof ApiError && err.status === 401

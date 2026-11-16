@@ -9,6 +9,14 @@
  *   so the FE works without the Go backend.
  */
 import type {
+  AudienceList,
+  AudienceStatus,
+  ContactDetail,
+  FormSubmission,
+  FormSummary,
+  ImportResponse,
+  UnfurlResult,
+  UploadResult,
   AnalyticsRange,
   AnalyticsSummary,
   ApiErrorBody,
@@ -38,6 +46,8 @@ export class ApiError extends Error {
     public status: number,
     public code: string,
     message: string,
+    /** P2-3: per-field validation messages, keyed by field id */
+    public details?: Record<string, string>,
   ) {
     super(message);
     this.name = "ApiError";
@@ -159,6 +169,7 @@ function toError(status: number, json: unknown): ApiError {
     status,
     e?.code ?? "http_" + status,
     e?.message ?? `Request failed (${status})`,
+    e?.details,
   );
 }
 
@@ -182,7 +193,8 @@ const withToken = <T extends { access_token: string }>(r: T) => {
 
 export const api = {
   auth: {
-    signup: (b: { email: string; password: string; username: string }) =>
+    /** username optional since P2-6: without it the account gets a tmp. name + onboarding.suggested_username */
+    signup: (b: { email: string; password: string; username?: string }) =>
       request<AuthResponse>("/auth/signup", { method: "POST", body: b, auth: false }).then(withToken),
     login: (b: { email: string; password: string }) =>
       request<AuthResponse>("/auth/login", { method: "POST", body: b, auth: false }).then(withToken),
@@ -224,13 +236,42 @@ export const api = {
     remove: (id: string) => request<void>(`/blocks/${id}`, { method: "DELETE" }),
     reorder: (tab_id: string, ids: string[]) =>
       request<void>("/blocks/order", { method: "PUT", body: { tab_id, ids } }),
+    /** P2-1 soft delete: newest first; purged after 30 days. */
+    deleted: () => request<{ blocks: Block[] }>("/blocks/deleted"),
+    restore: (id: string) => request<Block>(`/blocks/${id}/restore`, { method: "POST" }),
+  },
+
+  /** P2-6: preview (apply=false) or import links/socials/profile from another link page */
+  import: (b: { url: string; apply?: boolean; tab_id?: string }) =>
+    request<ImportResponse>("/import", { method: "POST", body: b }),
+
+  /** P2-5 smart paste */
+  unfurl: (url: string) => request<UnfurlResult>("/unfurl", { method: "POST", body: { url } }),
+
+  /** P2-3 forms */
+  forms: {
+    list: () => request<{ items: FormSummary[] }>("/forms"),
+    submissions: (blockId: string, cursor?: string | null) =>
+      request<Paginated<FormSubmission>>(
+        `/forms/${blockId}/submissions${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`,
+      ),
+    csvPath: (blockId: string) => `/forms/${blockId}/submissions.csv`,
+  },
+
+  /** P2-3 audience */
+  audience: {
+    list: (p: { status?: AudienceStatus; q?: string; cursor?: string | null } = {}) =>
+      request<AudienceList>(`/audience${qs({ status: p.status, q: p.q, cursor: p.cursor })}`),
+    get: (id: string) => request<ContactDetail>(`/audience/${id}`),
+    csvPath: (p: { status?: AudienceStatus; q?: string } = {}) => `/audience.csv${qs(p)}`,
   },
 
   uploads: {
-    create: (file: File) => {
+    /** kind "file" (P2-1) also accepts PDF, ZIP, MP3, MP4 and text up to 25 MB; images stay ≤5 MB. */
+    create: (file: File, kind: "image" | "file" = "image") => {
       const fd = new FormData();
       fd.append("file", file);
-      return request<{ url: string }>("/uploads", { method: "POST", body: fd });
+      return request<UploadResult>(`/uploads${kind === "file" ? "?kind=file" : ""}`, { method: "POST", body: fd });
     },
   },
 
@@ -267,6 +308,20 @@ export const api = {
         body: b,
         auth: false,
       }),
+    /** P2-3 form block. 400 invalid_answers carries ApiError.details {field_id: message}. */
+    form: (username: string, b: { block_id: string; answers: Record<string, unknown>; subscribe?: boolean }) =>
+      request<{ id: string; success_message: string }>(`/public/${encodeURIComponent(username)}/form`, {
+        method: "POST",
+        body: b,
+        auth: false,
+      }),
+    /** P2-3 email_signup block */
+    subscribe: (username: string, b: { block_id: string; email: string; name?: string }) =>
+      request<{ success_message: string }>(`/public/${encodeURIComponent(username)}/subscribe`, {
+        method: "POST",
+        body: b,
+        auth: false,
+      }),
   },
 };
 
@@ -275,4 +330,53 @@ export function assetUrl(u: string | null | undefined): string | undefined {
   if (!u) return undefined;
   if (/^(https?:|data:|blob:)/.test(u)) return u;
   return `${API_URL}${u.startsWith("/") ? "" : "/"}${u}`;
+}
+
+// ---------- helpers (P2) ----------
+
+function qs(p: Record<string, string | null | undefined>): string {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(p)) if (v) q.set(k, v);
+  const s = q.toString();
+  return s ? `?${s}` : "";
+}
+
+/**
+ * Download an authenticated CSV (Bearer token + one refresh on 401) and save it
+ * via a temporary object URL. `path` is API-relative, e.g. api.audience.csvPath().
+ */
+export async function downloadCsv(path: string, filename: string): Promise<void> {
+  if (USE_MOCK) {
+    const blob = new Blob(["mock,csv\n"], { type: "text/csv" });
+    return saveBlob(blob, filename);
+  }
+  const go = (token: string | null) =>
+    fetch(`${API_BASE}${path}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: "include",
+    });
+  let res = await go(tokenStore.get());
+  if (res.status === 401) {
+    const t = await refreshAccessToken();
+    if (t) res = await go(t);
+  }
+  if (!res.ok) {
+    let json: unknown = null;
+    try {
+      json = await res.json();
+    } catch {}
+    throw toError(res.status, json);
+  }
+  saveBlob(await res.blob(), filename);
+}
+
+function saveBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

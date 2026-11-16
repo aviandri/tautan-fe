@@ -8,11 +8,14 @@ import { z } from "zod";
 // ---------- Theme ----------
 
 export const ThemeBgSchema = z.object({
-  type: z.enum(["color", "gradient", "image"]),
+  /** split = the gradient behind the header only; none = plain page (P2-2) */
+  type: z.enum(["color", "gradient", "image", "split", "none"]),
   value: z.string(),
 });
 
 export const ButtonStyleSchema = z.enum(["fill", "outline", "shadow"]);
+
+export const ThemeColorPairSchema = z.object({ color: z.string(), text_color: z.string() });
 
 export const ThemeSchema = z.object({
   preset: z.string(),
@@ -23,10 +26,26 @@ export const ThemeSchema = z.object({
     color: z.string(),
     text_color: z.string(),
   }),
+  /** font family name, e.g. "DM Sans" (the BE rejects ids) */
   font: z.string(),
   text_color: z.string(),
+  // ---- Theme v2 (P2-2). All optional; the BE stores unknown keys untouched. ----
+  /** colour behind the page column on wide screens */
+  bg_desktop: z.string().optional(),
+  /** gap between blocks, 0–64 px */
+  spacing: z.number().optional(),
+  block: ThemeColorPairSchema.optional(),
+  label: ThemeColorPairSchema.optional(),
+  border: z.object({ width: z.number(), color: z.string() }).optional(),
+  shadow: z.object({ amount: z.number(), style: z.enum(["soft", "solid"]) }).optional(),
+  /** font family names */
+  fonts: z.object({ title: z.string().optional(), body: z.string().optional() }).optional(),
+  header: z
+    .object({ layout: z.enum(["classic", "banner", "headshot", "business"]), banner_image_url: z.string().optional() })
+    .optional(),
 });
 export type Theme = z.infer<typeof ThemeSchema>;
+export type HeaderLayout = NonNullable<Theme["header"]>["layout"];
 export type ThemeBg = z.infer<typeof ThemeBgSchema>;
 export type ButtonStyle = z.infer<typeof ButtonStyleSchema>;
 
@@ -48,6 +67,10 @@ export const UserSchema = z.object({
 });
 export type User = z.infer<typeof UserSchema>;
 
+/** P2-2: platform is lowercase [a-z0-9_]{1,30}; "divider" is a spacer whose url is ignored. */
+export const SocialSchema = z.object({ platform: z.string(), url: z.string() });
+export type Social = z.infer<typeof SocialSchema>;
+
 export const ProfileSchema = z.object({
   id: z.string(),
   user_id: z.string(),
@@ -60,8 +83,65 @@ export const ProfileSchema = z.object({
   is_published: z.boolean(),
   created_at: z.string(),
   updated_at: z.string(),
+  // P2-2 header socials row (the BE always returns them; optional here for older fixtures)
+  socials: z.array(SocialSchema).optional(),
+  socials_position: z.enum(["top", "bottom"]).optional(),
+  // P2-6 / P2-7 (the BE always returns them; optional here for older fixtures)
+  onboarding: z.lazy(() => OnboardingSchema).optional(),
+  announcement: z.lazy(() => AnnouncementSchema).nullable().optional(),
+  settings: z.lazy(() => PageSettingsSchema).optional(),
 });
 export type Profile = z.infer<typeof ProfileSchema>;
+
+// ---------- P2-6 onboarding / P2-7 page extras ----------
+
+export const ONBOARDING_INTENTS = ["local", "sell", "audience", "other"] as const;
+export type OnboardingIntent = (typeof ONBOARDING_INTENTS)[number];
+
+export const OnboardingSchema = z.object({
+  completed: z.boolean(),
+  completed_at: z.string().optional(),
+  /** free-form, [a-z_]{1,30} */
+  step: z.string().optional(),
+  intent: z.enum(ONBOARDING_INTENTS).optional(),
+  source: z.enum(["import", "scratch", "instagram"]).optional(),
+  /** server-managed */
+  username_claimed: z.boolean(),
+  /** server-managed */
+  suggested_username: z.string().optional(),
+});
+export type Onboarding = z.infer<typeof OnboardingSchema>;
+/** PATCH /profile {onboarding}: merged server-side; username_claimed/suggested_username are read-only. */
+export type OnboardingPatch = Partial<Pick<Onboarding, "step" | "intent" | "source" | "completed">>;
+
+export const AnnouncementSchema = z.object({
+  /** server-assigned; stable across edits (key dismissals on it) */
+  id: z.string().optional(),
+  layout: z.enum(["banner", "popup", "card"]).optional(),
+  title: z.string().max(100),
+  description: z.string().max(204).optional(),
+  image_url: z.string().optional(),
+  cta: z.object({ label: z.string().max(40), url: z.string().optional(), form_block_id: z.string().optional() }).optional(),
+  bg_color: z.string().optional(),
+  text_color: z.string().optional(),
+  schedule: z.object({ start_at: z.string().optional(), end_at: z.string().optional() }).optional(),
+});
+export type Announcement = z.infer<typeof AnnouncementSchema>;
+
+/** Replaced wholesale on PATCH; unknown keys are dropped by the BE. */
+export const PageSettingsSchema = z.object({
+  ga4_id: z.string().optional(),
+  meta_pixel_id: z.string().optional(),
+  language: z.string().optional(),
+  show_share: z.boolean().optional(),
+  show_save_contact: z.boolean().optional(),
+  contact_email: z.string().optional(),
+  contact_phone: z.string().optional(),
+});
+export type PageSettings = z.infer<typeof PageSettingsSchema>;
+
+/** Temporary usernames from username-less signup; can never be claimed. */
+export const isTempUsername = (u: string) => u.startsWith("tmp.");
 
 export const USERNAME_RE = /^[a-z0-9_.]{3,30}$/;
 export const UsernameSchema = z
@@ -92,28 +172,83 @@ export const BLOCK_TYPES = [
   "faq",
   "testimonial",
   "contact_form",
+  // Phase 2 (P2-1)
+  "heading",
+  "divider",
+  "file",
+  "discount_code",
+  "countdown",
+  "booking",
+  "quote",
+  "email_signup",
+  // Phase 2 (P2-3)
+  "form",
 ] as const;
 export type BlockType = (typeof BLOCK_TYPES)[number];
+
+/** P2-1: any block may carry a schedule (RFC 3339). Public reads drop blocks outside it. */
+export const ScheduleSchema = z.object({
+  start_at: z.string().optional(),
+  end_at: z.string().optional(),
+});
+export type Schedule = z.infer<typeof ScheduleSchema>;
+const schedule = { schedule: ScheduleSchema.optional() };
+
+export const TEXT_ALIGNS = ["left", "center", "right"] as const;
+export type TextAlign = (typeof TEXT_ALIGNS)[number];
+
+export const LINK_LAYOUTS = [
+  "button",
+  "thumbnail",
+  "thumbnail_highlight",
+  "grid2",
+  "grid3",
+  "image_background",
+  "carousel",
+] as const;
+export type LinkLayout = (typeof LINK_LAYOUTS)[number];
 
 export const LinkDataSchema = z.object({
   title: z.string(),
   url: z.string(),
   thumbnail_url: z.string().optional(),
+  // P2-1
+  description: z.string().max(300).optional(),
+  layout: z.enum(LINK_LAYOUTS).optional(),
+  /** emoji (≤8 chars) or an image URL */
+  icon: z.string().optional(),
+  label: z.string().max(24).optional(),
+  text_align: z.enum(TEXT_ALIGNS).optional(),
+  dest_kind: z.enum(["url", "email", "file", "tab"]).optional(),
+  /** required when dest_kind = "tab" */
+  tab_id: z.string().optional(),
+  ...schedule,
 });
-export const TextDataSchema = z.object({ content: z.string() });
+export const TextDataSchema = z.object({ content: z.string(), ...schedule });
 export const ImageDataSchema = z.object({
   url: z.string(),
   alt: z.string().optional(),
   link_url: z.string().optional(),
+  full_bleed: z.boolean().optional(),
+  lightbox: z.boolean().optional(),
+  ...schedule,
 });
-export const VideoDataSchema = z.object({ url: z.string() });
-export const MusicDataSchema = z.object({ url: z.string() });
+export const VideoDataSchema = z.object({ url: z.string(), ...schedule });
+export const MusicDataSchema = z.object({ url: z.string(), ...schedule });
 export const SocialIconsDataSchema = z.object({
   items: z.array(z.object({ platform: z.string(), url: z.string() })),
+  ...schedule,
 });
-export const FolderDataSchema = z.object({ title: z.string() });
+export const FolderDataSchema = z.object({
+  title: z.string(),
+  style: z.enum(["collapsible", "inline"]).optional(),
+  ...schedule,
+});
 export const FaqDataSchema = z.object({
   items: z.array(z.object({ q: z.string(), a: z.string() })),
+  heading: z.string().optional(),
+  description: z.string().optional(),
+  ...schedule,
 });
 export const TestimonialDataSchema = z.object({
   items: z.array(
@@ -121,12 +256,98 @@ export const TestimonialDataSchema = z.object({
       quote: z.string(),
       author: z.string(),
       avatar_url: z.string().optional(),
+      role: z.string().optional(),
+      url: z.string().optional(),
     }),
   ),
+  heading: z.string().optional(),
+  description: z.string().optional(),
+  ...schedule,
 });
 export const ContactFormDataSchema = z.object({
   title: z.string(),
   button_label: z.string(),
+  ...schedule,
+});
+
+// ---- P2-1 new block types ----
+export const HeadingDataSchema = z.object({ title: z.string(), text_align: z.enum(TEXT_ALIGNS).optional(), ...schedule });
+export const DividerDataSchema = z.object({
+  style: z.enum(["solid", "dashed", "dotted", "double", "none"]).optional(),
+  ...schedule,
+});
+export const FileDataSchema = z.object({
+  title: z.string(),
+  url: z.string(),
+  file_name: z.string().optional(),
+  /** bytes */
+  size: z.number().optional(),
+  ...schedule,
+});
+export const DiscountCodeDataSchema = z.object({
+  /** "" = no code needed */
+  code: z.string().max(40),
+  description: z.string().optional(),
+  brand: z.string().optional(),
+  discount: z.string().optional(),
+  url: z.string().optional(),
+  button_label: z.string().optional(),
+  ...schedule,
+});
+export const CountdownDataSchema = z.object({
+  /** RFC 3339 */
+  ends_at: z.string(),
+  label: z.string().optional(),
+  description: z.string().optional(),
+  ended_message: z.string().optional(),
+  hide_after_end: z.boolean().optional(),
+  ...schedule,
+});
+/** https on calendly.com, cal.com or app.cal.com only (validated by the BE) */
+export const BookingDataSchema = z.object({ url: z.string(), ...schedule });
+export const QuoteDataSchema = z.object({
+  quote: z.string(),
+  name: z.string().optional(),
+  role: z.string().optional(),
+  heading: z.string().optional(),
+  ...schedule,
+});
+// ---- P2-3 form block ----
+export const FORM_FIELD_TYPES = ["text", "email", "phone", "textarea", "select", "checkbox", "date", "number"] as const;
+export type FormFieldType = (typeof FORM_FIELD_TYPES)[number];
+export const FormFieldSchema = z.object({
+  /** [a-z0-9_-]{1,40}, unique within the form */
+  id: z.string().regex(/^[a-z0-9_-]{1,40}$/),
+  type: z.enum(FORM_FIELD_TYPES),
+  label: z.string(),
+  placeholder: z.string().optional(),
+  required: z.boolean().optional(),
+  /** select only, 1–50 */
+  options: z.array(z.string()).optional(),
+});
+export type FormField = z.infer<typeof FormFieldSchema>;
+export const FormDataSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  button_label: z.string().optional(),
+  success_message: z.string().optional(),
+  hide_labels: z.boolean().optional(),
+  /** default true */
+  create_contacts: z.boolean().optional(),
+  /** default "none" */
+  subscribe: z.enum(["everyone", "ask", "none"]).optional(),
+  /** 1–30 */
+  fields: z.array(FormFieldSchema),
+  ...schedule,
+});
+
+export const EmailSignupDataSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  placeholder: z.string().optional(),
+  button_label: z.string().optional(),
+  success_message: z.string().optional(),
+  ...schedule,
 });
 
 export const BlockDataSchemas = {
@@ -140,6 +361,15 @@ export const BlockDataSchemas = {
   faq: FaqDataSchema,
   testimonial: TestimonialDataSchema,
   contact_form: ContactFormDataSchema,
+  heading: HeadingDataSchema,
+  divider: DividerDataSchema,
+  file: FileDataSchema,
+  discount_code: DiscountCodeDataSchema,
+  countdown: CountdownDataSchema,
+  booking: BookingDataSchema,
+  quote: QuoteDataSchema,
+  email_signup: EmailSignupDataSchema,
+  form: FormDataSchema,
 } satisfies Record<BlockType, z.ZodType>;
 
 export type BlockDataMap = {
@@ -155,6 +385,16 @@ export type FolderData = BlockDataMap["folder"];
 export type FaqData = BlockDataMap["faq"];
 export type TestimonialData = BlockDataMap["testimonial"];
 export type ContactFormData = BlockDataMap["contact_form"];
+export type HeadingData = BlockDataMap["heading"];
+export type DividerData = BlockDataMap["divider"];
+export type FileData = BlockDataMap["file"];
+export type DiscountCodeData = BlockDataMap["discount_code"];
+export type CountdownData = BlockDataMap["countdown"];
+export type BookingData = BlockDataMap["booking"];
+export type QuoteData = BlockDataMap["quote"];
+export type EmailSignupData = BlockDataMap["email_signup"];
+/** Named FormBlockData so it never shadows the DOM FormData. */
+export type FormBlockData = BlockDataMap["form"];
 
 interface BlockBase {
   id: string;
@@ -166,6 +406,8 @@ interface BlockBase {
   is_visible: boolean;
   created_at: string;
   updated_at: string;
+  /** P2-1 soft delete: set on blocks from GET /blocks/deleted */
+  deleted_at?: string;
 }
 
 /** Discriminated union on `type`: narrowing `block.type` narrows `block.data`. */
@@ -184,6 +426,7 @@ const BlockBaseSchema = z.object({
   is_visible: z.boolean(),
   created_at: z.string(),
   updated_at: z.string(),
+  deleted_at: z.string().optional(),
 });
 
 export const BlockSchema = z.discriminatedUnion(
@@ -211,7 +454,8 @@ export interface AnalyticsSummary {
 export interface ContactSubmission {
   id: string;
   profile_id: string;
-  block_id: string;
+  /** null when the form block was deleted */
+  block_id: string | null;
   name: string;
   email: string;
   message: string;
@@ -258,8 +502,12 @@ export type ProfilePatch = Partial<
     | "seo"
     | "is_published"
     | "username"
+    | "socials"
+    | "socials_position"
+    | "announcement"
+    | "settings"
   >
->;
+> & { onboarding?: OnboardingPatch };
 
 export type CreateBlockInput = {
   [K in BlockType]: {
@@ -278,5 +526,99 @@ export interface UpdateBlockInput {
 }
 
 export interface ApiErrorBody {
-  error: { code: string; message: string };
+  error: { code: string; message: string; details?: Record<string, string> };
+}
+
+// ---------- Phase 2 API shapes owned by the editor session (uploads, unfurl, forms, audience) ----------
+
+/** POST /uploads[?kind=file] */
+export interface UploadResult {
+  url: string;
+  file_name?: string;
+  size?: number;
+  content_type?: string;
+}
+
+/** POST /unfurl (P2-5). fetched=false means the site was unreachable: fall back to a plain link. */
+export interface UnfurlResult {
+  url: string;
+  suggested_type: "link" | "video" | "music" | "booking" | "image";
+  dest_kind?: "url" | "email" | "file" | "tab";
+  fetched: boolean;
+  title: string;
+  description: string;
+  image_url: string;
+  site_name: string;
+}
+
+/** GET /forms */
+export interface FormSummary {
+  block_id: string;
+  type: "form" | "email_signup";
+  title: string;
+  tab_id: string;
+  is_visible: boolean;
+  responses: number;
+  last_response_at: string | null;
+}
+
+/** Stored answer; label and type are snapshotted at submit time. */
+export interface FormAnswer {
+  field_id: string;
+  label: string;
+  type: string;
+  value: unknown;
+}
+
+/** GET /forms/{block_id}/submissions */
+export interface FormSubmission {
+  id: string;
+  block_id: string | null;
+  contact_id: string | null;
+  answers: FormAnswer[];
+  created_at: string;
+}
+
+export type AudienceStatus = "all" | "subscribed" | "unsubscribed";
+
+export interface Contact {
+  id: string;
+  email: string;
+  name: string;
+  subscribed: boolean;
+  subscribed_at: string | null;
+  sources: { block_id: string; type: string; title: string }[];
+  responses: number;
+  first_seen_at: string;
+  last_activity_at: string;
+}
+
+/** GET /audience */
+export interface AudienceList extends Paginated<Contact> {
+  counts: { all: number; subscribed: number; unsubscribed: number };
+}
+
+/** GET /audience/{id} */
+export interface ContactDetail {
+  contact: Contact;
+  activity: {
+    kind: "form" | "contact";
+    block_id: string | null;
+    answers?: FormAnswer[];
+    message?: string;
+    created_at: string;
+  }[];
+}
+
+/** POST /import (P2-6) */
+export interface ImportPreview {
+  source_url: string;
+  profile: { display_name: string; bio: string; avatar_url: string };
+  links: { title: string; url: string }[];
+  socials: { platform: string; url: string }[];
+}
+export interface ImportResponse {
+  preview: ImportPreview;
+  applied?: { links: number; socials: number; display_name: boolean; bio: boolean; avatar: boolean };
+  profile?: Profile;
 }

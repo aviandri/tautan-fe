@@ -166,6 +166,9 @@ const err = (status: number, code: string, message: string) => ({
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "tab";
 
+const sameSet = (a: string[], b: string[]) =>
+  a.length === b.length && new Set(a).size === a.length && b.every((x) => a.includes(x));
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export const mockTransport: Transport = async (path, { method, body, token }) => {
@@ -187,13 +190,17 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     }
     if (p === "/auth/signup" && method === "POST") {
       const email = String(B.email ?? "").toLowerCase();
-      const username = String(B.username ?? "").toLowerCase();
+      // P2-6: username optional → temporary name + suggestion
+      const claimed = !!B.username;
+      const username = claimed ? String(B.username).toLowerCase() : `tmp.${uid().replace(/-/g, "").slice(0, 10)}`;
+      const suggested = email.split("@")[0].replace(/[^a-z0-9_.]/g, ".").slice(0, 30);
       if (d.users.some((u) => u.email === email)) return err(409, "email_taken", "That email is already registered.");
       if (d.profiles.some((x) => x.username === username)) return err(409, "username_taken", "That username is taken.");
       const user = { id: uid(), email, password: String(B.password), created_at: now() };
       const profile: Profile = {
-        id: uid(), user_id: user.id, username, display_name: username, bio: "", avatar_url: null,
+        id: uid(), user_id: user.id, username, display_name: claimed ? username : "", bio: "", avatar_url: null,
         theme: DEFAULT_THEME, seo: {}, is_published: false, created_at: now(), updated_at: now(),
+        onboarding: { completed: false, username_claimed: claimed, ...(claimed ? {} : { suggested_username: suggested }) },
       };
       d.users.push(user);
       d.profiles.push(profile);
@@ -231,12 +238,12 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
           id: uid(), profile_id: prof.id, block_id: String(B.block_id), name: String(B.name),
           email: String(B.email), message: String(B.message), created_at: now(),
         });
-        return ok(null, 204);
+        return ok(null, 201);
       }
       return ok({
         profile: prof,
         tabs: d.tabs.filter((t) => t.profile_id === prof.id).sort((a, b) => a.position - b.position),
-        blocks: d.blocks.filter((b) => b.profile_id === prof.id && b.is_visible),
+        blocks: d.blocks.filter((b) => b.profile_id === prof.id && b.is_visible && !b.deleted_at),
       });
     }
 
@@ -245,6 +252,8 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     if (!user) return err(401, "unauthorized", "Missing or invalid token.");
     const profile = d.profiles.find((x) => x.user_id === user.id)!;
     const mine = <T extends { profile_id: string }>(xs: T[]) => xs.filter((x) => x.profile_id === profile.id);
+    /** live (not soft-deleted) blocks of this profile */
+    const live = () => mine(d.blocks).filter((b) => !b.deleted_at);
     const { password: _pw, ...pubUser } = user;
     void _pw;
 
@@ -253,14 +262,26 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     if (p === "/profile" && method === "PATCH") {
       if (B.username && B.username !== profile.username && d.profiles.some((x) => x.username === B.username))
         return err(409, "username_taken", "That username is taken.");
-      Object.assign(profile, B, { updated_at: now() });
+      if (B.is_published && !B.username && profile.onboarding && !profile.onboarding.username_claimed)
+        return err(400, "username_not_claimed", "claim a username before publishing");
+      const { onboarding, ...rest } = B as { onboarding?: Record<string, unknown> };
+      Object.assign(profile, rest, { updated_at: now() });
+      if (onboarding || B.username) {
+        const ob = { ...(profile.onboarding ?? { completed: true, username_claimed: true }), ...(onboarding ?? {}) } as NonNullable<Profile["onboarding"]>;
+        if (B.username) {
+          ob.username_claimed = true;
+          delete ob.suggested_username;
+        }
+        if (onboarding?.completed) ob.completed_at = now();
+        profile.onboarding = ob;
+      }
       return ok(profile);
     }
     if (p === "/profile/editor") {
       return ok({
         profile,
         tabs: mine(d.tabs).sort((a, b) => a.position - b.position),
-        blocks: mine(d.blocks),
+        blocks: live(),
       });
     }
 
@@ -274,6 +295,8 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       return ok(tab, 201);
     }
     if (p === "/tabs/order" && method === "PUT") {
+      if (!sameSet(B.ids as string[], mine(d.tabs).map((t) => t.id)))
+        return err(400, "order_mismatch", "ids must list every tab exactly once");
       (B.ids as string[]).forEach((id, i) => {
         const t = d.tabs.find((x) => x.id === id && x.profile_id === profile.id);
         if (t) t.position = i;
@@ -285,6 +308,8 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       const tab = mine(d.tabs).find((t) => t.id === tabM[1]);
       if (!tab) return err(404, "not_found", "Tab not found.");
       if (method === "PATCH") {
+        if (B.slug && mine(d.tabs).some((t) => t.id !== tab.id && t.slug === B.slug))
+          return err(409, "slug_taken", "another tab already uses this slug");
         Object.assign(tab, B);
         return ok(tab);
       }
@@ -298,7 +323,7 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
 
     if (p === "/blocks" && method === "POST") {
       const parent_id = (B.parent_id as string | null) ?? null;
-      const siblings = mine(d.blocks).filter((b) => b.tab_id === B.tab_id && b.parent_id === parent_id);
+      const siblings = live().filter((b) => b.tab_id === B.tab_id && b.parent_id === parent_id);
       const block = {
         id: uid(), profile_id: profile.id, tab_id: String(B.tab_id), parent_id, type: B.type,
         data: B.data, position: siblings.length, is_visible: true, created_at: now(), updated_at: now(),
@@ -307,15 +332,41 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       return ok(block, 201);
     }
     if (p === "/blocks/order" && method === "PUT") {
-      (B.ids as string[]).forEach((id, i) => {
+      const ids = B.ids as string[];
+      const first = live().find((b) => b.id === ids[0]);
+      const group = first ? live().filter((b) => b.tab_id === B.tab_id && b.parent_id === first.parent_id) : [];
+      if (!first || !sameSet(ids, group.map((b) => b.id)))
+        return err(400, "order_mismatch", "ids must list the whole sibling group exactly once");
+      ids.forEach((id, i) => {
         const b = d.blocks.find((x) => x.id === id && x.profile_id === profile.id);
         if (b) b.position = i;
       });
       return ok(null, 204);
     }
+    if (p === "/blocks/deleted") {
+      const blocks = mine(d.blocks)
+        .filter((b) => b.deleted_at && (b as { deleted_with?: string }).deleted_with === b.id)
+        .sort((a, b) => (b.deleted_at ?? "").localeCompare(a.deleted_at ?? ""));
+      return ok({ blocks });
+    }
+    const restM = p.match(/^\/blocks\/([^/]+)\/restore$/);
+    if (restM && method === "POST") {
+      const block = mine(d.blocks).find((b) => b.id === restM[1] && b.deleted_at);
+      if (!block) return err(404, "not_found", "Block not found.");
+      const parentLive = block.parent_id && live().some((b) => b.id === block.parent_id);
+      if (block.parent_id && !parentLive) block.parent_id = null;
+      block.position = live().filter((b) => b.tab_id === block.tab_id && b.parent_id === block.parent_id).length;
+      d.blocks.forEach((b) => {
+        if ((b as { deleted_with?: string }).deleted_with === block.id) {
+          delete b.deleted_at;
+          delete (b as { deleted_with?: string }).deleted_with;
+        }
+      });
+      return ok(block);
+    }
     const blkM = p.match(/^\/blocks\/([^/]+)$/);
     if (blkM) {
-      const block = mine(d.blocks).find((b) => b.id === blkM[1]);
+      const block = live().find((b) => b.id === blkM[1]);
       if (!block) return err(404, "not_found", "Block not found.");
       if (method === "PATCH") {
         Object.assign(block, B, { updated_at: now() });
@@ -324,7 +375,11 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
         return ok(block);
       }
       if (method === "DELETE") {
-        d.blocks = d.blocks.filter((b) => b.id !== block.id && b.parent_id !== block.id);
+        // P2-1 soft delete; live children go with their folder.
+        const at = now();
+        d.blocks.forEach((b) => {
+          if (b.id === block.id || (b.parent_id === block.id && !b.deleted_at)) Object.assign(b, { deleted_at: at, deleted_with: block.id });
+        });
         return ok(null, 204);
       }
     }
@@ -332,8 +387,11 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     if (p === "/uploads" && method === "POST") {
       const file = body instanceof FormData ? body.get("file") : null;
       if (!(file instanceof Blob)) return err(400, "no_file", "No file uploaded.");
-      // Object URLs don't survive reloads; fine for a mock.
-      return ok({ url: isBrowser ? URL.createObjectURL(file) : "/uploads/mock.png" }, 201);
+      // The mock can't store files; return a stable placeholder URL that passes URL validation.
+      const name = (file as File).name ?? "file";
+      if (url.searchParams.get("kind") === "file")
+        return ok({ url: `https://example.com/files/${encodeURIComponent(name)}`, file_name: name, size: file.size, content_type: file.type }, 201);
+      return ok({ url: `https://picsum.photos/seed/${uid().slice(0, 8)}/600/600`, file_name: name, size: file.size, content_type: file.type }, 201);
     }
 
     if (p === "/analytics/summary") {
@@ -345,7 +403,7 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       });
       const views = series.reduce((s, x) => s + x.views, 0);
       const clicks = series.reduce((s, x) => s + x.clicks, 0);
-      const links = mine(d.blocks).filter((b) => b.type === "link");
+      const links = live().filter((b) => b.type === "link");
       const summary: AnalyticsSummary = {
         views, clicks, ctr: views ? clicks / views : 0, series,
         top_links: links.slice(0, 5).map((b, i) => ({
@@ -361,6 +419,50 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
       return ok(summary);
     }
 
+    // P2-6: import preview/apply (no network in the mock)
+    if (p === "/import" && method === "POST") {
+      const preview = {
+        source_url: String(B.url ?? ""),
+        profile: { display_name: "Imported Name", bio: "Imported bio", avatar_url: "" },
+        links: [{ title: "My shop", url: "https://example.com/shop" }, { title: "Latest video", url: "https://example.com/video" }],
+        socials: [{ platform: "instagram", url: "https://instagram.com/example" }],
+      };
+      if (!B.apply) return ok({ preview });
+      const tabId = String(B.tab_id ?? mine(d.tabs)[0]?.id);
+      preview.links.forEach((l) => {
+        d.blocks.push({ id: uid(), profile_id: profile.id, tab_id: tabId, parent_id: null, type: "link", data: l, position: live().filter((b) => b.tab_id === tabId && !b.parent_id).length, is_visible: true, created_at: now(), updated_at: now() } as Block);
+      });
+      if (!profile.display_name || profile.display_name === profile.username) profile.display_name = preview.profile.display_name;
+      if (!profile.bio) profile.bio = preview.profile.bio;
+      profile.onboarding = { ...(profile.onboarding ?? { completed: false, username_claimed: true }), source: "import" };
+      return ok({ preview, applied: { links: 2, socials: 0, display_name: true, bio: true, avatar: false }, profile });
+    }
+    // P2-5: classify only (no network fetch in the mock)
+    if (p === "/unfurl" && method === "POST") {
+      const raw = String(B.url ?? "").trim();
+      if (!raw) return err(400, "invalid_url", "url is required");
+      const addr = raw.replace(/^mailto:/, "");
+      if (!addr.includes("/") && addr.includes("@"))
+        return ok({ url: `mailto:${addr}`, suggested_type: "link", dest_kind: "email", fetched: false, title: addr, description: "", image_url: "", site_name: "" });
+      let u: URL;
+      try {
+        u = new URL(raw.includes("://") ? raw : `https://${raw}`);
+      } catch {
+        return err(400, "invalid_url", "not a valid http(s) URL");
+      }
+      const host = u.hostname.replace(/^www\./, "");
+      const t = /youtube\.com|youtu\.be|vimeo\.com/.test(host) ? "video" : /spotify\.com|soundcloud\.com/.test(host) ? "music" : /^(calendly\.com|cal\.com|app\.cal\.com)$/.test(host) ? "booking" : /\.(png|jpe?g|gif|webp)$/i.test(u.pathname) ? "image" : "link";
+      return ok({ url: u.toString(), suggested_type: t, fetched: false, title: "", description: "", image_url: t === "image" ? u.toString() : "", site_name: host });
+    }
+    // P2-3 (minimal): forms list from blocks, no stored submissions/contacts in the mock.
+    if (p === "/forms") {
+      const items = live()
+        .filter((b) => b.type === "form" || b.type === "email_signup")
+        .map((b) => ({ block_id: b.id, type: b.type, title: (b.data as { title?: string }).title ?? "", tab_id: b.tab_id, is_visible: b.is_visible, responses: 0, last_response_at: null }));
+      return ok({ items });
+    }
+    if (/^\/forms\/[^/]+\/submissions$/.test(p)) return ok({ items: [], next_cursor: null });
+    if (p === "/audience") return ok({ items: [], next_cursor: null, counts: { all: 0, subscribed: 0, unsubscribed: 0 } });
     if (p === "/contact-submissions") {
       const all = mine(d.submissions).sort((a, b) => b.created_at.localeCompare(a.created_at));
       const start = Number(url.searchParams.get("cursor") ?? 0);
