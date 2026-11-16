@@ -117,7 +117,7 @@ function AppearanceInner({ profile, tabs: rawTabs, blocks }: { profile: Profile;
       <Button variant="secondary" size="sm" onClick={() => setDraft(saved)} disabled={update.isPending}>
         Discard
       </Button>
-      <Button size="sm" onClick={save} loading={update.isPending}>
+      <Button variant="dark" size="sm" onClick={save} loading={update.isPending}>
         Save design
       </Button>
     </div>
