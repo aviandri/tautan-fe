@@ -30,6 +30,7 @@ import {
   TipJarForm,
   WhatsAppForm,
 } from "./sell/SellForms";
+import { BrandsForm, CommunityForm, EventsForm, GalleryForm, MediaKitForm, RateCardForm } from "./creator/CreatorForms";
 import { SOCIAL_PLATFORMS } from "@/lib/social";
 
 export interface FormContext {
@@ -463,6 +464,11 @@ function FormForm({ data, onChange, errors, autoFocus }: FormProps<"form">) {
   return <FormBuilder data={data} onChange={onChange} errors={errors} autoFocus={autoFocus} />;
 }
 
+/** Card types whose forms haven't landed yet: still listed, deletable and reorderable. */
+function PendingForm() {
+  return <p className="text-[13px] text-muted">This card can&apos;t be edited here yet.</p>;
+}
+
 const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   link: LinkForm,
   heading: HeadingForm,
@@ -492,6 +498,16 @@ const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   payment: PaymentForm,
   tip_jar: TipJarForm,
   reviews: ReviewsForm,
+  media_kit: MediaKitForm,
+  rate_card: RateCardForm,
+  brands: BrandsForm,
+  post_grid: PendingForm,
+  latest_video: PendingForm,
+  shop_the_look: PendingForm,
+  gallery: GalleryForm,
+  events: EventsForm,
+  podcast: PendingForm,
+  community: CommunityForm,
 };
 
 export function BlockForm<K extends BlockType>({ type, ...props }: FormProps<K> & { type: K }) {

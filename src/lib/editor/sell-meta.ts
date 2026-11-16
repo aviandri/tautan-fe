@@ -68,7 +68,7 @@ function platformUrlError<K extends string>(url: string, platform: K, detect: (u
   return found && found !== platform ? `That looks like a link for another platform, not ${label}` : null;
 }
 
-function validTz(tz: string): boolean {
+export function validTz(tz: string): boolean {
   try {
     new Intl.DateTimeFormat("en", { timeZone: tz });
     return true;

@@ -48,3 +48,16 @@ describe("card catalog", () => {
     expect(searchCards("  ")).toEqual([]);
   });
 });
+
+describe("creator synonyms", () => {
+  it("finds creator cards", () => {
+    expect(searchCards("media kit")[0]).toBe("media_kit");
+    expect(searchCards("ratecard")[0]).toBe("rate_card");
+    expect(searchCards("endorse").slice(0, 3)).toEqual(expect.arrayContaining(["media_kit", "rate_card"]));
+    expect(searchCards("jadwal live")[0]).toBe("events");
+    expect(searchCards("live")[0]).toBe("events");
+    expect(searchCards("grup wa")[0]).toBe("community");
+    expect(searchCards("telegram")[0]).toBe("community");
+    expect(searchCards("portfolio")[0]).toBe("gallery");
+  });
+});
