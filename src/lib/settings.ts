@@ -39,14 +39,15 @@ export function settingsErrors(s: Partial<Record<keyof PageSettings, string | bo
   return e;
 }
 
-/** Trim, uppercase the GA4 id, drop empty strings and false toggles. */
+/** Trim, uppercase the GA4 id, drop empty strings and false toggles (except show_share, always explicit). */
 export function compactSettings(s: PageSettings): PageSettings {
   const out: PageSettings = {};
   const t = (v?: string) => (v ?? "").trim();
   if (t(s.ga4_id)) out.ga4_id = t(s.ga4_id).toUpperCase();
   if (t(s.meta_pixel_id)) out.meta_pixel_id = t(s.meta_pixel_id);
   if (t(s.language)) out.language = t(s.language);
-  if (s.show_share) out.show_share = true;
+  // Share is on by default: always store an explicit boolean so "off" differs from "never set".
+  out.show_share = s.show_share !== false;
   if (s.show_save_contact) out.show_save_contact = true;
   if (t(s.contact_email)) out.contact_email = t(s.contact_email);
   if (t(s.contact_phone)) out.contact_phone = t(s.contact_phone);
