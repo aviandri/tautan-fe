@@ -19,21 +19,6 @@
   line-height: 1.5;
   color: var(--t-muted);
 }
-.sell [data-p="sellMark"],
-.sell [data-p="sellMonogram"] {
-  width: 18px;
-  height: 18px;
-  flex: none;
-}
-.sell [data-p="sellMonogram"] {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  background: color-mix(in srgb, currentColor 18%, transparent);
-  font-size: 0.7rem;
-  font-weight: 700;
-}
 .sell [data-p="sellChips"] {
   display: flex;
   flex-wrap: wrap;

@@ -2,7 +2,6 @@
 // Server components: no hooks, no context, no "use client". Interactivity goes through the data-*
 // hooks PageRuntime handles (copy, lightbox, go-to-form, click tracking).
 import { Copy, MapPin, Star } from "../icons";
-import type { SimpleIcon } from "simple-icons";
 import type { BlockOf, StoreInfoData, Weekday } from "@/lib/types";
 import { WEEKDAYS } from "@/lib/types";
 import { safeHref } from "@/lib/safe-url";
@@ -11,27 +10,13 @@ import { toE164 } from "@/lib/sell/phone";
 import { COURIER_LABELS, TIPS } from "@/lib/sell/platforms";
 import { mediaFor, track, type PageEnv } from "../env";
 import { Img } from "../Img";
+import { BrandMark } from "./SellBlocksA";
 import p from "../public.module.css";
 import s from "./sell-b.module.css";
 
 function waHref(number: string, text: string): string | undefined {
   const n = toE164(number);
   return /^\+[1-9][0-9]{7,14}$/.test(n) ? `https://wa.me/${n.slice(1)}?text=${encodeURIComponent(text)}` : undefined;
-}
-
-/** Real simple-icons mark, or a neutral monogram when there is none (never a look-alike). */
-function BrandMark({ icon, label }: { icon: SimpleIcon | null; label: string }) {
-  if (icon)
-    return (
-      <svg viewBox="0 0 24 24" data-p="sellMark" aria-hidden>
-        <path d={icon.path} fill="currentColor" />
-      </svg>
-    );
-  return (
-    <span data-p="sellMonogram" aria-hidden>
-      {label.slice(0, 1)}
-    </span>
-  );
 }
 
 function Stars({ value, label }: { value: number; label?: string }) {
