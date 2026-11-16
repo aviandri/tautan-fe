@@ -11,6 +11,8 @@ export interface ThemePickerProps {
   value: Theme | null | undefined;
   /** Picking a preset clears any advanced overrides. */
   onChange: (theme: Theme) => void;
+  /** "cards" (default): tall swatches with buttons, for onboarding. "row": Kartu's compact tile row for the Design page. */
+  variant?: "cards" | "row";
 }
 
 function Swatch({ p }: { p: Preset }) {
@@ -36,8 +38,34 @@ function Swatch({ p }: { p: Preset }) {
   );
 }
 
-export function ThemePicker({ value, onChange }: ThemePickerProps) {
+export function ThemePicker({ value, onChange, variant = "cards" }: ThemePickerProps) {
   const current = value?.preset;
+  if (variant === "row") {
+    return (
+      <div role="radiogroup" aria-label="Theme presets" className={`${themeFontVariables} grid grid-cols-4 gap-2 sm:grid-cols-8`}>
+        {PRESETS.map((p) => {
+          const selected = p.preset === current;
+          return (
+            <button
+              key={p.preset}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onChange(themeFromPreset(p.preset))}
+              title={p.blurb}
+              className={`flex h-[72px] items-end rounded-[18px] p-2 text-left text-xs font-bold transition hover:-translate-y-0.5 ${
+                selected ? "shadow-[0_0_0_3px_#fff,0_0_0_5px_var(--accent)]" : "shadow-[inset_0_0_0_1px_rgba(0,0,0,.08)]"
+              }`}
+              style={{ background: backgroundValue(p.bg), color: p.text_color, fontFamily: fontStack(p.font) }}
+            >
+              {p.name}
+              <span className="sr-only">{`: ${p.blurb}`}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
   return (
     <div className={themeFontVariables}>
       <div role="radiogroup" aria-label="Theme presets" className="grid grid-cols-2 gap-3 sm:grid-cols-4">

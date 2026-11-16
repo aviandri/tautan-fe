@@ -2,12 +2,12 @@
 
 import { Eye, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { PageHeader } from "@/components/dashboard/PageHeader";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { PhonePreview } from "@/components/editor/preview/Preview";
 import { QrCard } from "@/components/qr";
-import { SocialsEditor, ThemeEditor } from "@/components/theme";
-import { Alert, Button, Card, Spinner } from "@/components/ui";
+import { Group, SocialsEditor, ThemeEditor } from "@/components/theme";
+import { PublicPage } from "@/components/public";
+import { Alert, Button, Spinner } from "@/components/ui";
 import { toast } from "@/components/ui/toast";
 import { api, ApiError } from "@/lib/api";
 import { byPosition, errorMessage, useEditorData } from "@/lib/editor/queries";
@@ -105,99 +105,120 @@ function AppearanceInner({ profile, tabs: rawTabs, blocks }: { profile: Profile;
 
   const uploadImage = async (file: File) => (await api.uploads.create(file)).url;
   const previewProfile: Profile = { ...profile, ...draft };
-  const preview = <PhonePreview profile={previewProfile} tabs={tabs} blocks={blocks} />;
   const hasAddress = !isTempUsername(profile.username);
+  const changes = countChanges(saved, draft);
+
+  const saveBar = (
+    <div role="region" aria-label="Unsaved changes" className="flex w-full items-center gap-2.5 rounded-full bg-surface py-2.5 pl-[18px] pr-2.5 shadow-lift">
+      <p className="flex-1 text-sm font-semibold">
+        {changes} unsaved change{changes === 1 ? "" : "s"}
+      </p>
+      <Button variant="secondary" size="sm" onClick={() => setDraft(saved)} disabled={update.isPending}>
+        Discard
+      </Button>
+      <Button size="sm" onClick={save} loading={update.isPending}>
+        Save design
+      </Button>
+    </div>
+  );
 
   return (
-    <div className="mx-auto grid max-w-[1180px] gap-10 px-4 pb-28 pt-6 sm:px-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:pt-8">
-      <div className="flex min-w-0 flex-col gap-6">
-        <PageHeader title="Appearance" description="How your page looks to visitors. Changes show in the preview before you save." />
+    <div className="mx-auto flex max-w-[1440px] flex-wrap gap-4 px-4 pb-32 pt-4 sm:px-6 xl:pb-6">
+      <h1 className="sr-only">Design</h1>
+      <section aria-label="Design controls" className="grid min-w-0 flex-[1_1_640px] content-start gap-3 md:grid-cols-2">
+        <ThemeEditor value={draft.theme} onChange={(theme) => setDraft((d) => ({ ...d, theme }))} onUploadImage={uploadImage} />
 
-        <Card className="px-5 py-5 sm:px-6">
-          <ThemeEditor value={draft.theme} onChange={(theme) => setDraft((d) => ({ ...d, theme }))} onUploadImage={uploadImage} />
-        </Card>
+        <Group title="Social icons" wide>
+          <SocialsEditor socials={draft.socials} position={draft.socials_position} onChange={(v) => setDraft((d) => ({ ...d, ...v }))} />
+        </Group>
 
-        <Card>
-          <div className="border-b border-line px-5 py-4 sm:px-6">
-            <h2 className="text-[15px] font-semibold">Social icons</h2>
-            <p className="mt-0.5 text-sm text-muted">A row of icons linking to your profiles elsewhere.</p>
-          </div>
-          <div className="px-5 py-5 sm:px-6">
-            <SocialsEditor
-              socials={draft.socials}
-              position={draft.socials_position}
-              onChange={(v) => setDraft((d) => ({ ...d, ...v }))}
-            />
-          </div>
-        </Card>
+        <Group title="QR code" wide>
+          <p className="-mt-1 text-sm text-muted">For print, packaging or a slide. Scanning opens your page.</p>
+          {hasAddress ? (
+            <>
+              <QrCard username={profile.username} compact />
+              {!profile.is_published && <p className="text-sm text-muted">Your page isn&apos;t published yet, so the code leads to a &ldquo;not found&rdquo; page until you publish.</p>}
+            </>
+          ) : (
+            <p className="text-sm text-muted">
+              Pick your page address in{" "}
+              <Link href="/dashboard/settings" className="font-semibold text-foreground underline underline-offset-2">
+                Settings
+              </Link>{" "}
+              first; the QR code points to it.
+            </p>
+          )}
+        </Group>
+      </section>
 
-        <Card>
-          <div className="border-b border-line px-5 py-4 sm:px-6">
-            <h2 className="text-[15px] font-semibold">QR code</h2>
-            <p className="mt-0.5 text-sm text-muted">For print, packaging or a slide. Scanning opens your page.</p>
-          </div>
-          <div className="px-5 py-5 sm:px-6">
-            {hasAddress ? (
-              <>
-                <QrCard username={profile.username} compact />
-                {!profile.is_published && (
-                  <p className="mt-3 text-sm text-muted">Your page isn&apos;t published yet, so the code leads to a &ldquo;not found&rdquo; page until you publish.</p>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-muted">
-                Pick your page address in{" "}
-                <Link href="/dashboard/settings" className="font-medium text-foreground underline underline-offset-2">
-                  Settings
-                </Link>{" "}
-                first; the QR code points to it.
-              </p>
-            )}
-          </div>
-        </Card>
-      </div>
-
-      <aside className="hidden xl:block">
-        <div className="sticky top-[88px]">
-          {preview}
-          <p className="mt-4 text-center text-[13px] text-muted">{dirty ? "Preview includes unsaved changes." : "Live preview."}</p>
-        </div>
+      <aside aria-label="Live preview" className="relative hidden min-w-[340px] flex-[0_1_440px] flex-col items-center gap-4 self-start rounded-[32px] bg-sunken p-5 xl:sticky xl:top-4 xl:flex">
+        <DevicePreview profile={previewProfile} tabs={tabs} blocks={blocks} />
+        <p className="text-center text-[13px] text-muted">{dirty ? "The preview includes your unsaved changes." : "Live preview."}</p>
+        {dirty ? <div className="sticky bottom-5 w-full">{saveBar}</div> : null}
       </aside>
 
-      {/* Save bar: sits above the mobile tab bar (bottom-16) and clears the preview button. */}
-      {dirty && (
-        <div className="fixed inset-x-0 bottom-16 z-40 flex justify-center px-4 lg:bottom-6 lg:pl-[232px]">
-          <div role="region" aria-label="Unsaved changes" className="flex w-full max-w-md items-center gap-3 rounded-2xl border border-line bg-surface py-2.5 pl-4 pr-2.5 shadow-lg">
-            <p className="flex-1 text-sm text-muted">Unsaved changes</p>
-            <Button variant="ghost" size="sm" onClick={() => setDraft(saved)} disabled={update.isPending}>
-              Discard
-            </Button>
-            <Button size="sm" onClick={save} loading={update.isPending}>
-              Save
-            </Button>
-          </div>
-        </div>
-      )}
-
+      {/* below xl the save bar floats above the mobile nav, and a button opens the preview */}
+      {dirty ? <div className="fixed inset-x-0 bottom-16 z-40 flex justify-center px-4 lg:bottom-6 xl:hidden"><div className="w-full max-w-md">{saveBar}</div></div> : null}
       <button
         type="button"
         onClick={() => setSheet(true)}
-        className={`fixed right-4 z-30 inline-flex h-11 items-center gap-2 rounded-full bg-foreground px-4 text-sm font-medium text-background shadow-lg active:translate-y-px xl:hidden ${dirty ? "bottom-36 lg:bottom-24" : "bottom-20 lg:bottom-6"}`}
+        className={`fixed right-4 z-30 inline-flex h-11 items-center gap-2 rounded-full bg-foreground px-4 text-sm font-semibold text-white shadow-lift active:scale-[0.97] xl:hidden ${dirty ? "bottom-36 lg:bottom-24" : "bottom-20 lg:bottom-6"}`}
       >
         <Eye className="size-4" aria-hidden /> Preview
       </button>
       {sheet && (
         <div role="dialog" aria-modal aria-label="Page preview" className="fixed inset-0 z-50 flex flex-col items-center overflow-y-auto bg-[#16150f]/80 px-4 py-6 backdrop-blur-sm xl:hidden">
-          <button
-            type="button"
-            onClick={() => setSheet(false)}
-            className="mb-4 inline-flex h-10 items-center gap-1.5 self-end rounded-full bg-white/10 px-4 text-sm font-medium text-white"
-          >
+          <button type="button" onClick={() => setSheet(false)} className="mb-4 inline-flex h-10 items-center gap-1.5 self-end rounded-full bg-white/10 px-4 text-sm font-semibold text-white">
             <X className="size-4" aria-hidden /> Close
           </button>
-          {preview}
+          <PhonePreview profile={previewProfile} tabs={tabs} blocks={blocks} />
         </div>
       )}
     </div>
+  );
+}
+
+/** Number of changed settings, for the save bar ("3 unsaved changes"). */
+function countChanges(a: Draft, b: Draft): number {
+  const keys = new Set([...Object.keys(a.theme), ...Object.keys(b.theme)]) as Set<keyof Theme>;
+  let n = 0;
+  for (const k of keys) if (JSON.stringify(a.theme[k]) !== JSON.stringify(b.theme[k])) n++;
+  if (JSON.stringify(a.socials) !== JSON.stringify(b.socials)) n++;
+  if (a.socials_position !== b.socials_position) n++;
+  return n;
+}
+
+/** Phone / Desktop preview. Desktop renders the real page at 1100px and scales it into the panel. */
+function DevicePreview({ profile, tabs, blocks }: { profile: Profile; tabs: Tab[]; blocks: Block[] }) {
+  const [device, setDevice] = useState<"phone" | "desktop">("phone");
+  const box = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.36);
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el || device !== "desktop") return;
+    const ro = new ResizeObserver(() => setScale(el.clientWidth / 1100));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [device]);
+  return (
+    <>
+      <div role="radiogroup" aria-label="Preview device" className="inline-flex gap-1 rounded-full bg-background/70 p-1">
+        {(["phone", "desktop"] as const).map((d) => (
+          <button key={d} type="button" role="radio" aria-checked={device === d} onClick={() => setDevice(d)} className={`h-9 rounded-full px-4 text-sm font-semibold capitalize ${device === d ? "bg-surface text-foreground shadow-[0_1px_2px_rgba(0,0,0,.08)]" : "text-ink-2"}`}>
+            {d}
+          </button>
+        ))}
+      </div>
+      {device === "phone" ? (
+        <PhonePreview profile={profile} tabs={tabs} blocks={blocks} />
+      ) : (
+        <div ref={box} className="w-full overflow-hidden rounded-2xl bg-surface shadow-lift" style={{ height: 760 * scale }}>
+          {/* the transform also contains the page's fixed-position share pills and decorations */}
+          <div className="origin-top-left overflow-y-auto" style={{ width: 1100, height: 760, transform: `scale(${scale})` }}>
+            <PublicPage profile={profile} tabs={tabs} blocks={blocks} preview fullHeight style={{ minHeight: 760 }} />
+          </div>
+        </div>
+      )}
+    </>
   );
 }
