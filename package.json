@@ -36,6 +36,6 @@
     "jsqr": "^1.4.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^5.1.0"
+    "vitest": "^3.2.7"
   }
 }
