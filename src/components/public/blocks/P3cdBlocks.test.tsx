@@ -81,4 +81,17 @@ describe("P3-C/D public renderers", () => {
     expect(out).toContain("Open");
     expect(firstImageId(blocks)).toBeUndefined();
   });
+
+  it("an open folder with a gated child link renders that child's lock stub (no crash)", () => {
+    const folder = mk("folder", { title: "More", style: "inline" }, { id: "f1" });
+    const kids = [
+      mk("link", null, { id: "c1", parent_id: "f1", locked: true, gate: { kind: "password" } }),
+      mk("link", { title: "Open link", url: "https://x.example" }, { id: "c2", parent_id: "f1" }),
+    ];
+    const out = renderToStaticMarkup(<BlockList blocks={[folder]} childrenOf={new Map([["f1", kids]])} opts={{ env: { ...NO_ENV, username: "u", preview: false }, now: 0 }} />);
+    expect(out).toContain('data-x-lock="c1"');
+    expect(out).toContain("Open link");
+    const collapsed = renderToStaticMarkup(<BlockList blocks={[mk("folder", { title: "More" }, { id: "f1" })]} childrenOf={new Map([["f1", kids]])} opts={{ env: { ...NO_ENV, username: "u", preview: false }, now: 0 }} />);
+    expect(collapsed).toContain('data-x-lock="c1"');
+  });
 });

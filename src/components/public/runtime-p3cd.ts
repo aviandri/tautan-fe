@@ -199,9 +199,11 @@ async function lead(form: HTMLFormElement, ctx: P3cdContext) {
   const r = await post(cardPath(ctx, form, form.dataset.block!, "lead"), c);
   busy(form, false);
   const url = r.body?.download_url as string | undefined;
-  if (r.ok && url) {
+  // The BE returns a root-relative path; accept an absolute https URL too, nothing else.
+  const href = url?.startsWith("/") && !url.startsWith("//") ? `${API_BASE.replace(/\/api\/v1$/, "")}${url}` : url && /^https:\/\//.test(url) ? url : undefined;
+  if (r.ok && href) {
     const a = document.createElement("a");
-    a.href = `${API_BASE.replace(/\/api\/v1$/, "")}${url}`;
+    a.href = href;
     a.dataset.p = "download";
     a.textContent = "Download";
     a.rel = "noopener";
@@ -286,7 +288,10 @@ export async function restore(root: HTMLElement, c: P3cdContext) {
       if (!token) return;
       const r = await post(`/public/${encodeURIComponent(c.username)}/blocks/${encodeURIComponent(id)}/unlock`, { token });
       if (r.ok && r.body) await openCard(stub, c, r.body as unknown as UnlockBody);
-      else if (r.status === 403 || r.status === 404 || r.status === 400) setToken(c.username, id, null); // gate changed or card gone
+      // Forget the token only when the BE says it's no longer valid (gate changed, card gone or not
+      // gated): keep it on network errors and 5xx so a hiccup doesn't re-lock the card. Don't
+      // "simplify" this to !r.ok.
+      else if (r.status === 403 || r.status === 404 || r.status === 400) setToken(c.username, id, null);
     }),
   );
 }
