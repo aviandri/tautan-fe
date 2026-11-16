@@ -5,7 +5,7 @@
 import type { BlockDataMap, BlockType } from "../types";
 import { BLOCK_META } from "./block-meta";
 
-export type CategoryId = "all" | "sell" | "creators" | "links" | "grow" | "media" | "text";
+export type CategoryId = "all" | "sell" | "creators" | "engage" | "links" | "grow" | "media" | "text";
 
 export const CATEGORIES: { id: Exclude<CategoryId, "all">; label: string; types: BlockType[] }[] = [
   {
@@ -14,10 +14,11 @@ export const CATEGORIES: { id: Exclude<CategoryId, "all">; label: string; types:
     types: ["product", "shop", "whatsapp", "marketplace", "price_list", "payment", "store_info", "booking", "discount_code", "tip_jar", "reviews"],
   },
   { id: "creators", label: "Creators", types: ["media_kit", "rate_card", "brands", "events", "post_grid", "latest_video", "shop_the_look", "community", "gallery", "podcast"] },
+  { id: "engage", label: "Engage", types: ["poll", "ask_me", "lead_magnet", "giveaway"] },
   { id: "links", label: "Links and buttons", types: ["link", "folder", "file", "social_icons"] },
   { id: "grow", label: "Grow your audience", types: ["email_signup", "form", "contact_form", "countdown", "testimonial", "faq"] },
   { id: "media", label: "Video and music", types: ["video", "music", "image"] },
-  { id: "text", label: "Text and layout", types: ["heading", "text", "quote", "divider"] },
+  { id: "text", label: "Text and layout", types: ["heading", "text", "quote", "divider", "spotlight", "marquee", "timeline", "resume", "before_after", "map"] },
 ];
 
 export const ALL_TYPES: BlockType[] = CATEGORIES.flatMap((c) => c.types);
@@ -254,6 +255,78 @@ export const CATALOG: Record<BlockType, Entry> = {
     keywords: ["pemisah", "spacer", "line", "garis", "separator", "divider", "space", "jarak"],
     blurb: "A line or some space between cards.",
     sample: { style: "dashed" } satisfies BlockDataMap["divider"],
+  },
+  // ----- engage -----
+  poll: {
+    keywords: ["poll", "polling", "vote", "voting", "survei", "survey", "pilih", "pilihan", "tanya", "kuis", "quiz"],
+    blurb: "Ask one question with up to five answers. Visitors vote once a day and can see the results.",
+    features: ["Results after voting, always or never", "Optional closing time", "Totals in your dashboard"],
+    sample: {
+      question: "Which flavour should we bake next?",
+      options: [
+        { id: "a", label: "Pandan" },
+        { id: "b", label: "Matcha" },
+        { id: "c", label: "Red velvet" },
+      ],
+      show_results: "after_vote",
+    } satisfies BlockDataMap["poll"],
+  },
+  ask_me: {
+    keywords: ["ask me", "ama", "ask me anything", "tanya", "tanya aku", "pertanyaan", "question", "questions", "anonim", "anonymous", "qna", "q&a", "curhat"],
+    blurb: "An anonymous question box. Questions land in your dashboard, and you can pin answered ones as a public Q&A.",
+    features: ["Anonymous, rate limited", "Answer, pin or delete", "Pinned answers show on the page"],
+    sample: { prompt: "Ask me anything about running a home bakery", public_answers: true } satisfies BlockDataMap["ask_me"],
+  },
+  lead_magnet: {
+    keywords: ["lead magnet", "freebie", "gratis", "free", "download", "unduh", "ebook", "e-book", "pdf", "guide", "panduan", "template", "checklist"],
+    blurb: "Give away a file in exchange for an email. Visitors join your Audience, then get a private download link.",
+    features: ["The file link is never public", "Adds the email to Audience", "Optional mailing-list opt-in"],
+    sample: { title: "Free pricing template", description: "The spreadsheet I use to price every order.", file_url: "https://example.com/template.xlsx", subscribe: "ask" } satisfies BlockDataMap["lead_magnet"],
+  },
+  giveaway: {
+    keywords: ["giveaway", "ga", "undian", "hadiah", "prize", "contest", "kontes", "lomba", "win", "menang", "gratis"],
+    blurb: "Collect entries by email until a closing time, then draw a random winner who appears on the card.",
+    features: ["One entry per email", "Follow-us steps", "Random draw, winner shown masked"],
+    sample: {
+      title: "Win a tote bag",
+      prize: "Canvas tote + sticker pack",
+      ends_at: "2030-01-01T12:00:00Z",
+      steps: [{ label: "Follow us on Instagram", url: "https://instagram.com/example" }],
+      subscribe: "ask",
+    } satisfies BlockDataMap["giveaway"],
+  },
+  // ----- text and layout (P3-D) -----
+  spotlight: {
+    keywords: ["spotlight", "hero", "banner", "highlight", "sorotan", "launch", "drop", "rilis", "promo", "featured"],
+    blurb: "A big card with an image, headline, short text and a button: for a drop, a launch or your main offer.",
+    sample: { eyebrow: "New drop", headline: "The rainy-season collection", text: "Out Friday at 20:00.", button: { label: "Shop now", url: "https://example.com" }, align: "left" } satisfies BlockDataMap["spotlight"],
+  },
+  marquee: {
+    keywords: ["marquee", "ticker", "running text", "teks berjalan", "ribbon", "pita", "scrolling", "announcement", "pengumuman"],
+    blurb: "A scrolling ribbon of text, like “FREE SHIPPING ✦ OPEN PO ✦”. Not clickable.",
+    sample: { text: "FREE SHIPPING ALL JAVA", separator: "✦", speed: "normal", direction: "left", style: "ribbon" } satisfies BlockDataMap["marquee"],
+  },
+  timeline: {
+    keywords: ["timeline", "steps", "langkah", "cara", "how to", "cara order", "alur", "process", "proses", "roadmap", "tahapan"],
+    blurb: "Numbered or dotted steps, such as how to order, with one step highlighted.",
+    sample: {
+      style: "numbered",
+      items: [{ title: "Choose your box" }, { title: "Pay with QRIS", highlight: true }, { title: "We deliver in 2 days" }],
+    } satisfies BlockDataMap["timeline"],
+  },
+  resume: {
+    keywords: ["resume", "cv", "experience", "pengalaman", "work", "kerja", "career", "karir", "riwayat", "portfolio", "portofolio"],
+    blurb: "Your work history: role, company, dates and what you did.",
+    sample: { items: [{ role: "Pastry chef", company: "Kopi Pagi", start: "2022-03", current: true }] } satisfies BlockDataMap["resume"],
+  },
+  before_after: {
+    keywords: ["before after", "before", "after", "sebelum sesudah", "sebelum", "sesudah", "transformasi", "transformation", "slider", "renovasi", "salon", "makeover"],
+    blurb: "Drag a slider between two photos. Great for salons, renovations and photo editing.",
+  },
+  map: {
+    keywords: ["map", "peta", "lokasi", "location", "alamat", "address", "directions", "arah", "maps", "google maps", "toko"],
+    blurb: "Where to find you, with Directions buttons for Google Maps, Apple Maps and OpenStreetMap. No map tiles load for visitors.",
+    sample: { label: "Toko Kue Bu Rina", address: "Jl. Braga No. 10", area: "Bandung", lat: -6.91746, lng: 107.60981, zoom: 15 } satisfies BlockDataMap["map"],
   },
 };
 
