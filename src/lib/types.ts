@@ -1,0 +1,282 @@
+/**
+ * Shared API types. Source of truth: /SPEC.md ("Data model" + "REST API").
+ * Keep in sync with the Go types in tautan-be. Zod schemas double as runtime
+ * validators for forms and API responses; TS types are inferred from them.
+ */
+import { z } from "zod";
+
+// ---------- Theme ----------
+
+export const ThemeBgSchema = z.object({
+  type: z.enum(["color", "gradient", "image"]),
+  value: z.string(),
+});
+
+export const ButtonStyleSchema = z.enum(["fill", "outline", "shadow"]);
+
+export const ThemeSchema = z.object({
+  preset: z.string(),
+  bg: ThemeBgSchema,
+  button: z.object({
+    style: ButtonStyleSchema,
+    radius: z.number(),
+    color: z.string(),
+    text_color: z.string(),
+  }),
+  font: z.string(),
+  text_color: z.string(),
+});
+export type Theme = z.infer<typeof ThemeSchema>;
+export type ThemeBg = z.infer<typeof ThemeBgSchema>;
+export type ButtonStyle = z.infer<typeof ButtonStyleSchema>;
+
+// ---------- SEO ----------
+
+export const SeoSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  image_url: z.string().optional(),
+});
+export type Seo = z.infer<typeof SeoSchema>;
+
+// ---------- User / Profile ----------
+
+export const UserSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  created_at: z.string(),
+});
+export type User = z.infer<typeof UserSchema>;
+
+export const ProfileSchema = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  username: z.string(),
+  display_name: z.string(),
+  bio: z.string(),
+  avatar_url: z.string().nullable(),
+  theme: ThemeSchema,
+  seo: SeoSchema,
+  is_published: z.boolean(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+export type Profile = z.infer<typeof ProfileSchema>;
+
+export const USERNAME_RE = /^[a-z0-9_.]{3,30}$/;
+export const UsernameSchema = z
+  .string()
+  .regex(USERNAME_RE, "3–30 chars: lowercase letters, numbers, _ or .");
+
+// ---------- Tabs ----------
+
+export const TabSchema = z.object({
+  id: z.string(),
+  profile_id: z.string(),
+  title: z.string(),
+  slug: z.string(),
+  position: z.number(),
+});
+export type Tab = z.infer<typeof TabSchema>;
+
+// ---------- Blocks ----------
+
+export const BLOCK_TYPES = [
+  "link",
+  "text",
+  "image",
+  "video",
+  "music",
+  "social_icons",
+  "folder",
+  "faq",
+  "testimonial",
+  "contact_form",
+] as const;
+export type BlockType = (typeof BLOCK_TYPES)[number];
+
+export const LinkDataSchema = z.object({
+  title: z.string(),
+  url: z.string(),
+  thumbnail_url: z.string().optional(),
+});
+export const TextDataSchema = z.object({ content: z.string() });
+export const ImageDataSchema = z.object({
+  url: z.string(),
+  alt: z.string().optional(),
+  link_url: z.string().optional(),
+});
+export const VideoDataSchema = z.object({ url: z.string() });
+export const MusicDataSchema = z.object({ url: z.string() });
+export const SocialIconsDataSchema = z.object({
+  items: z.array(z.object({ platform: z.string(), url: z.string() })),
+});
+export const FolderDataSchema = z.object({ title: z.string() });
+export const FaqDataSchema = z.object({
+  items: z.array(z.object({ q: z.string(), a: z.string() })),
+});
+export const TestimonialDataSchema = z.object({
+  items: z.array(
+    z.object({
+      quote: z.string(),
+      author: z.string(),
+      avatar_url: z.string().optional(),
+    }),
+  ),
+});
+export const ContactFormDataSchema = z.object({
+  title: z.string(),
+  button_label: z.string(),
+});
+
+export const BlockDataSchemas = {
+  link: LinkDataSchema,
+  text: TextDataSchema,
+  image: ImageDataSchema,
+  video: VideoDataSchema,
+  music: MusicDataSchema,
+  social_icons: SocialIconsDataSchema,
+  folder: FolderDataSchema,
+  faq: FaqDataSchema,
+  testimonial: TestimonialDataSchema,
+  contact_form: ContactFormDataSchema,
+} satisfies Record<BlockType, z.ZodType>;
+
+export type BlockDataMap = {
+  [K in BlockType]: z.infer<(typeof BlockDataSchemas)[K]>;
+};
+export type LinkData = BlockDataMap["link"];
+export type TextData = BlockDataMap["text"];
+export type ImageData = BlockDataMap["image"];
+export type VideoData = BlockDataMap["video"];
+export type MusicData = BlockDataMap["music"];
+export type SocialIconsData = BlockDataMap["social_icons"];
+export type FolderData = BlockDataMap["folder"];
+export type FaqData = BlockDataMap["faq"];
+export type TestimonialData = BlockDataMap["testimonial"];
+export type ContactFormData = BlockDataMap["contact_form"];
+
+interface BlockBase {
+  id: string;
+  profile_id: string;
+  tab_id: string;
+  /** Set for links inside a folder. */
+  parent_id: string | null;
+  position: number;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Discriminated union on `type`: narrowing `block.type` narrows `block.data`. */
+export type Block = {
+  [K in BlockType]: BlockBase & { type: K; data: BlockDataMap[K] };
+}[BlockType];
+
+export type BlockOf<K extends BlockType> = Extract<Block, { type: K }>;
+
+const BlockBaseSchema = z.object({
+  id: z.string(),
+  profile_id: z.string(),
+  tab_id: z.string(),
+  parent_id: z.string().nullable(),
+  position: z.number(),
+  is_visible: z.boolean(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export const BlockSchema = z.discriminatedUnion(
+  "type",
+  BLOCK_TYPES.map((t) =>
+    BlockBaseSchema.extend({ type: z.literal(t), data: BlockDataSchemas[t] }),
+  ) as unknown as [z.ZodObject, ...z.ZodObject[]],
+) as unknown as z.ZodType<Block>;
+
+// ---------- Analytics ----------
+
+export type AnalyticsRange = "7d" | "30d" | "90d";
+
+export interface AnalyticsSummary {
+  views: number;
+  clicks: number;
+  ctr: number;
+  series: { date: string; views: number; clicks: number }[];
+  top_links: { block_id: string; title: string; clicks: number }[];
+  top_referrers: { referrer: string; count: number }[];
+}
+
+// ---------- Contact submissions ----------
+
+export interface ContactSubmission {
+  id: string;
+  profile_id: string;
+  block_id: string;
+  name: string;
+  email: string;
+  message: string;
+  created_at: string;
+}
+
+export interface Paginated<T> {
+  items: T[];
+  next_cursor: string | null;
+}
+
+// ---------- Events ----------
+
+export type EventKind = "view" | "click";
+
+// ---------- API request / response shapes ----------
+
+export interface AuthResponse {
+  access_token: string;
+  user: User;
+  profile: Profile;
+}
+export interface MeResponse {
+  user: User;
+  profile: Profile;
+}
+export interface PageResponse {
+  profile: Profile;
+  tabs: Tab[];
+  blocks: Block[];
+}
+/** GET /profile/editor — includes hidden blocks. */
+export type EditorResponse = PageResponse;
+/** GET /public/{username} — published page, visible blocks only. */
+export type PublicPageResponse = PageResponse;
+
+export type ProfilePatch = Partial<
+  Pick<
+    Profile,
+    | "display_name"
+    | "bio"
+    | "avatar_url"
+    | "theme"
+    | "seo"
+    | "is_published"
+    | "username"
+  >
+>;
+
+export type CreateBlockInput = {
+  [K in BlockType]: {
+    tab_id: string;
+    type: K;
+    data: BlockDataMap[K];
+    parent_id?: string | null;
+  };
+}[BlockType];
+
+export interface UpdateBlockInput {
+  data?: BlockDataMap[BlockType];
+  is_visible?: boolean;
+  tab_id?: string;
+  parent_id?: string | null;
+}
+
+export interface ApiErrorBody {
+  error: { code: string; message: string };
+}

@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/* Tautan app tokens (dashboard / marketing chrome).
+   Public pages get their colours from profile.theme via CSS vars (see src/lib/theme). */
+:root {
+  --background: #f7f6f2;
+  --surface: #ffffff;
+  --foreground: #16150f;
+  --muted: #6b6858;
+  --line: #e6e3d8;
+  --brand: #1f5c4a;
+  --brand-ink: #ffffff;
+  --accent: #e8743b;
+  --danger: #b4321f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}

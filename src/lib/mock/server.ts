@@ -1,0 +1,373 @@
+/**
+ * In-memory mock of the Tautan API, enabled by NEXT_PUBLIC_API_MOCK=1.
+ * Mirrors SPEC.md's contract closely enough for FE development. State is per
+ * JS realm (browser tab / server process) and resets on reload — except in the
+ * browser, where it's persisted to localStorage so the editor survives reloads.
+ *
+ * Seed login: demo@tautan.id / password123  (username "demo", published)
+ */
+import type { Transport } from "../api";
+import type {
+  AnalyticsSummary,
+  Block,
+  BlockType,
+  ContactSubmission,
+  Profile,
+  Tab,
+  Theme,
+  User,
+} from "../types";
+
+interface DB {
+  users: (User & { password: string })[];
+  profiles: Profile[];
+  tabs: Tab[];
+  blocks: Block[];
+  submissions: ContactSubmission[];
+  /** refresh "cookie" — mock keeps one session per realm */
+  session: string | null;
+}
+
+const LS_KEY = "tautan-mock-db-v1";
+const now = () => new Date().toISOString();
+const uid = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+export const DEFAULT_THEME: Theme = {
+  preset: "default",
+  bg: { type: "color", value: "#f6f5f1" },
+  button: { style: "fill", radius: 14, color: "#111111", text_color: "#ffffff" },
+  font: "Inter",
+  text_color: "#111111",
+};
+
+function seed(): DB {
+  const userId = uid();
+  const profileId = uid();
+  const t1 = uid();
+  const t2 = uid();
+  const folderId = uid();
+  const contactId = uid();
+  const ts = now();
+  const b = <K extends BlockType>(
+    type: K,
+    data: Extract<Block, { type: K }>["data"],
+    position: number,
+    extra: Partial<Block> = {},
+  ): Block =>
+    ({
+      id: uid(),
+      profile_id: profileId,
+      tab_id: t1,
+      parent_id: null,
+      type,
+      data,
+      position,
+      is_visible: true,
+      created_at: ts,
+      updated_at: ts,
+      ...extra,
+    }) as Block;
+
+  return {
+    users: [{ id: userId, email: "demo@tautan.id", password: "password123", created_at: ts }],
+    profiles: [
+      {
+        id: profileId,
+        user_id: userId,
+        username: "demo",
+        display_name: "Sari Wulandari",
+        bio: "Ceramicist in Yogyakarta. Small-batch stoneware, workshops on weekends.",
+        avatar_url: null,
+        theme: DEFAULT_THEME,
+        seo: { title: "Sari Wulandari — Ceramics", description: "Shop, workshops and studio notes." },
+        is_published: true,
+        created_at: ts,
+        updated_at: ts,
+      },
+    ],
+    tabs: [
+      { id: t1, profile_id: profileId, title: "Links", slug: "links", position: 0 },
+      { id: t2, profile_id: profileId, title: "Workshops", slug: "workshops", position: 1 },
+    ],
+    blocks: [
+      b("social_icons", { items: [
+        { platform: "instagram", url: "https://instagram.com/" },
+        { platform: "tiktok", url: "https://tiktok.com/" },
+        { platform: "email", url: "mailto:hello@example.com" },
+      ] }, 0),
+      b("link", { title: "Shop the spring glaze collection", url: "https://example.com/shop" }, 1),
+      b("folder", { title: "Studio favourites" }, 2, { id: folderId }),
+      b("link", { title: "Clay supplier I use", url: "https://example.com/clay" }, 0, { parent_id: folderId }),
+      b("link", { title: "My wheel setup", url: "https://example.com/wheel" }, 1, { parent_id: folderId }),
+      b("text", { content: "New pieces drop on the **first Friday** of each month." }, 3),
+      b("video", { url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }, 4, { is_visible: false }),
+      b("faq", { items: [
+        { q: "Do you ship internationally?", a: "Yes, to most of Southeast Asia." },
+        { q: "Are pieces food safe?", a: "All glazes are lead-free and food safe." },
+      ] }, 0, { tab_id: t2 }),
+      b("testimonial", { items: [
+        { quote: "Best Saturday I've had in months.", author: "Dimas" },
+      ] }, 1, { tab_id: t2 }),
+      b("contact_form", { title: "Book a private session", button_label: "Send" }, 2, { tab_id: t2, id: contactId }),
+    ],
+    submissions: Array.from({ length: 7 }, (_, i) => ({
+      id: uid(),
+      profile_id: profileId,
+      block_id: contactId,
+      name: ["Rina", "Bayu", "Ayu", "Kevin", "Putri", "Andre", "Mei"][i],
+      email: `person${i}@example.com`,
+      message: "Hi! Is there space for 3 people next Saturday? We're beginners.",
+      created_at: new Date(Date.now() - i * 36e5 * 9).toISOString(),
+    })),
+    session: null,
+  };
+}
+
+let db: DB | null = null;
+const isBrowser = typeof window !== "undefined";
+
+function load(): DB {
+  if (db) return db;
+  if (isBrowser) {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) db = JSON.parse(raw) as DB;
+    } catch {}
+  }
+  db ??= seed();
+  return db;
+}
+function save() {
+  if (isBrowser && db) {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(db));
+    } catch {}
+  }
+}
+
+export function resetMockDb() {
+  db = seed();
+  save();
+}
+
+// tokens are "mock.<userId>"
+const tokenFor = (u: User) => `mock.${u.id}`;
+const userFromToken = (d: DB, t: string | null) =>
+  t?.startsWith("mock.") ? d.users.find((u) => u.id === t.slice(5)) : undefined;
+
+const ok = (json: unknown, status = 200) => ({ status, json });
+const err = (status: number, code: string, message: string) => ({
+  status,
+  json: { error: { code, message } },
+});
+const slugify = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "tab";
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+export const mockTransport: Transport = async (path, { method, body, token }) => {
+  await sleep(120 + Math.random() * 180);
+  const d = load();
+  const url = new URL(path, "http://mock");
+  const p = url.pathname;
+  const B = (body ?? {}) as Record<string, unknown>;
+  const res = route();
+  if (method !== "GET") save();
+  return res;
+
+  function route() {
+    // ----- auth -----
+    if (p === "/auth/username-available") {
+      const u = (url.searchParams.get("u") ?? "").toLowerCase();
+      const reserved = ["admin", "dashboard", "login", "signup", "api", "settings"];
+      return ok({ available: !reserved.includes(u) && !d.profiles.some((x) => x.username === u) });
+    }
+    if (p === "/auth/signup" && method === "POST") {
+      const email = String(B.email ?? "").toLowerCase();
+      const username = String(B.username ?? "").toLowerCase();
+      if (d.users.some((u) => u.email === email)) return err(409, "email_taken", "That email is already registered.");
+      if (d.profiles.some((x) => x.username === username)) return err(409, "username_taken", "That username is taken.");
+      const user = { id: uid(), email, password: String(B.password), created_at: now() };
+      const profile: Profile = {
+        id: uid(), user_id: user.id, username, display_name: username, bio: "", avatar_url: null,
+        theme: DEFAULT_THEME, seo: {}, is_published: false, created_at: now(), updated_at: now(),
+      };
+      d.users.push(user);
+      d.profiles.push(profile);
+      d.tabs.push({ id: uid(), profile_id: profile.id, title: "Links", slug: "links", position: 0 });
+      d.session = user.id;
+      const { password: _pw, ...pub } = user;
+      void _pw;
+      return ok({ access_token: tokenFor(user), user: pub, profile }, 201);
+    }
+    if (p === "/auth/login" && method === "POST") {
+      const user = d.users.find((u) => u.email === String(B.email ?? "").toLowerCase());
+      if (!user || user.password !== B.password) return err(401, "invalid_credentials", "Email or password is incorrect.");
+      d.session = user.id;
+      const { password: _pw, ...pub } = user;
+      void _pw;
+      return ok({ access_token: tokenFor(user), user: pub, profile: d.profiles.find((x) => x.user_id === user.id) });
+    }
+    if (p === "/auth/refresh" && method === "POST") {
+      const user = d.users.find((u) => u.id === d.session);
+      return user ? ok({ access_token: tokenFor(user) }) : err(401, "no_session", "Not signed in.");
+    }
+    if (p === "/auth/logout") {
+      d.session = null;
+      return ok(null, 204);
+    }
+
+    // ----- public -----
+    const pub = p.match(/^\/public\/([^/]+)(\/events|\/contact)?$/);
+    if (pub) {
+      const prof = d.profiles.find((x) => x.username === decodeURIComponent(pub[1]).toLowerCase());
+      if (!prof || !prof.is_published) return err(404, "not_found", "Page not found.");
+      if (pub[2] === "/events") return ok(null, 204);
+      if (pub[2] === "/contact") {
+        d.submissions.unshift({
+          id: uid(), profile_id: prof.id, block_id: String(B.block_id), name: String(B.name),
+          email: String(B.email), message: String(B.message), created_at: now(),
+        });
+        return ok(null, 204);
+      }
+      return ok({
+        profile: prof,
+        tabs: d.tabs.filter((t) => t.profile_id === prof.id).sort((a, b) => a.position - b.position),
+        blocks: d.blocks.filter((b) => b.profile_id === prof.id && b.is_visible),
+      });
+    }
+
+    // ----- owner -----
+    const user = userFromToken(d, token);
+    if (!user) return err(401, "unauthorized", "Missing or invalid token.");
+    const profile = d.profiles.find((x) => x.user_id === user.id)!;
+    const mine = <T extends { profile_id: string }>(xs: T[]) => xs.filter((x) => x.profile_id === profile.id);
+    const { password: _pw, ...pubUser } = user;
+    void _pw;
+
+    if (p === "/me") return ok({ user: pubUser, profile });
+
+    if (p === "/profile" && method === "PATCH") {
+      if (B.username && B.username !== profile.username && d.profiles.some((x) => x.username === B.username))
+        return err(409, "username_taken", "That username is taken.");
+      Object.assign(profile, B, { updated_at: now() });
+      return ok(profile);
+    }
+    if (p === "/profile/editor") {
+      return ok({
+        profile,
+        tabs: mine(d.tabs).sort((a, b) => a.position - b.position),
+        blocks: mine(d.blocks),
+      });
+    }
+
+    if (p === "/tabs" && method === "POST") {
+      const title = String(B.title ?? "New tab");
+      const tab: Tab = {
+        id: uid(), profile_id: profile.id, title, slug: B.slug ? String(B.slug) : slugify(title),
+        position: mine(d.tabs).length,
+      };
+      d.tabs.push(tab);
+      return ok(tab, 201);
+    }
+    if (p === "/tabs/order" && method === "PUT") {
+      (B.ids as string[]).forEach((id, i) => {
+        const t = d.tabs.find((x) => x.id === id && x.profile_id === profile.id);
+        if (t) t.position = i;
+      });
+      return ok(null, 204);
+    }
+    const tabM = p.match(/^\/tabs\/([^/]+)$/);
+    if (tabM) {
+      const tab = mine(d.tabs).find((t) => t.id === tabM[1]);
+      if (!tab) return err(404, "not_found", "Tab not found.");
+      if (method === "PATCH") {
+        Object.assign(tab, B);
+        return ok(tab);
+      }
+      if (method === "DELETE") {
+        if (mine(d.tabs).length <= 1) return err(400, "last_tab", "A page needs at least one tab.");
+        d.tabs = d.tabs.filter((t) => t.id !== tab.id);
+        d.blocks = d.blocks.filter((b) => b.tab_id !== tab.id);
+        return ok(null, 204);
+      }
+    }
+
+    if (p === "/blocks" && method === "POST") {
+      const parent_id = (B.parent_id as string | null) ?? null;
+      const siblings = mine(d.blocks).filter((b) => b.tab_id === B.tab_id && b.parent_id === parent_id);
+      const block = {
+        id: uid(), profile_id: profile.id, tab_id: String(B.tab_id), parent_id, type: B.type,
+        data: B.data, position: siblings.length, is_visible: true, created_at: now(), updated_at: now(),
+      } as Block;
+      d.blocks.push(block);
+      return ok(block, 201);
+    }
+    if (p === "/blocks/order" && method === "PUT") {
+      (B.ids as string[]).forEach((id, i) => {
+        const b = d.blocks.find((x) => x.id === id && x.profile_id === profile.id);
+        if (b) b.position = i;
+      });
+      return ok(null, 204);
+    }
+    const blkM = p.match(/^\/blocks\/([^/]+)$/);
+    if (blkM) {
+      const block = mine(d.blocks).find((b) => b.id === blkM[1]);
+      if (!block) return err(404, "not_found", "Block not found.");
+      if (method === "PATCH") {
+        Object.assign(block, B, { updated_at: now() });
+        if (block.type === "folder" && B.tab_id)
+          d.blocks.forEach((c) => { if (c.parent_id === block.id) c.tab_id = String(B.tab_id); });
+        return ok(block);
+      }
+      if (method === "DELETE") {
+        d.blocks = d.blocks.filter((b) => b.id !== block.id && b.parent_id !== block.id);
+        return ok(null, 204);
+      }
+    }
+
+    if (p === "/uploads" && method === "POST") {
+      const file = body instanceof FormData ? body.get("file") : null;
+      if (!(file instanceof Blob)) return err(400, "no_file", "No file uploaded.");
+      // Object URLs don't survive reloads; fine for a mock.
+      return ok({ url: isBrowser ? URL.createObjectURL(file) : "/uploads/mock.png" }, 201);
+    }
+
+    if (p === "/analytics/summary") {
+      const days = Number((url.searchParams.get("range") ?? "7d").replace("d", "")) || 7;
+      const series = Array.from({ length: days }, (_, i) => {
+        const date = new Date(Date.now() - (days - 1 - i) * 864e5).toISOString().slice(0, 10);
+        const views = Math.round(80 + 40 * Math.sin(i / 3) + ((i * 37) % 23));
+        return { date, views, clicks: Math.round(views * (0.3 + ((i * 13) % 10) / 50)) };
+      });
+      const views = series.reduce((s, x) => s + x.views, 0);
+      const clicks = series.reduce((s, x) => s + x.clicks, 0);
+      const links = mine(d.blocks).filter((b) => b.type === "link");
+      const summary: AnalyticsSummary = {
+        views, clicks, ctr: views ? clicks / views : 0, series,
+        top_links: links.slice(0, 5).map((b, i) => ({
+          block_id: b.id, title: (b.data as { title: string }).title, clicks: Math.round(clicks / (i + 2)),
+        })),
+        top_referrers: [
+          { referrer: "instagram.com", count: Math.round(views * 0.46) },
+          { referrer: "direct", count: Math.round(views * 0.28) },
+          { referrer: "tiktok.com", count: Math.round(views * 0.17) },
+          { referrer: "google.com", count: Math.round(views * 0.09) },
+        ],
+      };
+      return ok(summary);
+    }
+
+    if (p === "/contact-submissions") {
+      const all = mine(d.submissions).sort((a, b) => b.created_at.localeCompare(a.created_at));
+      const start = Number(url.searchParams.get("cursor") ?? 0);
+      const items = all.slice(start, start + 20);
+      return ok({ items, next_cursor: start + 20 < all.length ? String(start + 20) : null });
+    }
+
+    return err(404, "not_found", `No mock route for ${method} ${p}`);
+  }
+};
