@@ -5,6 +5,7 @@ import { ChevronRight, Download, Search, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { AudienceNav } from "./AudienceNav";
 import { Alert, Button, Card, cx, Input, Spinner } from "@/components/ui";
 import { toast } from "@/components/ui/toast";
 import { api, downloadCsv } from "@/lib/api";
@@ -66,6 +67,8 @@ export function Audience() {
           </Button>
         }
       />
+
+      <AudienceNav />
 
       {!noneAtAll && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
