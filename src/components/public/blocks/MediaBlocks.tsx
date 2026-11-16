@@ -80,7 +80,7 @@ export function VideoBlock({ block, env, priority = false }: { block: BlockOf<"v
       >
         {poster ? (
           // re-hosted by the BE (data.resolved.poster, with variants in `media`): first-party, sized
-          <Img className={s.facadePoster} src={poster} alt="" media={mediaFor(env, poster)} sizes="(max-width: 600px) 100vw, 560px" priority={priority} />
+          <Img className={s.facadePoster} src={poster} alt="" media={mediaFor(env, poster)} sizes="(max-width: 600px) 100vw, 560px" maxVariant={640} priority={priority} />
         ) : null}
         <span className={s.facadePlay} aria-hidden>
           <Play />
