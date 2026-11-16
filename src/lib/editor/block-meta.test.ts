@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { normalizeUrl, urlError } from "../url";
 import { BLOCK_META } from "./block-meta";
-import { BLOCK_TYPES, BlockDataSchemas } from "../types";
+import { BlockDataSchemas } from "../types";
+import { BLOCK_TYPES } from "../constants";
 
 describe("urlError (mirrors tautan-be checkURL)", () => {
   it.each([

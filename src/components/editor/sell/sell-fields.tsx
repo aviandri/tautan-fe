@@ -15,16 +15,15 @@ import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordi
 import { CSS } from "@dnd-kit/utilities";
 import { ImagePlus, Loader2, Star, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import type { SimpleIcon } from "simple-icons";
 import { cx, Field, Input } from "@/components/ui";
 import { api, assetUrl } from "@/lib/api";
 import { CURRENCY_META, inputToMinor, minorToInput, type Currency } from "@/lib/sell/money";
 import { toE164 } from "@/lib/sell/phone";
-import { CURRENCIES } from "@/lib/types";
+import { CURRENCIES } from "@/lib/constants";
 import { uploadErrorMessage } from "../fields";
 
 export const selectCls =
-  "h-11 w-full rounded-xl border border-line bg-surface px-3 text-[15px] focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10";
+  "h-12 w-full rounded-2xl border-0 bg-background px-4 text-[15px] font-medium shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-[inset_0_0_0_1px_var(--line-2)] focus:bg-surface focus:shadow-[inset_0_0_0_2px_var(--foreground)] focus:outline-none";
 
 // ---------- money ----------
 
@@ -142,26 +141,7 @@ export function PhoneField({
   );
 }
 
-// ---------- brand marks ----------
-
-/** Real simple-icons mark, or a neutral monogram when there is none (never a look-alike). */
-export function Mark({ icon, label, size = 20 }: { icon: SimpleIcon | null; label: string; size?: number }) {
-  if (icon)
-    return (
-      <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden className="shrink-0" style={{ color: `#${icon.hex}` }}>
-        <path d={icon.path} fill="currentColor" />
-      </svg>
-    );
-  return (
-    <span
-      aria-hidden
-      className="inline-flex shrink-0 items-center justify-center rounded-md bg-foreground/10 font-semibold text-foreground/70"
-      style={{ width: size, height: size, fontSize: size * 0.5 }}
-    >
-      {label.slice(0, 1)}
-    </span>
-  );
-}
+export { Mark } from "./mark";
 
 // ---------- chips ----------
 

@@ -89,12 +89,12 @@ export function SmartPaste({ tabId, onCreated, onSell }: { tabId: string; onCrea
           run(value);
         }}
         className={cx(
-          "flex h-12 items-center gap-2 rounded-xl border bg-surface pl-3.5 pr-1.5 transition-[border-color,box-shadow]",
-          "focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10",
-          error ? "border-danger" : "border-line hover:border-line-2",
+          "flex h-[50px] items-center gap-2 rounded-full bg-surface pl-4 pr-1.5 transition-[box-shadow]",
+          "focus-within:shadow-[inset_0_0_0_2px_var(--foreground)]",
+          error ? "shadow-[inset_0_0_0_2px_var(--danger)]" : "shadow-[inset_0_0_0_1px_var(--line-2)]",
         )}
       >
-        {busy ? <Loader2 className="size-4 shrink-0 animate-spin text-brand" aria-hidden /> : <Sparkles className="size-4 shrink-0 text-muted" aria-hidden />}
+        {busy ? <Loader2 className="size-4 shrink-0 animate-spin text-brand" aria-hidden /> : <Sparkles className="size-4 shrink-0 text-brand" aria-hidden />}
         <input
           ref={inputRef}
           value={value}
@@ -114,22 +114,22 @@ export function SmartPaste({ tabId, onCreated, onSell }: { tabId: string; onCrea
           aria-label="Paste a link, video or email"
           aria-invalid={!!error}
           aria-describedby="smart-paste-hint"
-          placeholder="Paste a link, video, Calendly page or email"
+          placeholder="Paste a link to add a card"
           inputMode="url"
           autoCapitalize="none"
           spellCheck={false}
-          className="h-full min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted/70"
+          className="h-full min-w-0 flex-1 bg-transparent text-[15px] font-semibold outline-none placeholder:font-medium placeholder:text-muted"
         />
         <button
           type="submit"
           disabled={!value.trim() || busy}
           aria-label="Add from link"
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-foreground text-background transition-opacity disabled:opacity-25"
+          className="inline-flex size-[38px] shrink-0 items-center justify-center rounded-full bg-foreground text-background transition-opacity disabled:opacity-25"
         >
           <ArrowRight className="size-4" />
         </button>
       </form>
-      <p id="smart-paste-hint" className={cx("mt-1.5 text-[12px]", error ? "text-danger" : "text-muted")} role={error ? "alert" : undefined}>
+      <p id="smart-paste-hint" className={cx("mt-1.5 px-4 text-[12px]", error ? "text-danger" : "text-muted")} role={error ? "alert" : undefined}>
         {error ?? "Links, YouTube, Spotify, Calendly, Shopee or Tokopedia, images and emails each become the right card."}
       </p>
     </div>

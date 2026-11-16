@@ -178,18 +178,18 @@ export function MoreOptions({
 }) {
   const [open, setOpen] = useState(!!defaultOpen);
   return (
-    <div className="rounded-xl border border-line">
+    <div className="rounded-[20px] bg-background">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-[13px] font-medium"
+        className="flex w-full items-center gap-2 rounded-[20px] px-4 py-3.5 text-left text-[15px] font-bold"
       >
         {title}
         {badge}
         <ChevronDown className={cx("ml-auto size-4 text-muted transition-transform", open && "rotate-180")} />
       </button>
-      {open && <div className="flex flex-col gap-4 border-t border-line px-3.5 py-4">{children}</div>}
+      {open && <div className="flex flex-col gap-4 px-4 pb-4 pt-1">{children}</div>}
     </div>
   );
 }

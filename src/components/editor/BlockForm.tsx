@@ -18,24 +18,56 @@ import {
   Segmented,
   ToggleRow,
 } from "./fields-extra";
-import { FormBuilder } from "./FormBuilder";
-import {
-  MarketplaceForm,
-  PaymentForm,
-  PriceListForm,
-  ProductForm,
-  ReviewsForm,
-  ShopForm,
-  StoreInfoForm,
-  TipJarForm,
-  WhatsAppForm,
-} from "./sell/SellForms";
-import { LatestVideoForm, PodcastForm, PostGridForm, ShopTheLookForm } from "./creator/FetchedForms";
-import { BrandsForm, CommunityForm, EventsForm, GalleryForm, MediaKitForm, RateCardForm } from "./creator/CreatorForms";
+import dynamic from "next/dynamic";
+
+// Card-type forms load on demand (code split per family), so the editor's first load stays small.
+function FormSkeleton() {
+  return (
+    <div className="flex flex-col gap-4" aria-busy="true" aria-label="Loading the card's settings">
+      <div className="h-[72px] animate-pulse rounded-2xl bg-sunken" />
+      <div className="h-[72px] animate-pulse rounded-2xl bg-sunken" />
+      <div className="h-24 animate-pulse rounded-2xl bg-sunken" />
+    </div>
+  );
+}
+const sell = () => import("./sell/SellForms");
+const creator = () => import("./creator/CreatorForms");
+const fetched = () => import("./creator/FetchedForms");
+const engage = () => import("./engage/EngageForms");
+const layout = () => import("./layout/LayoutForms");
+const FormBuilder = dynamic(() => import("./FormBuilder").then((m) => m.FormBuilder), { loading: FormSkeleton });
+const ProductForm = dynamic(() => sell().then((m) => m.ProductForm), { loading: FormSkeleton });
+const ShopForm = dynamic(() => sell().then((m) => m.ShopForm), { loading: FormSkeleton });
+const MarketplaceForm = dynamic(() => sell().then((m) => m.MarketplaceForm), { loading: FormSkeleton });
+const WhatsAppForm = dynamic(() => sell().then((m) => m.WhatsAppForm), { loading: FormSkeleton });
+const PriceListForm = dynamic(() => sell().then((m) => m.PriceListForm), { loading: FormSkeleton });
+const StoreInfoForm = dynamic(() => sell().then((m) => m.StoreInfoForm), { loading: FormSkeleton });
+const PaymentForm = dynamic(() => sell().then((m) => m.PaymentForm), { loading: FormSkeleton });
+const TipJarForm = dynamic(() => sell().then((m) => m.TipJarForm), { loading: FormSkeleton });
+const ReviewsForm = dynamic(() => sell().then((m) => m.ReviewsForm), { loading: FormSkeleton });
+const MediaKitForm = dynamic(() => creator().then((m) => m.MediaKitForm), { loading: FormSkeleton });
+const RateCardForm = dynamic(() => creator().then((m) => m.RateCardForm), { loading: FormSkeleton });
+const BrandsForm = dynamic(() => creator().then((m) => m.BrandsForm), { loading: FormSkeleton });
+const GalleryForm = dynamic(() => creator().then((m) => m.GalleryForm), { loading: FormSkeleton });
+const EventsForm = dynamic(() => creator().then((m) => m.EventsForm), { loading: FormSkeleton });
+const CommunityForm = dynamic(() => creator().then((m) => m.CommunityForm), { loading: FormSkeleton });
+const PostGridForm = dynamic(() => fetched().then((m) => m.PostGridForm), { loading: FormSkeleton });
+const LatestVideoForm = dynamic(() => fetched().then((m) => m.LatestVideoForm), { loading: FormSkeleton });
+const PodcastForm = dynamic(() => fetched().then((m) => m.PodcastForm), { loading: FormSkeleton });
+const ShopTheLookForm = dynamic(() => fetched().then((m) => m.ShopTheLookForm), { loading: FormSkeleton });
+const PollForm = dynamic(() => engage().then((m) => m.PollForm), { loading: FormSkeleton });
+const AskMeForm = dynamic(() => engage().then((m) => m.AskMeForm), { loading: FormSkeleton });
+const LeadMagnetForm = dynamic(() => engage().then((m) => m.LeadMagnetForm), { loading: FormSkeleton });
+const GiveawayForm = dynamic(() => engage().then((m) => m.GiveawayForm), { loading: FormSkeleton });
+const SpotlightForm = dynamic(() => layout().then((m) => m.SpotlightForm), { loading: FormSkeleton });
+const MarqueeForm = dynamic(() => layout().then((m) => m.MarqueeForm), { loading: FormSkeleton });
+const TimelineForm = dynamic(() => layout().then((m) => m.TimelineForm), { loading: FormSkeleton });
+const ResumeForm = dynamic(() => layout().then((m) => m.ResumeForm), { loading: FormSkeleton });
+const BeforeAfterForm = dynamic(() => layout().then((m) => m.BeforeAfterForm), { loading: FormSkeleton });
+const MapForm = dynamic(() => layout().then((m) => m.MapForm), { loading: FormSkeleton });
 import { SOCIAL_PLATFORMS } from "@/lib/social";
-import { AskMeForm, GiveawayForm, LeadMagnetForm, PollForm } from "./engage/EngageForms";
-import { BeforeAfterForm, MapForm, MarqueeForm, ResumeForm, SpotlightForm, TimelineForm } from "./layout/LayoutForms";
-import { DONATE_PLATFORMS, type DiscountCodeEntry, type TextStyle } from "@/lib/types";
+import type { DiscountCodeEntry, TextStyle } from "@/lib/types";
+import { DONATE_PLATFORMS } from "@/lib/constants";
 
 export interface FormContext {
   /** All tabs (link → tab destination). */
@@ -64,7 +96,7 @@ const ALIGN_OPTIONS: { value: TextAlign; label: React.ReactNode; title: string }
 ];
 
 const selectCls =
-  "h-11 w-full rounded-xl border border-line bg-surface px-3 text-[15px] focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10";
+  "h-12 w-full rounded-2xl border-0 bg-background px-4 text-[15px] font-medium shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-[inset_0_0_0_1px_var(--line-2)] focus:bg-surface focus:shadow-[inset_0_0_0_2px_var(--foreground)] focus:outline-none";
 
 // ---------- link ----------
 
@@ -550,7 +582,7 @@ function FormForm({ data, onChange, errors, autoFocus }: FormProps<"form">) {
   return <FormBuilder data={data} onChange={onChange} errors={errors} autoFocus={autoFocus} />;
 }
 
-const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
+const FORMS: { [K in BlockType]: React.ComponentType<FormProps<K>> } = {
   link: LinkForm,
   heading: HeadingForm,
   text: TextForm,
@@ -607,7 +639,7 @@ export function BlockForm<K extends BlockType>({ type, ...props }: FormProps<K> 
   const state = scheduleState(data.schedule);
   return (
     <div className="flex flex-col gap-4">
-      {Form(props as unknown as FormProps<BlockType>)}
+      <Form {...(props as unknown as FormProps<BlockType>)} />
       <MoreOptions
         title="Schedule"
         defaultOpen={!!props.errors.schedule}

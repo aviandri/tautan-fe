@@ -3,7 +3,7 @@
 // hooks PageRuntime handles (copy, lightbox, go-to-form, click tracking).
 import { Copy, MapPin, Star } from "../icons";
 import type { BlockOf, StoreInfoData, Weekday } from "@/lib/types";
-import { WEEKDAYS } from "@/lib/types";
+import { WEEKDAYS } from "@/lib/constants";
 import { safeHref } from "@/lib/safe-url";
 import { formatMoney } from "@/lib/sell/money";
 import { toE164 } from "@/lib/sell/phone";

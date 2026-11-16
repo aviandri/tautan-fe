@@ -17,7 +17,7 @@ import { INTENTS, STARTERS, starterBlock } from "@/lib/onboarding/starters";
 import { setProfileEverywhere, useUpdateProfile } from "@/lib/profile";
 import { qk, useLogout } from "@/lib/session";
 import type { ImportPreview, OnboardingIntent, Profile, Theme } from "@/lib/types";
-import { isTempUsername } from "@/lib/types";
+import { isTempUsername } from "@/lib/constants";
 import { useUsernameCheck } from "@/lib/use-username-check";
 
 export const STEPS = ["start", "profile", "sections", "theme", "claim"] as const;

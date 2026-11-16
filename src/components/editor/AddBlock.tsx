@@ -20,6 +20,7 @@ export function NewBlockDraft<K extends BlockType>({
   tabs = [],
   initialData,
   onDone,
+  bare,
 }: {
   type: K;
   tabId: string;
@@ -28,6 +29,8 @@ export function NewBlockDraft<K extends BlockType>({
   /** Prefill (smart paste). */
   initialData?: Partial<BlockDataMap[K]>;
   onDone: (created?: Block) => void;
+  /** no card frame (inside the editor's settings panel) */
+  bare?: boolean;
 }) {
   const meta = getMeta(type);
   const [data, setData] = useState<BlockDataMap[K]>({ ...meta.defaultData(), ...initialData } as BlockDataMap[K]);
@@ -46,13 +49,16 @@ export function NewBlockDraft<K extends BlockType>({
   }
 
   return (
-    <form onSubmit={submit} className="rounded-2xl border border-brand/30 bg-surface p-4 shadow-[0_0_0_4px_rgba(31,92,74,.06)] sm:p-5">
-      <div className="mb-4 flex items-center gap-3">
-        <TypeChip type={type} />
-        <p className="text-[15px] font-medium">New {meta.label.toLowerCase()}</p>
+    <form onSubmit={submit} className={bare ? "flex flex-col" : "rounded-[28px] bg-surface p-5 shadow-[0_0_0_2px_var(--brand)]"}>
+      <div className="mb-5 flex items-center gap-3">
+        <TypeChip type={type} size="lg" />
+        <div className="min-w-0">
+          <p className="text-[20px] font-bold tracking-[-0.015em]">New {meta.label.toLowerCase()}</p>
+          <p className="text-[13px] text-muted">{meta.description}</p>
+        </div>
       </div>
       <BlockForm type={type} data={data} onChange={setData} errors={tried ? errors : {}} autoFocus ctx={{ tabs, currentTabId: tabId }} />
-      <div className="mt-5 flex justify-end gap-2">
+      <div className="mt-6 flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={() => onDone()}>
           Cancel
         </Button>
