@@ -2,13 +2,18 @@ import { describe, expect, it } from "vitest";
 import { PRESETS, themeFromPreset, hasOverrides, DEFAULT_PRESET } from "../theme/presets";
 import { resolveTheme, themeToCssVars, isGradient, isColor } from "../theme/resolve";
 import { parseGradient, toGradientCss } from "../theme/gradient";
-import { FONT_OPTIONS } from "../theme/fonts-meta";
+import { FONT_OPTIONS, findFont } from "../theme/fonts-meta";
 
 describe("presets", () => {
   it("has 8 unique presets that each use a curated font", () => {
     expect(PRESETS).toHaveLength(8);
     expect(new Set(PRESETS.map((p) => p.preset)).size).toBe(8);
-    for (const p of PRESETS) expect(FONT_OPTIONS.some((f) => f.id === p.font)).toBe(true);
+    for (const p of PRESETS) {
+      expect(FONT_OPTIONS.some((f) => f.label === p.font)).toBe(true);
+      // what the BE accepts (fontNameRE in tautan-be theme.go)
+      expect(p.font).toMatch(/^[A-Za-z0-9 ]{1,40}$/);
+      expect(p.button.radius).toBeLessThanOrEqual(100);
+    }
   });
 
   it("every preset survives its own validation unchanged", () => {
@@ -39,7 +44,9 @@ describe("resolveTheme", () => {
     });
     expect(r.preset).toBe("default");
     expect(r.bg.value).toBe("#f6f5f1");
-    expect(r.font).toBe("inter");
+    expect(r.font).toBe("Inter");
+    expect(resolveTheme({ preset: "batu", font: "dm-sans" }).font).toBe("DM Sans");
+    expect(findFont("space grotesk")?.label).toBe("Space Grotesk");
   });
 
   it("drops dangerous or malformed values", () => {
@@ -53,7 +60,7 @@ describe("resolveTheme", () => {
     });
     expect(r.bg).toEqual(base.bg);
     expect(r.button.style).toBe(base.button.style);
-    expect(r.button.radius).toBe(999);
+    expect(r.button.radius).toBe(100);
     expect(r.button.color).toBe(base.button.color);
     expect(r.button.text_color).toBe("#fff");
     expect(r.font).toBe(base.font);

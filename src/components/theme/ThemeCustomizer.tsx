@@ -16,7 +16,8 @@ export interface ThemeCustomizerProps {
   onUploadImage?: (file: File) => Promise<string>;
 }
 
-const PILL = 999;
+/** The BE caps radius at 100; 100px is a pill at any button height. */
+const PILL = 100;
 
 export function ThemeCustomizer({ value, onChange, onUploadImage }: ThemeCustomizerProps) {
   const t = resolveTheme(value);
@@ -198,10 +199,10 @@ function FontField({ value, onChange }: { value: string; onChange: (id: string) 
           key={f.id}
           type="button"
           role="radio"
-          aria-checked={f.id === value}
-          onClick={() => onChange(f.id)}
+          aria-checked={f.label === value}
+          onClick={() => onChange(f.label)}
           className={`flex min-h-12 flex-col items-start justify-center rounded-lg border px-3 text-left transition ${
-            f.id === value ? "border-foreground bg-surface" : "border-line bg-surface/60 hover:border-muted"
+            f.label === value ? "border-foreground bg-surface" : "border-line bg-surface/60 hover:border-muted"
           }`}
         >
           <span className="text-base leading-tight" style={{ fontFamily: fontStack(f.id) }}>
