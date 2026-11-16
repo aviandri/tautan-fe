@@ -16,7 +16,6 @@ import {
   Heading as HeadingIcon,
   Image as ImageIcon,
   Link2,
-  type LucideIcon,
   Mail,
   MailPlus,
   MessageSquareQuote,
@@ -443,6 +442,7 @@ function embedHint(kind: "video" | "music", url: string): string | null {
 
 /** The "Add block" picker, grouped. */
 export const PICKER_GROUPS: { title: string; types: BlockType[] }[] = [
+  { title: "Sell", types: ["product", "shop", "whatsapp", "marketplace", "price_list", "store_info", "payment", "tip_jar", "reviews"] },
   { title: "Links", types: ["link", "folder", "file", "social_icons"] },
   { title: "Content", types: ["heading", "text", "image", "quote", "divider", "faq", "testimonial"] },
   { title: "Media", types: ["video", "music"] },

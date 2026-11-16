@@ -19,6 +19,17 @@ import {
   ToggleRow,
 } from "./fields-extra";
 import { FormBuilder } from "./FormBuilder";
+import {
+  MarketplaceForm,
+  PaymentForm,
+  PriceListForm,
+  ProductForm,
+  ReviewsForm,
+  ShopForm,
+  StoreInfoForm,
+  TipJarForm,
+  WhatsAppForm,
+} from "./sell/SellForms";
 import { SOCIAL_PLATFORMS } from "@/lib/social";
 
 export interface FormContext {
@@ -452,11 +463,6 @@ function FormForm({ data, onChange, errors, autoFocus }: FormProps<"form">) {
   return <FormBuilder data={data} onChange={onChange} errors={errors} autoFocus={autoFocus} />;
 }
 
-/** P3 types before their forms land: still listed, deletable and reorderable. */
-function PendingForm() {
-  return <p className="text-[13px] text-muted">This card can&apos;t be edited here yet.</p>;
-}
-
 const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   link: LinkForm,
   heading: HeadingForm,
@@ -477,15 +483,15 @@ const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   contact_form: ContactFormForm,
   divider: DividerForm,
   form: FormForm,
-  product: PendingForm,
-  shop: PendingForm,
-  marketplace: PendingForm,
-  whatsapp: PendingForm,
-  price_list: PendingForm,
-  store_info: PendingForm,
-  payment: PendingForm,
-  tip_jar: PendingForm,
-  reviews: PendingForm,
+  product: ProductForm,
+  shop: ShopForm,
+  marketplace: MarketplaceForm,
+  whatsapp: WhatsAppForm,
+  price_list: PriceListForm,
+  store_info: StoreInfoForm,
+  payment: PaymentForm,
+  tip_jar: TipJarForm,
+  reviews: ReviewsForm,
 };
 
 export function BlockForm<K extends BlockType>({ type, ...props }: FormProps<K> & { type: K }) {

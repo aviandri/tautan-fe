@@ -164,8 +164,11 @@ export function newItemId(taken: Iterable<string> = []): string {
   return id;
 }
 
+/** Starting WhatsApp message for a product's buy button. */
+export const DEFAULT_PRODUCT_WA = "Hi! I'd like to order {name} {variant}.";
+
 export function emptyShopItem(taken: Iterable<string> = []): ShopItem {
-  return { id: newItemId(taken), images: [], name: "", action: { kind: "whatsapp" } };
+  return { id: newItemId(taken), images: [], name: "", action: { kind: "whatsapp", wa_template: DEFAULT_PRODUCT_WA } };
 }
 
 // ---------- the metas ----------
@@ -179,7 +182,7 @@ export const SELL_META: { [K in SellType]: BlockMeta<K> } = {
     description: "One item with photos, price and a buy button",
     icon: ShoppingBag,
     tint: "#c2410c",
-    defaultData: () => ({ images: [], name: "", currency: "IDR", action: { kind: "whatsapp" } }),
+    defaultData: () => ({ images: [], name: "", currency: "IDR", action: { kind: "whatsapp", wa_template: DEFAULT_PRODUCT_WA } }),
     needsInputFirst: true,
     summary: (d) => d.name || "Product",
     validate: withSchedule<"product">((d) => validateProductCore(d)),
