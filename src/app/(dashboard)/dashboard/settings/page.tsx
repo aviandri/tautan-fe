@@ -1,5 +1,5 @@
-import { Placeholder } from "@/components/dashboard/PageHeader";
+import { Settings } from "@/components/settings/Settings";
 
-export default function Page() {
-  return <Placeholder title="Settings">Profile settings land in a later PR.</Placeholder>;
+export default function SettingsPage() {
+  return <Settings />;
 }
