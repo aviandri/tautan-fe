@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { X } from "lucide-react";
+import { X } from "./icons";
 import type { Announcement } from "@/lib/page-extras";
 import s from "./public.module.css";
 

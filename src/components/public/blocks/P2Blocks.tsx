@@ -1,4 +1,4 @@
-import { Calendar, Copy, Download, FileText } from "lucide-react";
+import { Calendar, Copy, Download, FileText } from "../icons";
 import type { BlockOf } from "@/lib/types";
 import { safeHref } from "@/lib/safe-url";
 import { bookingEmbedSrc } from "@/lib/embeds";

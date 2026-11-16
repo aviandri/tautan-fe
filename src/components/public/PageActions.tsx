@@ -1,4 +1,4 @@
-import { Share2, UserPlus } from "lucide-react";
+import { Share2, UserPlus } from "./icons";
 import { API_BASE } from "@/lib/api";
 import s from "./public.module.css";
 

@@ -10,6 +10,7 @@ import { lazy, Suspense, type ComponentProps } from "react";
  */
 const ContactForm = lazy(() => import("./blocks/ContactFormBlock").then((m) => ({ default: m.ContactFormBlock })));
 const Form = lazy(() => import("./blocks/FormBlocks").then((m) => ({ default: m.FormBlock })));
+const WaOrder = lazy(() => import("./blocks/WaOrderForm").then((m) => ({ default: m.WaOrderForm })));
 const EmailSignup = lazy(() => import("./blocks/FormBlocks").then((m) => ({ default: m.EmailSignupBlock })));
 
 export const ContactFormIsland = (p: ComponentProps<typeof ContactForm>) => (
@@ -25,5 +26,10 @@ export const FormIsland = (p: ComponentProps<typeof Form>) => (
 export const EmailSignupIsland = (p: ComponentProps<typeof EmailSignup>) => (
   <Suspense>
     <EmailSignup {...p} />
+  </Suspense>
+);
+export const WaOrderIsland = (p: ComponentProps<typeof WaOrder>) => (
+  <Suspense>
+    <WaOrder {...p} />
   </Suspense>
 );

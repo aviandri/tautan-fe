@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "../icons";
 import type { Block, BlockOf } from "@/lib/types";
 import { safeHref, safeImageSrc } from "@/lib/safe-url";
 import { LinkBlock } from "./LinkBlock";

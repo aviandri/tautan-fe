@@ -1,4 +1,4 @@
-import { Play } from "lucide-react";
+import { Play } from "../icons";
 
 import type { BlockOf } from "@/lib/types";
 import { toMusicEmbed, toVideoEmbed } from "@/lib/embeds";
