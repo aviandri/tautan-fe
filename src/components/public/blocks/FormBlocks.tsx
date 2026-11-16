@@ -3,7 +3,8 @@
 import { useState, type FormEvent } from "react";
 import type { BlockOf, FormField } from "@/lib/types";
 import { validateAnswers, type RawAnswers } from "@/lib/form-validate";
-import { FormApiError, formErrorMessage, publicForms } from "@/lib/public-forms";
+import { api, ApiError } from "@/lib/api";
+import { formErrorMessage } from "@/lib/form-validate";
 import { usePublic } from "../context";
 import s from "../public.module.css";
 
@@ -41,10 +42,10 @@ export function EmailSignupBlock({ block }: { block: BlockOf<"email_signup"> }) 
     setError(null);
     setStatus({ kind: "sending" });
     try {
-      const r = await publicForms.subscribe(username, { block_id: block.id, email: String(answers.email) });
+      const r = await api.public.subscribe(username, { block_id: block.id, email: String(answers.email) });
       setStatus({ kind: "sent", message: r.success_message || d.success_message || "You're on the list." });
     } catch (err) {
-      setStatus({ kind: "error", message: err instanceof FormApiError && err.details?.email ? err.details.email : formErrorMessage(err) });
+      setStatus({ kind: "error", message: err instanceof ApiError && err.details?.email ? err.details.email : formErrorMessage(err) });
     }
   }
 
@@ -130,7 +131,7 @@ export function FormBlock({ block }: { block: BlockOf<"form"> }) {
     }
     setStatus({ kind: "sending" });
     try {
-      const r = await publicForms.form(username, {
+      const r = await api.public.form(username, {
         block_id: block.id,
         answers: v.answers,
         subscribe: d.subscribe === "ask" ? fd.get("__subscribe") === "on" : undefined,
@@ -138,7 +139,7 @@ export function FormBlock({ block }: { block: BlockOf<"form"> }) {
       form.reset();
       setStatus({ kind: "sent", message: r.success_message || ok });
     } catch (err) {
-      if (err instanceof FormApiError && err.details) setErrors(err.details);
+      if (err instanceof ApiError && err.details) setErrors(err.details);
       setStatus({ kind: "error", message: formErrorMessage(err) });
     }
   }

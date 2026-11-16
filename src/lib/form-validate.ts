@@ -1,4 +1,5 @@
 import type { FormField } from "./types";
+import { ApiError } from "./api";
 
 // Client-side checks that mirror the BE rules for POST /public/{u}/form (SPEC P2-3), so most
 // mistakes show under their field before a round trip. The BE stays the source of truth.
@@ -52,4 +53,16 @@ export function validateAnswers(fields: FormField[], raw: RawAnswers) {
     if (!errors[f.id]) answers[f.id] = f.type === "number" ? Number(str) : str;
   }
   return { answers, errors, ok: Object.keys(errors).length === 0 };
+}
+
+/** Visitor-facing message for a failed public form/subscribe POST (api.public.*). */
+export function formErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 429) return "Too many tries. Please wait a few minutes and try again.";
+    if (err.status === 400 || err.status === 422) return err.message;
+    return "Something went wrong sending this. Please try again.";
+  }
+  // fetch() rejects with a TypeError when the network or CORS fails
+  if (err instanceof TypeError) return "Couldn't reach the server. Check your connection and try again.";
+  return "Something went wrong sending this. Please try again.";
 }

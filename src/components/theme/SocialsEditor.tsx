@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { ArrowDown, ArrowUp, Minus, Plus, X } from "lucide-react";
 import type { Social } from "@/lib/types";
 import { SOCIAL_PLATFORMS, handleHint, platformLabel, socialHandle, socialUrl } from "@/lib/social";
@@ -119,6 +119,8 @@ function Row({
 }) {
   const id = useId();
   const [draft, setDraft] = useState(socialHandle(social.platform, social.url));
+  // Follow outside changes (discard, reorder, a save normalising the URL); typing only commits on blur.
+  useEffect(() => setDraft(socialHandle(social.platform, social.url)), [social.platform, social.url]);
   const isGap = social.platform === "divider";
   const label = isGap ? "Gap" : platformLabel(social.platform);
   return (
