@@ -215,7 +215,8 @@ export function CardPicker({
         </aside>
       </div>
     </div>,
-    document.body,
+    // inside the Kartu root so the dialog gets the owner-side tokens and fonts
+    document.querySelector("[data-kartu-root]") ?? document.body,
   );
 }
 

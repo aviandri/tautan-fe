@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, ClipboardList, EyeOff, MailPlus } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { AudienceNav } from "@/components/audience/AudienceNav";
 import { Alert, Button, Card, Spinner } from "@/components/ui";
 import { api } from "@/lib/api";
 import { errorMessage, useEditorData } from "@/lib/editor/queries";
@@ -21,7 +22,7 @@ export function FormsList() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
       <PageHeader
-        title="Forms"
+        title="Form responses"
         description={items.length ? `${total} response${total === 1 ? "" : "s"} across ${items.length} form${items.length === 1 ? "" : "s"}.` : "Responses to the forms and email signups on your page."}
         actions={
           <Link href="/dashboard/audience" className="text-sm font-medium text-muted underline-offset-4 hover:text-foreground hover:underline">
@@ -29,6 +30,7 @@ export function FormsList() {
           </Link>
         }
       />
+      <AudienceNav />
       {q.isLoading ? (
         <div className="grid min-h-[30vh] place-items-center">
           <Spinner />

@@ -5,6 +5,7 @@ import { Check, Copy, Inbox as InboxIcon, Mail, RefreshCw, Search } from "lucide
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { AudienceNav } from "@/components/audience/AudienceNav";
 import { Alert, Button, Card, cx, IconButton, Input, Spinner } from "@/components/ui";
 import { api } from "@/lib/api";
 import { errorMessage, useEditorData } from "@/lib/editor/queries";
@@ -49,6 +50,7 @@ export function Inbox() {
           </Button>
         }
       />
+      <AudienceNav />
 
       {all.length > 0 && (
         <div className="relative">

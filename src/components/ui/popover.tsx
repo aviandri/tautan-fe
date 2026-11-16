@@ -55,7 +55,7 @@ export function Popover({
           aria-label={label}
           tabIndex={-1}
           className={cx(
-            "absolute top-full z-40 mt-2 rounded-2xl border border-line bg-surface shadow-[0_18px_40px_-12px_rgba(0,0,0,.22)] focus:outline-none",
+            "absolute top-full z-40 mt-2 rounded-[28px] bg-surface shadow-lift focus:outline-none",
             align === "right" ? "right-0" : "left-0",
             className,
           )}
