@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Inbox, LayoutList, LogOut, Palette, Settings } from "lucide-react";
+import { BarChart3, ClipboardList, Inbox, LayoutList, LogOut, Palette, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand";
@@ -9,15 +9,17 @@ import { useLogout, useSession } from "@/lib/session";
 
 /**
  * Dashboard routes. Ownership (see README):
- *   /dashboard, /dashboard/inbox, /dashboard/settings → editor session
+ *   /dashboard, /dashboard/{forms,audience,inbox,settings} → editor session
  *   /dashboard/appearance, /dashboard/analytics       → tautan-c6
  */
 export const NAV = [
-  { href: "/dashboard", label: "Page", icon: LayoutList },
-  { href: "/dashboard/appearance", label: "Appearance", icon: Palette },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/dashboard/inbox", label: "Inbox", icon: Inbox },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard", label: "Page", short: "Page", icon: LayoutList },
+  { href: "/dashboard/appearance", label: "Appearance", short: "Design", icon: Palette },
+  { href: "/dashboard/analytics", label: "Analytics", short: "Stats", icon: BarChart3 },
+  { href: "/dashboard/forms", label: "Forms", short: "Forms", icon: ClipboardList },
+  { href: "/dashboard/audience", label: "Audience", short: "People", icon: Users },
+  { href: "/dashboard/inbox", label: "Inbox", short: "Inbox", icon: Inbox },
+  { href: "/dashboard/settings", label: "Settings", short: "Settings", icon: Settings },
 ] as const;
 
 function useIsActive() {
@@ -75,22 +77,23 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Dashboard"
-      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-7 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
     >
-      {NAV.map(({ href, label, icon: Icon }) => {
+      {NAV.map(({ href, label, short, icon: Icon }) => {
         const active = isActive(href);
         return (
           <Link
             key={href}
             href={href}
+            aria-label={label}
             aria-current={active ? "page" : undefined}
             className={cx(
-              "flex h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium",
+              "flex h-14 min-w-0 flex-col items-center justify-center gap-0.5 text-[10px] font-medium",
               active ? "text-foreground" : "text-muted",
             )}
           >
             <Icon className="size-[18px]" aria-hidden />
-            {label}
+            <span className="max-w-full truncate px-0.5">{short}</span>
           </Link>
         );
       })}

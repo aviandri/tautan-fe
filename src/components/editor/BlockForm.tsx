@@ -18,6 +18,7 @@ import {
   Segmented,
   ToggleRow,
 } from "./fields-extra";
+import { FormBuilder } from "./FormBuilder";
 import { SOCIAL_PLATFORMS } from "./social-platforms";
 
 export interface FormContext {
@@ -447,16 +448,8 @@ function ContactFormForm({ data, onChange, autoFocus }: FormProps<"contact_form"
   );
 }
 
-/** Interim: the full field builder replaces this in the P2-3 PR. */
-function FormFormInterim({ data, onChange }: FormProps<"form">) {
-  return (
-    <>
-      <TextField label="Heading" value={data.title ?? ""} onChange={(title) => onChange({ ...data, title })} maxLength={120} />
-      <p className="text-[13px] text-muted">
-        Fields: {data.fields.map((f) => f.label).join(", ") || "none"}. The field editor is coming next.
-      </p>
-    </>
-  );
+function FormForm({ data, onChange, errors, autoFocus }: FormProps<"form">) {
+  return <FormBuilder data={data} onChange={onChange} errors={errors} autoFocus={autoFocus} />;
 }
 
 const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
@@ -478,7 +471,7 @@ const FORMS: { [K in BlockType]: (p: FormProps<K>) => React.ReactNode } = {
   email_signup: EmailSignupForm,
   contact_form: ContactFormForm,
   divider: DividerForm,
-  form: FormFormInterim,
+  form: FormForm,
 };
 
 export function BlockForm<K extends BlockType>({ type, ...props }: FormProps<K> & { type: K }) {
