@@ -53,9 +53,16 @@ export function SocialIcon({ platform }: { platform: string }) {
   return <Globe aria-hidden />;
 }
 
-export function SocialIconsBlock({ block }: { block: BlockOf<"social_icons"> }) {
+export function SocialIconsBlock({ block, preview = false }: { block: BlockOf<"social_icons">; preview?: boolean }) {
   const items = (block.data.items ?? []).filter((i) => safeHref(i.url));
-  if (!items.length) return null;
+  if (!items.length) {
+    // public pages hide an empty card; the owner's preview shows where it will go
+    return preview ? (
+      <div className={s.emptyCard} aria-hidden>
+        Add your profiles
+      </div>
+    ) : null;
+  }
   return (
     <nav className={s.social} aria-label="Social links">
       {items.map((it, i) => (

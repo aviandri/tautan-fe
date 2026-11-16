@@ -1742,28 +1742,26 @@ textarea.tp-input {
   color: var(--t-muted);
 }
 
+/* Same rule as the P3-C/D rows (#50): the input keeps at least 200px and takes the spare width; when
+   the button doesn't fit beside it, it wraps to its own full-width line. Container-based, so it also
+   works in ~300px editor/onboarding previews on a wide screen (a viewport media query can't). */
 .tp-signupRow {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
 }
 
 .tp-signupRow .tp-input {
-  flex: 1;
+  flex: 999 1 200px;
   min-width: 0;
 }
 
 .tp-signupRow .tp-btn {
-  flex: none;
+  flex: 1 0 auto;
+  width: auto;
   min-height: 44px;
-}
-
-@media (max-width: 380px) {
-  .tp-signupRow {
-    flex-direction: column;
-  }
-  .tp-signupRow .tp-btn {
-    width: 100% !important;
-  }
+  padding-inline: 16px;
 }
 
 .tp-checkRow {
@@ -2606,4 +2604,17 @@ textarea.tp-input {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* preview-only placeholder for a card that has no content yet (the public page renders nothing) */
+.tp-emptyCard {
+  display: grid;
+  place-items: center;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 2px dashed var(--t-line);
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--t-muted);
 }

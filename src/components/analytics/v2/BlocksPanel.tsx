@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Download } from "lucide-react";
 import { analyticsApi, type AnalyticsQuery } from "@/lib/analytics-api";
 import { fmtInt } from "../format";
+import { BLOCK_META } from "@/lib/editor/block-meta";
+import type { BlockType } from "@/lib/types";
 import { SeriesChart } from "./SeriesChart";
 
 /** Card types a visitor can tap. Others are listed only if they somehow have taps. */
@@ -20,6 +22,11 @@ function actionLabel(a: string): string {
   const words: Record<string, string> = { wa_order: "WhatsApp order", wa_chat: "WhatsApp chat", view_product: "Opened product", copy: "Copied", buy: "Buy", play: "Played", download: "Downloaded" };
   const t = target ? target.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "";
   return verb === "marketplace" || verb === "tip" || verb === "join" || verb === "post" || verb === "profile" || verb === "social" ? t || verb : (words[verb] ?? verb.replace(/_/g, " ")) + (t ? ` · ${t}` : "");
+}
+
+/** A card's name in the list: its title, else its type's display name ("Store info", "Media kit"). */
+function cardName(b: { title: string; type: string }): string {
+  return b.title?.trim() || BLOCK_META[b.type as BlockType]?.label || b.type.replace(/_/g, " ");
 }
 
 export function BlocksPanel({ q, onExport }: { q: AnalyticsQuery; onExport: () => void }) {
@@ -80,7 +87,7 @@ export function BlocksPanel({ q, onExport }: { q: AnalyticsQuery; onExport: () =
                     aria-hidden
                   />
                   <span className="relative z-[1] min-w-0 flex-1 truncate text-foreground">
-                    {b.title || "Untitled"}
+                    {cardName(b)}
                     {b.deleted ? <span className="font-medium text-muted"> · deleted</span> : !b.is_visible ? <span className="font-medium text-muted"> · hidden</span> : null}
                   </span>
                   <span className="relative z-[1] font-mono tabular-nums">{fmtInt(b.clicks)}</span>

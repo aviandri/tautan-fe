@@ -15,6 +15,7 @@
  * whatever the Content-Type. Inside an unlocked card, endpoints get ?unlock=<token>.
  */
 import type { PollResults } from "@/lib/types";
+import { trackEvent } from "@/lib/track";
 
 export interface P3cdContext {
   username: string;
@@ -48,6 +49,11 @@ const errMsg = (r: Res, fallback = "Something went wrong. Please try again.") =>
   const e = r.body?.error as { message?: string } | undefined;
   return e?.message ? e.message.charAt(0).toUpperCase() + e.message.slice(1) : fallback;
 };
+
+/** A successful interaction counts as a tap on its card (Insights → Top cards, Taps), with its action. */
+function tap(ctx: P3cdContext, blockId: string | undefined, action: string) {
+  if (blockId) trackEvent(ctx.username, { kind: "click", block_id: blockId, action });
+}
 
 // ---------- unlock tokens ----------
 
@@ -155,6 +161,7 @@ async function poll(form: HTMLFormElement, ctx: P3cdContext) {
   const r = await post(cardPath(ctx, form, form.dataset.block!, "vote"), { option_id: String(option) });
   busy(form, false);
   const results = r.body?.results as PollResults | undefined;
+  if (r.ok) tap(ctx, form.dataset.block, "vote");
   if (r.ok || (r.status === 409 && (r.body?.error as { code?: string })?.code === "already_voted")) {
     let options: { id: string; label: string }[] = [];
     try {
@@ -186,7 +193,10 @@ async function ask(form: HTMLFormElement, ctx: P3cdContext) {
   busy(form, true);
   const r = await post(cardPath(ctx, form, form.dataset.block!, "ask"), { question });
   busy(form, false);
-  if (r.ok) return done(form, "Thanks! Your question was sent anonymously.");
+  if (r.ok) {
+    tap(ctx, form.dataset.block, "ask");
+    return done(form, "Thanks! Your question was sent anonymously.");
+  }
   setStatus(form, errMsg(r));
 }
 
@@ -202,6 +212,7 @@ async function lead(form: HTMLFormElement, ctx: P3cdContext) {
   // The BE returns a root-relative path; accept an absolute https URL too, nothing else.
   const href = url?.startsWith("/") && !url.startsWith("//") ? `${API_BASE.replace(/\/api\/v1$/, "")}${url}` : url && /^https:\/\//.test(url) ? url : undefined;
   if (r.ok && href) {
+    tap(ctx, form.dataset.block, "lead");
     const a = document.createElement("a");
     a.href = href;
     a.dataset.p = "download";
@@ -220,6 +231,7 @@ async function enter(form: HTMLFormElement, ctx: P3cdContext) {
   busy(form, true);
   const r = await post(cardPath(ctx, form, form.dataset.block!, "enter"), c);
   busy(form, false);
+  if (r.ok) tap(ctx, form.dataset.block, "enter");
   if (r.ok) return done(form, r.body?.already_entered ? "You're already entered with that email. Good luck!" : "You're in. Good luck!");
   setStatus(form, errMsg(r));
 }
@@ -273,7 +285,10 @@ async function unlock(form: HTMLFormElement, ctx: P3cdContext) {
   busy(form, true);
   const r = await post(`/public/${encodeURIComponent(ctx.username)}/blocks/${encodeURIComponent(stub.dataset.xLock!)}/unlock`, body);
   busy(form, false);
-  if (r.ok && r.body) return openCard(stub, ctx, r.body as unknown as UnlockBody);
+  if (r.ok && r.body) {
+    tap(ctx, stub.dataset.xLock, "unlock");
+    return openCard(stub, ctx, r.body as unknown as UnlockBody);
+  }
   setStatus(form, (r.body?.error as { code?: string })?.code === "wrong_password" ? "That password isn't right." : errMsg(r));
   if (form.dataset.kind === "password") form.querySelector<HTMLInputElement>('input[name="password"]')?.select();
 }

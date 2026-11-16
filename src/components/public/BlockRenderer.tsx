@@ -43,7 +43,7 @@ export function BlockRenderer({ block, childBlocks = [], opts }: { block: Block;
     case "music":
       return <MusicBlock block={block} env={env} />;
     case "social_icons":
-      return block.data.variant === "donate" ? <DonateIconsBlock block={block} /> : <SocialIconsBlock block={block} />;
+      return block.data.variant === "donate" ? <DonateIconsBlock block={block} /> : <SocialIconsBlock block={block} preview={env.preview} />;
     case "folder":
       return (
         <FolderBlock block={block} env={env}>
