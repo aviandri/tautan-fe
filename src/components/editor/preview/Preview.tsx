@@ -1,12 +1,7 @@
 "use client";
 
-/**
- * Live phone preview. Single swap point for the renderer:
- * once tautan-c6's PR #2 is on main, replace the import below with
- *   import { PublicPage } from "@/components/public";
- * and delete PlaceholderPage.tsx.
- */
-import { PlaceholderPage as PublicPage } from "./PlaceholderPage";
+/** Live phone preview, rendered with the public page renderer in preview mode. */
+import { PublicPage } from "@/components/public";
 import type { Block, Profile, Tab } from "@/lib/types";
 
 export function PhonePreview({
