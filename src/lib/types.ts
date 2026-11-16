@@ -48,6 +48,10 @@ export const UserSchema = z.object({
 });
 export type User = z.infer<typeof UserSchema>;
 
+/** P2-2: platform is lowercase [a-z0-9_]{1,30}; "divider" is a spacer whose url is ignored. */
+export const SocialSchema = z.object({ platform: z.string(), url: z.string() });
+export type Social = z.infer<typeof SocialSchema>;
+
 export const ProfileSchema = z.object({
   id: z.string(),
   user_id: z.string(),
@@ -60,6 +64,9 @@ export const ProfileSchema = z.object({
   is_published: z.boolean(),
   created_at: z.string(),
   updated_at: z.string(),
+  // P2-2 header socials row (the BE always returns them; optional here for older fixtures)
+  socials: z.array(SocialSchema).optional(),
+  socials_position: z.enum(["top", "bottom"]).optional(),
 });
 export type Profile = z.infer<typeof ProfileSchema>;
 
@@ -101,6 +108,8 @@ export const BLOCK_TYPES = [
   "booking",
   "quote",
   "email_signup",
+  // Phase 2 (P2-3)
+  "form",
 ] as const;
 export type BlockType = (typeof BLOCK_TYPES)[number];
 
@@ -230,6 +239,35 @@ export const QuoteDataSchema = z.object({
   heading: z.string().optional(),
   ...schedule,
 });
+// ---- P2-3 form block ----
+export const FORM_FIELD_TYPES = ["text", "email", "phone", "textarea", "select", "checkbox", "date", "number"] as const;
+export type FormFieldType = (typeof FORM_FIELD_TYPES)[number];
+export const FormFieldSchema = z.object({
+  /** [a-z0-9_-]{1,40}, unique within the form */
+  id: z.string().regex(/^[a-z0-9_-]{1,40}$/),
+  type: z.enum(FORM_FIELD_TYPES),
+  label: z.string(),
+  placeholder: z.string().optional(),
+  required: z.boolean().optional(),
+  /** select only, 1–50 */
+  options: z.array(z.string()).optional(),
+});
+export type FormField = z.infer<typeof FormFieldSchema>;
+export const FormDataSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  button_label: z.string().optional(),
+  success_message: z.string().optional(),
+  hide_labels: z.boolean().optional(),
+  /** default true */
+  create_contacts: z.boolean().optional(),
+  /** default "none" */
+  subscribe: z.enum(["everyone", "ask", "none"]).optional(),
+  /** 1–30 */
+  fields: z.array(FormFieldSchema),
+  ...schedule,
+});
+
 export const EmailSignupDataSchema = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
@@ -258,6 +296,7 @@ export const BlockDataSchemas = {
   booking: BookingDataSchema,
   quote: QuoteDataSchema,
   email_signup: EmailSignupDataSchema,
+  form: FormDataSchema,
 } satisfies Record<BlockType, z.ZodType>;
 
 export type BlockDataMap = {
@@ -281,6 +320,8 @@ export type CountdownData = BlockDataMap["countdown"];
 export type BookingData = BlockDataMap["booking"];
 export type QuoteData = BlockDataMap["quote"];
 export type EmailSignupData = BlockDataMap["email_signup"];
+/** Named FormBlockData so it never shadows the DOM FormData. */
+export type FormBlockData = BlockDataMap["form"];
 
 interface BlockBase {
   id: string;
@@ -292,6 +333,8 @@ interface BlockBase {
   is_visible: boolean;
   created_at: string;
   updated_at: string;
+  /** P2-1 soft delete: set on blocks from GET /blocks/deleted */
+  deleted_at?: string;
 }
 
 /** Discriminated union on `type`: narrowing `block.type` narrows `block.data`. */
@@ -310,6 +353,7 @@ const BlockBaseSchema = z.object({
   is_visible: z.boolean(),
   created_at: z.string(),
   updated_at: z.string(),
+  deleted_at: z.string().optional(),
 });
 
 export const BlockSchema = z.discriminatedUnion(
@@ -337,7 +381,7 @@ export interface AnalyticsSummary {
 export interface ContactSubmission {
   id: string;
   profile_id: string;
-  block_id: string;
+  block_id: string | null;
   name: string;
   email: string;
   message: string;
