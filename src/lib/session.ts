@@ -73,18 +73,16 @@ export function useAcceptAuth() {
 }
 
 export function useLogout() {
-  const qc = useQueryClient();
-  const router = useRouter();
   return useCallback(async () => {
     try {
       await api.auth.logout();
     } catch {
       // Token is cleared regardless; the cookie expires on its own.
     }
-    qc.clear();
-    qc.setQueryData(qk.me, null);
-    router.replace("/login");
-  }, [qc, router]);
+    // Hard navigation: drops every cached query and in-memory state, and avoids
+    // the guard racing us to /login?next=….
+    window.location.assign("/login");
+  }, []);
 }
 
 /** Only allow same-origin relative redirects. */

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { UsernameStatusLine } from "@/components/auth/UsernameStatusLine";
 import { PUBLIC_HOST } from "@/components/brand";
-import { Alert, Button, Field, Input } from "@/components/ui";
+import { Alert, Button, Field, Input, PrefixInput } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { useAcceptAuth } from "@/lib/session";
 import { useRedirectIfSignedIn } from "@/lib/use-redirect-if-signed-in";
@@ -73,23 +73,18 @@ export function SignupForm() {
           hint={<UsernameStatusLine status={check.status} host={PUBLIC_HOST} />}
         >
           {(p) => (
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-[15px] text-muted">
-                {PUBLIC_HOST}/
-              </span>
-              <Input
-                {...p}
-                aria-invalid={check.status.state === "invalid" || check.status.state === "taken"}
-                value={username}
-                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ""))}
-                autoComplete="username"
-                autoCapitalize="none"
-                spellCheck={false}
-                autoFocus
-                style={{ paddingLeft: `calc(0.875rem + ${PUBLIC_HOST.length + 1}ch)` }}
-                className="font-medium"
-              />
-            </div>
+            <PrefixInput
+              {...p}
+              prefix={`${PUBLIC_HOST}/`}
+              aria-invalid={check.status.state === "invalid" || check.status.state === "taken"}
+              value={username}
+              onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ""))}
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              autoFocus
+              className="font-medium"
+            />
           )}
         </Field>
 

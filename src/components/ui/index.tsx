@@ -97,6 +97,30 @@ export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTML
   },
 );
 
+/** Input with a fixed text prefix (e.g. "tautan.id/") that sits flush with the value. */
+export const PrefixInput = forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement> & { prefix: string }
+>(function PrefixInput({ prefix, className, ...rest }, ref) {
+  return (
+    <div
+      className={cx(
+        "flex h-11 w-full items-center rounded-xl border border-line bg-surface pl-3.5 text-[15px]",
+        "transition-[border-color,box-shadow] duration-150 hover:border-[#cfcbbd]",
+        "focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10",
+        "has-[[aria-invalid=true]]:border-danger has-[[aria-invalid=true]]:focus-within:ring-danger/10",
+      )}
+    >
+      <span className="select-none text-muted">{prefix}</span>
+      <input
+        ref={ref}
+        className={cx("h-full min-w-0 flex-1 bg-transparent pr-3.5 text-foreground outline-none", className)}
+        {...rest}
+      />
+    </div>
+  );
+});
+
 export const Textarea = forwardRef<
   HTMLTextAreaElement,
   React.TextareaHTMLAttributes<HTMLTextAreaElement>
