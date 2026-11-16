@@ -9,6 +9,7 @@ import { FaqBlock, FolderBlock, TestimonialBlock } from "./blocks/DisclosureBloc
 import { BookingBlock, CountdownBlock, DiscountCodeBlock, DividerBlock, FileBlock, HeadingBlock, QuoteBlock } from "./blocks/P2Blocks";
 import { ContactFormIsland, EmailSignupIsland, FormIsland } from "./islands";
 import { MarketplaceBlock, ProductBlock, ShopBlock, WhatsAppBlock } from "./blocks/SellBlocksA";
+import { BrandsBlock, CommunityBlock, EventsBlock, GalleryBlock, LatestVideoBlock, MediaKitBlock, PodcastBlock, PostGridBlock, RateCardBlock, ShopTheLookBlock } from "./blocks/CreatorBlocks";
 import { PaymentBlock, PriceListBlock, ReviewsBlock, StoreInfoBlock, TipJarBlock } from "./blocks/SellBlocksB";
 
 // Server-safe: no hooks, no context. On the public route every card here renders as server HTML;
@@ -88,6 +89,26 @@ export function BlockRenderer({ block, childBlocks = [], opts }: { block: Block;
       return <TipJarBlock block={block} />;
     case "reviews":
       return <ReviewsBlock block={block} />;
+    case "media_kit":
+      return <MediaKitBlock block={block} />;
+    case "rate_card":
+      return <RateCardBlock block={block} />;
+    case "brands":
+      return <BrandsBlock block={block} env={env} />;
+    case "post_grid":
+      return <PostGridBlock block={block} env={env} />;
+    case "latest_video":
+      return <LatestVideoBlock block={block} env={env} />;
+    case "shop_the_look":
+      return <ShopTheLookBlock block={block} env={env} />;
+    case "gallery":
+      return <GalleryBlock block={block} env={env} />;
+    case "events":
+      return <EventsBlock block={block} />;
+    case "podcast":
+      return <PodcastBlock block={block} env={env} />;
+    case "community":
+      return <CommunityBlock block={block} />;
     default:
       // unknown type from a newer API: skip rather than crash the page
       return null;

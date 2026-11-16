@@ -1870,3 +1870,526 @@ textarea.tp-input {
 .tp-waTotal {
   font-weight: 700;
 }
+
+/* ---- P3-B creator cards (media kit, rates, brands, posts, latest video, shop the look, gallery,
+   events, podcast, community). Same tokens as the sell cards. ---- */
+.tp-creator {
+  background: var(--t-block-bg);
+  color: var(--t-block-text);
+  border: var(--t-card-bw, 1px) solid var(--t-card-bc, var(--t-line));
+  box-shadow: var(--t-card-shadow, none);
+  border-radius: var(--t-card-radius);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  text-align: left;
+}
+.tp-crTitle {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  font-family: var(--t-font-title, inherit);
+}
+.tp-crMuted {
+  font-size: 0.82rem;
+  opacity: 0.72;
+}
+.tp-crNote {
+  margin: 0;
+  font-size: 0.86rem;
+  opacity: 0.8;
+}
+.tp-crLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: inherit;
+}
+.tp-crLink svg {
+  width: 16px;
+  height: 16px;
+}
+.tp-crFoot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+/* media kit */
+.tp-crStats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.tp-crStat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  padding: 10px 12px;
+  border-radius: calc(var(--t-card-radius) * 0.7);
+  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
+  color: inherit;
+  text-decoration: none;
+}
+.tp-crStatHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.tp-crStatIcon {
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.tp-crStatIcon svg {
+  width: 18px;
+  height: 18px;
+}
+.tp-crStatHandle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-crStatBig {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.tp-crStatUnit {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  opacity: 0.7;
+}
+.tp-crStatSmall {
+  font-size: 0.74rem;
+  opacity: 0.75;
+}
+.tp-crAudience {
+  display: grid;
+  gap: 10px;
+}
+.tp-crBars {
+  display: grid;
+  gap: 4px;
+}
+.tp-crBarsLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.tp-crBar {
+  display: grid;
+  grid-template-columns: minmax(64px, 30%) 1fr 3.2em;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+.tp-crBarName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-crBarTrack {
+  height: 8px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--t-block-text) 12%, transparent);
+  overflow: hidden;
+}
+.tp-crBarFill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--t-block-text);
+}
+.tp-crBarPct {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+/* rate card */
+.tp-crPackages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.tp-crPackage {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: calc(var(--t-card-radius) * 0.7);
+  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
+}
+.tp-crPackageHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tp-crPackageName {
+  font-weight: 700;
+}
+.tp-crPackagePrice {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.tp-crDeliverables {
+  margin: 0;
+  padding-left: 1.1em;
+  list-style: disc;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+/* brands */
+.tp-crLogos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.tp-crLogo a,
+.tp-crLogo > img {
+  display: grid;
+  place-items: center;
+}
+.tp-crLogo {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3 / 2;
+  padding: 10px;
+  border-radius: calc(var(--t-card-radius) * 0.6);
+  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
+}
+.tp-crLogoImg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+/* post grid + gallery grid */
+.tp-crPosts,
+.tp-crGrid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+.tp-crPost,
+.tp-crGalleryItem {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  border-radius: calc(var(--t-card-radius) * 0.4);
+  background: color-mix(in srgb, var(--t-block-text) 8%, transparent);
+  cursor: pointer;
+}
+.tp-crPost img,
+.tp-crGalleryItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.tp-crPostEmpty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--t-block-text);
+}
+.tp-crPostIcon {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+}
+.tp-crPostIcon svg {
+  width: 13px;
+  height: 13px;
+}
+.tp-crSlide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+.tp-crSlide .tp-crGalleryItem {
+  aspect-ratio: 4 / 3;
+  border-radius: 0;
+}
+/* latest video */
+.tp-crVideo {
+  display: grid;
+  gap: 6px;
+}
+.tp-crVideoTitle {
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+/* shop the look */
+.tp-crLook {
+  position: relative;
+  border-radius: calc(var(--t-card-radius) * 0.8);
+  overflow: hidden;
+}
+.tp-crLook img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.tp-crSpot {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+  background: var(--t-block-text);
+  color: var(--t-bg-solid);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--t-bg-solid) 70%, transparent), 0 4px 12px rgb(0 0 0 / 0.3);
+}
+.tp-crLookList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.tp-crLookItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
+}
+.tp-crLookNum {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: var(--t-block-text);
+  color: var(--t-bg-solid);
+}
+.tp-crLookText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tp-crLookName {
+  font-weight: 700;
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-crCode {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px dashed color-mix(in srgb, var(--t-block-text) 45%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.tp-crShop {
+  display: inline-grid;
+  place-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  flex: none;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  border: var(--t-btn-bw, 2px) solid var(--t-btn-border, transparent);
+}
+/* events */
+.tp-crEvents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.tp-crEvent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 10px;
+  border-radius: calc(var(--t-card-radius) * 0.7);
+  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
+}
+.tp-crEventOff .tp-crWhat {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.tp-crDate {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  flex: none;
+  padding: 4px 0;
+  border-radius: 12px;
+  background: var(--t-block-text);
+  color: var(--t-bg-solid);
+  line-height: 1.1;
+}
+.tp-crDateMonth {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.tp-crDateDay {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+.tp-crWhen {
+  display: grid;
+  min-width: 84px;
+  flex: none;
+  white-space: nowrap;
+}
+.tp-crWhenDay {
+  font-weight: 700;
+  font-size: 0.86rem;
+}
+.tp-crWhat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tp-crEventTitle {
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+.tp-crStatus,
+.tp-crLive {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.tp-crStatus {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--t-block-text) 12%, transparent);
+}
+.tp-crStatusHot {
+  background: var(--t-block-text);
+  color: var(--t-bg-solid);
+}
+/* fixed slot: the runtime swaps "Next Fri 20:00" ↔ "Live now" without moving anything */
+.tp-crLive {
+  min-width: 7.5em;
+  text-align: right;
+  opacity: 0.8;
+}
+.tp-crLiveOn {
+  opacity: 1;
+  color: #c0262d;
+}
+.tp-crLiveOn::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 5px;
+  border-radius: 99px;
+  background: currentColor;
+  vertical-align: 1px;
+}
+/* podcast */
+.tp-crPodHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tp-crPodCover {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.tp-crEpisodes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.tp-crEpisode {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: calc(var(--t-card-radius) * 0.7);
+  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
+}
+.tp-crAudio {
+  width: 100%;
+  height: 40px;
+  margin-top: 4px;
+}
+/* community */
+.tp-crCommunity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tp-crCommunity .tp-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+}
+.tp-crCommunity .tp-mark svg {
+  width: 24px;
+  height: 24px;
+}

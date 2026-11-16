@@ -1,5 +1,6 @@
 import { afterLoad, trackEvent } from "@/lib/track";
 import { fillTemplate, waLink } from "@/lib/sell/wa";
+import { s } from "./cls";
 
 /**
  * The public page's runtime, imported by the PageRuntime stub right after hydration (so it never
@@ -18,6 +19,9 @@ import { fillTemplate, waLink } from "@/lib/sell/wa";
  *   data-open-dialog    opens <dialog id=…> (shop product sheet); data-close-dialog closes it
  *   data-wa-template    product WhatsApp link: re-composed with the chosen variant radios at click time
  *   data-slides         photo carousel; keeps its [data-slide-count] "n / total" in sync
+ *   data-live-slot      events "Live now" badge: re-checked against data-live-end / data-next-start/-end
+ *                       every 30 s (fixed-width slot, so the text swap never shifts layout)
+ *   audio[data-play-b]  podcast episodes: one click event (action "play") per play
  *   form[data-x] submit / [data-x] input
  *                       interactive P3-C/D cards and gate unlocks: handled by ./runtime-p3cd
  *                       (lazy); data-x-lock stubs are restored from stored tokens on start
@@ -123,6 +127,17 @@ export function start(root: HTMLElement, { username, preview, onTab, ga4, pixel 
   }
 
 
+  cleanups.push(startLiveSlots(root));
+  if (!preview) {
+    // "play" doesn't bubble: capture it on the root for every podcast episode player
+    const onPlay = (e: Event) => {
+      const a = e.target as HTMLElement;
+      if (a?.dataset?.playB) trackEvent(username, { kind: "click", block_id: a.dataset.playB, action: "play" });
+    };
+    root.addEventListener("play", onPlay, true);
+    cleanups.push(() => root.removeEventListener("play", onPlay, true));
+  }
+
   // interactive P3-C/D cards and gate unlocks (tautan-27): one delegated hook, module loaded on demand
   const ctx = { username, preview, root };
   let p3cd: Promise<typeof import("./runtime-p3cd")> | null = null;
@@ -216,6 +231,27 @@ function loadEmbed(el: HTMLElement) {
   if (host === el) el.replaceWith(f);
   else host.replaceChildren(f);
   f.focus();
+}
+
+// ---------- events "Live now" ----------
+
+function startLiveSlots(root: HTMLElement): () => void {
+  const els = [...root.querySelectorAll<HTMLElement>("[data-live-slot]")];
+  if (!els.length) return () => {};
+  const t = (v?: string) => (v ? Date.parse(v) : NaN);
+  const tick = () => {
+    const now = Date.now();
+    for (const el of els) {
+      const { liveEnd, nextStart, nextEnd, nextLabel } = el.dataset;
+      const on = now < t(liveEnd) || (now >= t(nextStart) && now < t(nextEnd));
+      const text = on ? "Live now" : now < t(nextStart) ? (nextLabel ?? "") : "";
+      el.classList.toggle(s.crLiveOn, on);
+      if (el.textContent !== text) el.textContent = text;
+    }
+  };
+  tick();
+  const id = setInterval(tick, 30_000);
+  return () => clearInterval(id);
 }
 
 // ---------- countdowns ----------
