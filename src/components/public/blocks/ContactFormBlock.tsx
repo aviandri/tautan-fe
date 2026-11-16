@@ -100,7 +100,7 @@ export function ContactFormBlock({ block }: { block: BlockOf<"contact_form"> }) 
   };
 
   return (
-    <form className={s.form} onSubmit={onSubmit} noValidate aria-label={block.data.title || "Contact form"}>
+    <form id={`block-${block.id}`} className={s.form} onSubmit={onSubmit} noValidate aria-label={block.data.title || "Contact form"}>
       {block.data.title ? <p className={s.formTitle}>{block.data.title}</p> : null}
       {field("name", "Name", "input", "text", "name")}
       {field("email", "Email", "input", "email", "email")}

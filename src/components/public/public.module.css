@@ -1086,3 +1086,229 @@ textarea.input {
 .headerBusiness .social {
   justify-content: flex-start;
 }
+
+/* ================= P2-7 visitor chrome ================= */
+
+.placeholder {
+  opacity: 0.45;
+}
+
+/* announcement */
+.annBanner,
+.annCard {
+  --ann-bg: var(--t-text);
+  --ann-text: var(--t-bg-solid);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--ann-bg);
+  color: var(--ann-text);
+}
+.annBanner {
+  width: calc(100% + 32px);
+  margin: -48px -16px 18px;
+  padding: 12px 52px 12px 16px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+.desktopBg .annBanner {
+  width: calc(100% + 40px);
+  margin: -48px -20px 18px;
+}
+.annCard {
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+  padding: 18px 18px 16px;
+  border-radius: var(--t-card-radius);
+  overflow: hidden;
+}
+.annImage {
+  width: calc(100% + 36px);
+  margin: -18px -18px 4px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.annText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.annTitle {
+  font-family: var(--t-font-title, var(--t-font));
+  font-weight: 700;
+  font-size: 1rem;
+}
+.annDesc {
+  opacity: 0.85;
+  font-size: 0.9rem;
+  margin: 0;
+}
+.annCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--t-btn-radius);
+  background: var(--ann-text, var(--t-btn-bg));
+  color: var(--ann-bg, var(--t-btn-text));
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  border: 0;
+  cursor: pointer;
+}
+.annClose {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.8;
+}
+.annClose:hover {
+  opacity: 1;
+}
+.annClose svg {
+  width: 18px;
+  height: 18px;
+}
+
+.annPopup,
+.annPopupInline,
+.sharePanel {
+  /* Tailwind's preflight zeroes margins, which un-centres modal dialogs */
+  margin: auto;
+  --ann-bg: var(--t-bg-solid);
+  --ann-text: var(--t-text);
+  padding: 0;
+  border: 0;
+  border-radius: 22px;
+  background: var(--ann-bg);
+  color: var(--ann-text);
+  font-family: var(--t-font);
+  width: min(92vw, 380px);
+  overflow: hidden;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.45);
+}
+.annPopup::backdrop,
+.sharePanel::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+.annPopupInline {
+  position: absolute;
+  inset: 80px 16px auto;
+  margin: 0 auto;
+  z-index: 5;
+}
+.annPopupImage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+.annPopupBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 20px 18px;
+  text-align: center;
+}
+.annPopupActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+.annPopupActions .annCta {
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  border: var(--t-btn-bw, 2px) solid var(--t-btn-border);
+  min-height: 46px;
+}
+.annSecondary {
+  min-height: 40px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+/* share + save contact */
+.pageActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin: -32px 0 -6px;
+  position: relative;
+  z-index: 2;
+}
+.pageAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--t-line);
+  background: color-mix(in srgb, var(--t-bg-solid) 75%, transparent);
+  color: var(--t-text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+.pageAction svg {
+  width: 15px;
+  height: 15px;
+}
+.sharePanelInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 20px 20px;
+}
+.shareQr {
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  background: #fff;
+  padding: 6px;
+}
+.shareQr svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.shareUrlRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.shareUrl {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}

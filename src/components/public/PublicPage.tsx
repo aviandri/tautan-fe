@@ -9,7 +9,10 @@ import { trackEvent } from "@/lib/track";
 import { themeFontVariables } from "@/lib/theme/fonts";
 import { PublicContext } from "./context";
 import { BlockList } from "./BlockRenderer";
-import { ProfileHeader, SocialRow } from "./ProfileHeader";
+import { ProfileHeader, SocialRow, displayName } from "./ProfileHeader";
+import { AnnouncementView } from "./Announcement";
+import { PageActions } from "./PageActions";
+import { readAnnouncement, readSettings } from "@/lib/page-extras";
 import s from "./public.module.css";
 
 export interface PublicPageProps {
@@ -45,6 +48,8 @@ export function PublicPage({
   const tab = selectTab(sortedTabs, slug);
   const tree = useMemo(() => buildTabTree(blocks, tab?.id), [blocks, tab?.id]);
   const theme = useMemo(() => resolveTheme(profile.theme), [profile.theme]);
+  const announcement = useMemo(() => readAnnouncement(profile), [profile]);
+  const settings = useMemo(() => readSettings(profile), [profile]);
   const vars = useMemo(() => themeToCssVars(theme), [theme]);
 
   // one view per page load (the ref guards React StrictMode's double effect in dev)
@@ -93,9 +98,12 @@ export function PublicPage({
       <div
         className={[s.page, themeFontVariables, fullHeight && s.fullHeight, theme.bg_desktop && s.desktopBg, className].filter(Boolean).join(" ")}
         style={{ ...vars, ...style }}
+        lang={settings.language}
       >
         <div className={s.sheet}>
         <Main className={s.column}>
+          {announcement?.layout === "banner" ? <AnnouncementView a={announcement} /> : null}
+          <PageActions name={displayName(profile) || "this page"} share={!!settings.show_share} saveContact={!!settings.show_save_contact} />
           <ProfileHeader profile={profile} theme={theme} />
 
           {sortedTabs.length > 1 ? (
@@ -116,6 +124,9 @@ export function PublicPage({
               })}
             </nav>
           ) : null}
+
+          {announcement?.layout === "card" ? <AnnouncementView a={announcement} /> : null}
+          {announcement?.layout === "popup" ? <AnnouncementView a={announcement} /> : null}
 
           {tree.top.length ? (
             <BlockList blocks={tree.top} childrenOf={tree.children} />

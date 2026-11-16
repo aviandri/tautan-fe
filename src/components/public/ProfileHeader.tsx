@@ -3,6 +3,7 @@
 import type { Profile, Theme } from "@/lib/types";
 import { safeHref, safeImageSrc } from "@/lib/safe-url";
 import { platformLabel } from "@/lib/social";
+import { isTempUsername } from "@/lib/page-extras";
 import { SocialIcon } from "./blocks/SocialIconsBlock";
 import { usePublic } from "./context";
 import s from "./public.module.css";
@@ -35,11 +36,19 @@ export function SocialRow({ socials }: { socials: NonNullable<Profile["socials"]
   );
 }
 
+/** display_name, else the username, but never a temporary "tmp.…" name from username-less signup. */
+export function displayName(profile: Profile): string {
+  return profile.display_name?.trim() || (isTempUsername(profile.username) ? "" : profile.username);
+}
+
 export function ProfileHeader({ profile, theme }: { profile: Profile; theme: Theme }) {
   const layout = theme.header?.layout ?? "classic";
   const avatar = safeImageSrc(profile.avatar_url);
   const banner = safeImageSrc(theme.header?.banner_image_url);
-  const name = profile.display_name || profile.username;
+  const { preview } = usePublic();
+  const real = displayName(profile);
+  // a brand-new account in the editor preview has neither a name nor a claimed username yet
+  const name = real || (preview ? "Your name" : "");
   const socialsTop = profile.socials?.length && (profile.socials_position ?? "top") === "top";
 
   const avatarEl = avatar ? (
@@ -47,12 +56,12 @@ export function ProfileHeader({ profile, theme }: { profile: Profile; theme: The
     <img className={s.avatar} src={avatar} alt="" width={96} height={96} />
   ) : (
     <div className={s.avatarFallback} aria-hidden>
-      {name.slice(0, 1).toUpperCase()}
+      {(name || "?").slice(0, 1).toUpperCase()}
     </div>
   );
   const text = (
     <>
-      <h1 className={s.name}>{name}</h1>
+      {name ? <h1 className={`${s.name} ${real ? "" : s.placeholder}`}>{name}</h1> : null}
       {profile.bio ? <p className={s.bio}>{profile.bio}</p> : null}
     </>
   );

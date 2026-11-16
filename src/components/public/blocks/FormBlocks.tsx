@@ -50,7 +50,7 @@ export function EmailSignupBlock({ block }: { block: BlockOf<"email_signup"> }) 
 
   if (status.kind === "sent") return <Sent title={d.title} message={status.message} />;
   return (
-    <form className={s.form} onSubmit={onSubmit} noValidate aria-label={d.title || "Email signup"}>
+    <form id={`block-${block.id}`} className={s.form} onSubmit={onSubmit} noValidate aria-label={d.title || "Email signup"}>
       {d.title ? <p className={s.formTitle}>{d.title}</p> : null}
       {d.description ? <p className={s.formDesc}>{d.description}</p> : null}
       <label htmlFor={id} className={s.srOnly}>
@@ -146,7 +146,7 @@ export function FormBlock({ block }: { block: BlockOf<"form"> }) {
   if (status.kind === "sent") return <Sent title={d.title} message={status.message} />;
 
   return (
-    <form className={s.form} onSubmit={onSubmit} noValidate aria-label={d.title || "Form"}>
+    <form id={`block-${block.id}`} className={s.form} onSubmit={onSubmit} noValidate aria-label={d.title || "Form"}>
       {d.title ? <p className={s.formTitle}>{d.title}</p> : null}
       {d.description ? <p className={s.formDesc}>{d.description}</p> : null}
       {fields.map((f) => {

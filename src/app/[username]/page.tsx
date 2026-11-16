@@ -1,11 +1,13 @@
 import { cache } from "react";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata, Viewport } from "next";
 import { PublicPage } from "@/components/public";
-import { ApiError, api } from "@/lib/api";
+import { getPublicPage } from "@/lib/get-public-page";
 import { resolveTheme } from "@/lib/theme/resolve";
 import { selectTab, tabQuery } from "@/lib/page-structure";
 import { safeImageSrc } from "@/lib/safe-url";
+import { readSettings } from "@/lib/page-extras";
+import { TrackingScripts } from "./TrackingScripts";
 
 type Params = Promise<{ username: string }>;
 type Search = Promise<{ tab?: string | string[] }>;
@@ -14,18 +16,15 @@ const USERNAME = /^[a-z0-9_.]{1,40}$/i;
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
 // shared by generateMetadata and the page within one request
-const load = cache(async (raw: string) => {
+const loadResult = cache(async (raw: string) => {
   const username = decodeURIComponent(raw);
-  if (!USERNAME.test(username)) return null;
-  try {
-    return await api.public.page(username.toLowerCase(), {
-      next: { revalidate: 15, tags: [`public:${username.toLowerCase()}`] },
-    });
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 404) return null;
-    throw e;
-  }
+  if (!USERNAME.test(username)) return { kind: "missing" as const };
+  return getPublicPage(username.toLowerCase());
 });
+const load = async (raw: string) => {
+  const r = await loadResult(raw);
+  return r.kind === "page" ? r.data : null;
+};
 
 export async function generateMetadata({ params, searchParams }: { params: Params; searchParams: Search }): Promise<Metadata> {
   const { username } = await params;
@@ -76,16 +75,25 @@ export async function generateViewport({ params }: { params: Params }): Promise<
 
 export default async function UsernamePage({ params, searchParams }: { params: Params; searchParams: Search }) {
   const { username } = await params;
-  const data = await load(username);
-  if (!data) notFound();
   const sp = await searchParams;
+  const result = await loadResult(username);
+  if (result.kind === "moved") {
+    // renamed page: the old name 301s to the new one (keeping ?tab)
+    const tab = typeof sp.tab === "string" ? `?tab=${encodeURIComponent(sp.tab)}` : "";
+    permanentRedirect(`/${result.to}${tab}`);
+  }
+  if (result.kind !== "page") notFound();
+  const data = result.data;
   return (
-    <PublicPage
-      profile={data.profile}
-      tabs={data.tabs}
-      blocks={data.blocks}
-      activeTabSlug={typeof sp.tab === "string" ? sp.tab : null}
-      fullHeight
-    />
+    <>
+      <PublicPage
+        profile={data.profile}
+        tabs={data.tabs}
+        blocks={data.blocks}
+        activeTabSlug={typeof sp.tab === "string" ? sp.tab : null}
+        fullHeight
+      />
+      <TrackingScripts settings={readSettings(data.profile)} />
+    </>
   );
 }
