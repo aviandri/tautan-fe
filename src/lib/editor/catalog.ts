@@ -133,6 +133,50 @@ export const CATALOG: Record<BlockType, Entry> = {
     sample: { average: 4.9, count: 312, source: "Shopee", items: [{ stars: 5, quote: "Arrived in two days, colours exactly like the photos.", author: "Rina" }] } satisfies BlockDataMap["reviews"],
   },
 
+  // ----- creators -----
+  media_kit: {
+    keywords: ["media kit", "mediakit", "stats", "statistik", "followers", "pengikut", "engagement", "insight", "audience", "brand", "endorse", "endorsement", "kol", "influencer"],
+    blurb: "Your followers, views and engagement per platform, plus who your audience is, with a PDF to download.",
+    features: ["Per-platform stats", "Audience by age, gender and city", "Shows when it was last updated"],
+  },
+  rate_card: {
+    keywords: ["rate card", "ratecard", "rate", "harga endorse", "endorse", "paket", "package", "collab", "kolaborasi", "kerja sama", "sponsor", "pricelist endorse"],
+    blurb: "Collab packages with a “from” price, deliverables and turnaround. The button opens your request form.",
+  },
+  brands: {
+    keywords: ["brands", "brand", "logo", "logos", "client", "klien", "worked with", "partner", "partners", "endorse", "pernah kerja sama"],
+    blurb: "A “Worked with” wall of the brands you've partnered with.",
+  },
+  post_grid: {
+    keywords: ["post", "posts", "feed", "instagram", "ig", "reels", "tiktok", "youtube shorts", "grid", "konten", "content", "pinned"],
+    blurb: "Pin your best Instagram, TikTok or YouTube posts as a thumbnail grid. Paste the links, no login needed.",
+  },
+  latest_video: {
+    keywords: ["youtube", "latest video", "video terbaru", "channel", "upload", "vlog", "yt"],
+    blurb: "Shows the newest video from your YouTube channel and updates by itself.",
+  },
+  shop_the_look: {
+    keywords: ["shop the look", "ootd", "outfit", "affiliate", "afiliasi", "tag", "hotspot", "spill", "racun", "link produk", "look"],
+    blurb: "A photo with tappable tags. Each tag opens a product or affiliate link with its price and code.",
+  },
+  gallery: {
+    keywords: ["gallery", "galeri", "photos", "foto", "carousel", "slider", "portfolio", "portofolio", "album"],
+    blurb: "A grid or swipeable carousel of photos that open full screen.",
+  },
+  events: {
+    keywords: ["events", "event", "acara", "jadwal", "schedule", "live", "jadwal live", "live tiktok", "live shopee", "tour", "konser", "workshop", "tiket", "tickets", "dates"],
+    blurb: "Tour and workshop dates with ticket links, or a weekly live schedule with a “Live now” badge.",
+    features: ["Dates with Sold out or Few left", "Weekly live slots in your time zone", "Past dates hide themselves"],
+  },
+  podcast: {
+    keywords: ["podcast", "rss", "episode", "episodes", "audio", "siaran", "spotify podcast", "apple podcasts"],
+    blurb: "The latest episodes from your podcast feed, with a player.",
+  },
+  community: {
+    keywords: ["community", "komunitas", "grup", "group", "grup wa", "whatsapp group", "channel wa", "saluran", "telegram", "discord", "line", "join", "gabung", "member"],
+    blurb: "A join card for your WhatsApp group or channel, Telegram, Discord or LINE.",
+  },
+
   // ----- links and buttons -----
   link: {
     keywords: ["tautan", "url", "website", "web", "button", "tombol", "link"],

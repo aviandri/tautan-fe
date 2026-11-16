@@ -193,6 +193,17 @@ export const BLOCK_TYPES = [
   "payment",
   "tip_jar",
   "reviews",
+  // Phase 3 (P3-B Creators)
+  "media_kit",
+  "rate_card",
+  "brands",
+  "post_grid",
+  "latest_video",
+  "shop_the_look",
+  "gallery",
+  "events",
+  "podcast",
+  "community",
 ] as const;
 export type BlockType = (typeof BLOCK_TYPES)[number];
 
@@ -534,6 +545,207 @@ export const ReviewsDataSchema = z.object({
   ...schedule,
 });
 
+
+// ---------- Phase 3 (P3-B Creators) ----------
+// Shapes from SPEC "P3-B: implemented (BE)". `resolved` / `computed` are read-only server
+// additions: never send them back (the editor validators strip them).
+
+export const MEDIA_KIT_PLATFORMS = ["instagram", "tiktok", "youtube", "x", "facebook", "threads", "twitch", "linkedin", "spotify", "podcast", "blog"] as const;
+const slice = z.object({ label: z.string().max(40), pct: z.number().min(0).max(100) });
+export const MediaKitDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** 1–8 */
+  platforms: z.array(
+    z.object({
+      platform: z.enum(MEDIA_KIT_PLATFORMS),
+      handle: z.string().max(60),
+      followers: z.number().int().nonnegative(),
+      avg_views: z.number().int().nonnegative().optional(),
+      /** percent 0–100 */
+      engagement: z.number().min(0).max(100).optional(),
+      url: z.string().optional(),
+    }),
+  ),
+  /** each list's pct sums ≤ 100; age ≤8, gender ≤4, cities ≤10 */
+  audience: z.object({ age: z.array(slice).optional(), gender: z.array(slice).optional(), cities: z.array(slice).optional() }).optional(),
+  /** YYYY-MM-DD */
+  updated_at: z.string(),
+  pdf_url: z.string().optional(),
+  ...schedule,
+});
+
+export const RateCardDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** 1–12 */
+  packages: z.array(
+    z.object({
+      name: z.string().max(80),
+      price_from: money.optional(),
+      /** 1–10, each 1–100 */
+      deliverables: z.array(z.string().max(100)),
+      turnaround: z.string().max(40).optional(),
+    }),
+  ),
+  currency,
+  note: z.string().max(300).optional(),
+  button_label: z.string().max(40).optional(),
+  /** a live form / contact_form / email_signup block on the same page */
+  form_block_id: z.string().optional(),
+  ...schedule,
+});
+
+export const BrandsDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** 1–30 */
+  logos: z.array(z.object({ image_url: z.string(), name: z.string().max(60), url: z.string().optional() })),
+  ...schedule,
+});
+
+export const POST_PLATFORMS = ["instagram", "tiktok", "youtube"] as const;
+export const PostGridDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** 1–12; platform is set by the server from url */
+  posts: z.array(z.object({ url: z.string(), caption: z.string().max(200).optional(), platform: z.enum(POST_PLATFORMS).optional() })),
+  /** read only */
+  resolved: z
+    .object({
+      posts: z.array(
+        z.object({
+          status: z.enum(["ok", "link_only", "pending"]),
+          url: z.string(),
+          platform: z.enum(POST_PLATFORMS).optional(),
+          title: z.string().optional(),
+          author: z.string().optional(),
+          thumb_url: z.string().optional(),
+        }),
+      ),
+    })
+    .optional(),
+  ...schedule,
+});
+
+export const LatestVideoDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** "UC" + 22 chars */
+  channel_id: z.string(),
+  show: z.object({ count: z.number().int().min(1).max(3) }).optional(),
+  /** read only */
+  resolved: z
+    .object({
+      status: z.enum(["ok", "pending"]),
+      fetched_at: z.string().optional(),
+      channel_title: z.string().optional(),
+      videos: z.array(z.object({ video_id: z.string(), title: z.string(), url: z.string(), published_at: z.string(), thumb_url: z.string() })).optional(),
+    })
+    .optional(),
+  ...schedule,
+});
+
+export const ShopTheLookDataSchema = z.object({
+  image_url: z.string(),
+  alt: z.string().max(200).optional(),
+  currency,
+  /** 1–12; x/y are percent of the image box from the top left */
+  spots: z.array(
+    z.object({
+      x: z.number().min(0).max(100),
+      y: z.number().min(0).max(100),
+      title: z.string().max(80),
+      price: money.optional(),
+      url: z.string(),
+      code: z.string().max(40).optional(),
+    }),
+  ),
+  ...schedule,
+});
+
+export const GalleryDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** 1–30 */
+  images: z.array(z.object({ url: z.string(), alt: z.string().max(200).optional(), link_url: z.string().optional() })),
+  /** default grid */
+  layout: z.enum(["carousel", "grid"]).optional(),
+  ...schedule,
+});
+
+export const EVENT_STATUSES = ["sold_out", "few_left", "cancelled"] as const;
+export const LIVE_PLATFORMS = ["tiktok", "instagram", "youtube", "twitch", "facebook", "shopee", "other"] as const;
+const eventWindow = z.object({ index: z.number().int(), starts_at: z.string(), ends_at: z.string() });
+export const EventsDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  /** IANA zone */
+  tz: z.string(),
+  mode: z.enum(["dates", "weekly"]),
+  /** dates mode: 1–50 */
+  dates: z
+    .array(
+      z.object({
+        /** YYYY-MM-DD */
+        date: z.string(),
+        /** HH:MM */
+        time: z.string().optional(),
+        title: z.string().max(80).optional(),
+        city: z.string().max(60).optional(),
+        venue: z.string().max(100).optional(),
+        url: z.string().optional(),
+        status: z.enum(EVENT_STATUSES).optional(),
+      }),
+    )
+    .optional(),
+  /** weekly mode: 1–20 */
+  weekly: z
+    .array(
+      z.object({
+        /** 1–7 unique */
+        days: z.array(z.enum(WEEKDAYS)),
+        /** HH:MM */
+        start: z.string(),
+        /** 5–720 */
+        duration_min: z.number().int().min(5).max(720),
+        title: z.string().max(80).optional(),
+        platform: z.enum(LIVE_PLATFORMS).optional(),
+        url: z.string().optional(),
+      }),
+    )
+    .optional(),
+  /** read only, public reads */
+  computed: z
+    .object({ computed_at: z.string(), live: eventWindow.nullable().optional(), next: eventWindow.nullable().optional(), past_hidden: z.number().optional(), today: z.string().optional() })
+    .optional(),
+  ...schedule,
+});
+
+export const PodcastDataSchema = z.object({
+  title: z.string().max(60).optional(),
+  feed_url: z.string(),
+  /** 1–10, default 3 */
+  count: z.number().int().min(1).max(10).optional(),
+  /** read only */
+  resolved: z
+    .object({
+      status: z.enum(["ok", "pending"]),
+      fetched_at: z.string().optional(),
+      title: z.string().optional(),
+      image_url: z.string().optional(),
+      episodes: z
+        .array(z.object({ title: z.string(), published_at: z.string().optional(), audio_url: z.string(), audio_type: z.string().optional(), duration_sec: z.number().optional(), link: z.string().optional() }))
+        .optional(),
+    })
+    .optional(),
+  ...schedule,
+});
+
+export const COMMUNITY_PLATFORMS = ["whatsapp_group", "whatsapp_channel", "telegram", "discord", "line"] as const;
+export const CommunityDataSchema = z.object({
+  platform: z.enum(COMMUNITY_PLATFORMS),
+  /** https on the platform's host */
+  url: z.string(),
+  title: z.string().max(80),
+  members_note: z.string().max(60).optional(),
+  button_label: z.string().max(40).optional(),
+  ...schedule,
+});
+
 export const BlockDataSchemas = {
   link: LinkDataSchema,
   text: TextDataSchema,
@@ -563,6 +775,16 @@ export const BlockDataSchemas = {
   payment: PaymentDataSchema,
   tip_jar: TipJarDataSchema,
   reviews: ReviewsDataSchema,
+  media_kit: MediaKitDataSchema,
+  rate_card: RateCardDataSchema,
+  brands: BrandsDataSchema,
+  post_grid: PostGridDataSchema,
+  latest_video: LatestVideoDataSchema,
+  shop_the_look: ShopTheLookDataSchema,
+  gallery: GalleryDataSchema,
+  events: EventsDataSchema,
+  podcast: PodcastDataSchema,
+  community: CommunityDataSchema,
 } satisfies Record<BlockType, z.ZodType>;
 
 export type BlockDataMap = {

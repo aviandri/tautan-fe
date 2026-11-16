@@ -29,6 +29,7 @@ import {
 import type { BlockDataMap, BlockType, FormField } from "../types";
 import { compact, keep, maxLen, plural, put, required, withSchedule, type BlockMeta, type FieldErrors } from "./meta-core";
 import { SELL_META } from "./sell-meta";
+import { CREATOR_META } from "./creator-meta";
 import { prettyUrl, urlError } from "../url";
 
 export type { BlockMeta, FieldErrors } from "./meta-core";
@@ -417,6 +418,7 @@ export const BLOCK_META: { [K in BlockType]: BlockMeta<K> } = {
     }),
   },
   ...SELL_META,
+  ...CREATOR_META,
 };
 
 export function getMeta<K extends BlockType>(type: K): BlockMeta<K> {
