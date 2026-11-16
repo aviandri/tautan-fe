@@ -2393,3 +2393,197 @@ textarea.tp-input {
   width: 24px;
   height: 24px;
 }
+
+/* ---- Kartu defaults (direction B): footer pill, page actions, desktop sheet, announcement popup ---- */
+.tp-madeWith {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--t-surface);
+  font-size: 13px;
+}
+.tp-madeWith svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--t-text);
+}
+
+/* share / save contact: round icon buttons on phones, labelled pills (top right) on desktop */
+.tp-pageAction {
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  border: 0;
+  background: color-mix(in srgb, var(--t-bg-solid) 12%, #fff);
+  color: #16150f;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), inset 0 0 0 1px rgb(0 0 0 / 0.08);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tp-pageAction:hover {
+  transform: translateY(-1px);
+}
+@media (max-width: 759px) {
+  .tp-pageAction {
+    width: 44px;
+    padding: 0;
+    border-radius: 50%;
+  }
+  .tp-pageAction svg {
+    width: 18px;
+    height: 18px;
+  }
+  .tp-pageAction span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 760px) {
+  .tp-fullHeight .tp-pageActions {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    margin: 0;
+    z-index: 10;
+  }
+  .tp-pageAction {
+    min-height: 38px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+
+  /* the page as a rounded sheet on the theme's ground (owners who set bg_desktop keep theirs) */
+  .tp-fullHeight:not(.tp-desktopBg) {
+    padding: 48px 16px;
+  }
+  .tp-fullHeight:not(.tp-desktopBg) .tp-sheet {
+    position: relative;
+    z-index: 1;
+    flex: none;
+    max-width: 560px;
+    border-radius: 40px;
+    padding: 44px 32px 28px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--t-bg-solid) 22%, #fff);
+    box-shadow: 0 40px 80px -40px rgb(0 0 0 / 0.35), 0 0 0 1px rgb(0 0 0 / 0.04);
+  }
+  .tp-fullHeight.tp-dark:not(.tp-desktopBg) .tp-sheet {
+    background: color-mix(in srgb, var(--t-bg-solid) 88%, #fff);
+  }
+  .tp-fullHeight:not(.tp-desktopBg) .tp-annBanner {
+    width: calc(100% + 64px);
+    margin: -44px -32px 18px;
+  }
+  .tp-fullHeight:not(.tp-desktopBg) .tp-banner {
+    width: calc(100% + 64px);
+    margin: -44px -32px 0;
+    border-radius: 0;
+  }
+  /* two soft shapes on the ground, decoration only */
+  .tp-fullHeight:not(.tp-desktopBg)::before,
+  .tp-fullHeight:not(.tp-desktopBg)::after {
+    content: "";
+    position: fixed;
+    z-index: 0;
+    border-radius: 44px;
+    background: color-mix(in srgb, #fff 38%, transparent);
+    pointer-events: none;
+  }
+  .tp-fullHeight:not(.tp-desktopBg)::before {
+    width: 220px;
+    height: 140px;
+    left: 6%;
+    top: 12%;
+  }
+  .tp-fullHeight:not(.tp-desktopBg)::after {
+    width: 200px;
+    height: 200px;
+    right: 8%;
+    bottom: 12%;
+  }
+}
+
+/* announcement popup: a dark card (a bottom sheet on phones); owner colours still override */
+.tp-annPopup,
+.tp-annPopupInline {
+  --ann-bg: #000;
+  --ann-text: #fff;
+  width: min(440px, calc(100vw - 28px));
+  border-radius: 32px;
+  box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.5);
+}
+.tp-annPopup::backdrop {
+  background: rgb(20 20 18 / 0.28);
+}
+@media (max-width: 759px) {
+  .tp-annPopup {
+    margin: auto auto 18px;
+  }
+}
+.tp-annPopupBody {
+  gap: 14px;
+  padding: 22px;
+  text-align: left;
+}
+.tp-annPopupHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.tp-annPopupIcon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: 16px;
+  background: var(--t-btn-bg);
+  color: var(--t-btn-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ann-text) 18%, transparent);
+}
+.tp-annPopupIcon svg {
+  width: 22px;
+  height: 22px;
+}
+.tp-annPopupText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 2px;
+  min-width: 0;
+}
+.tp-annPopupBody .tp-annTitle {
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.tp-annPopupBody .tp-annDesc {
+  font-size: 15px;
+  opacity: 0.8;
+}
+.tp-annPopupHead .tp-annClose {
+  position: static;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  opacity: 1;
+  background: color-mix(in srgb, var(--ann-text) 14%, transparent);
+}
+.tp-annPopupActions {
+  margin-top: 0;
+}
+.tp-annPopupActions .tp-annCta {
+  width: 100%;
+  min-height: 56px;
+  border-radius: 999px;
+  font-size: 17px;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ann-text) 22%, transparent);
+}

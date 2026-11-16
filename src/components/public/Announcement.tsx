@@ -46,18 +46,26 @@ export function AnnouncementView({ a, preview }: { a: Announcement; preview: boo
           <img className={s.annPopupImage} src={a.image_url} alt="" loading="lazy" />
         ) : null}
         <div className={s.annPopupBody}>
-          <strong id={`${elId}-title`} className={s.annTitle}>
-            {a.title}
-          </strong>
-          {a.description ? <p className={s.annDesc}>{a.description}</p> : null}
-          <div className={s.annPopupActions}>
-            <Cta a={a} />
-            <button type="button" className={s.annSecondary} data-dismiss={a.id}>
-              Close
-            </button>
+          <div className={s.annPopupHead}>
+            <span className={s.annPopupIcon} aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" />
+              </svg>
+            </span>
+            <div className={s.annPopupText}>
+              <strong id={`${elId}-title`} className={s.annTitle}>
+                {a.title}
+              </strong>
+              {a.description ? <p className={s.annDesc}>{a.description}</p> : null}
+            </div>
+            <Close id={a.id} label="Close announcement" />
           </div>
+          {a.cta ? (
+            <div className={s.annPopupActions}>
+              <Cta a={a} />
+            </div>
+          ) : null}
         </div>
-        <Close id={a.id} label="Close announcement" />
       </dialog>
     );
   }
