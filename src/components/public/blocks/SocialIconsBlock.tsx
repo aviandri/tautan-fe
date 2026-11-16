@@ -14,7 +14,7 @@ import {
   siTwitch,
   type SimpleIcon,
 } from "simple-icons";
-import { BriefcaseBusiness, Globe, Mail } from "lucide-react";
+import { BriefcaseBusiness, Globe, Mail } from "../icons";
 import type { BlockOf } from "@/lib/types";
 import { platformLabel } from "@/lib/social";
 import { safeHref } from "@/lib/safe-url";

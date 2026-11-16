@@ -66,5 +66,5 @@ export function groupBlocks(blocks: Block[]): ListItem[] {
  * viewport (header + about six cards). It loads eagerly with fetchpriority=high and a preload.
  */
 export function firstImageId(top: Block[]): string | undefined {
-  return top.slice(0, 6).find((b) => b.type === "image" || b.type === "video")?.id;
+  return top.slice(0, 6).find((b) => b.type === "image" || b.type === "video" || (b.type === "product" && b.data.images.length > 0))?.id;
 }

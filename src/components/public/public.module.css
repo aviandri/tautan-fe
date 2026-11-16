@@ -1413,3 +1413,430 @@ textarea.input {
   border-radius: 8px;
   object-fit: cover;
 }
+
+/* ---- P3-A sell (a): product, shop, marketplace, whatsapp ----
+   Token-driven (Kartu: pastel card = --t-block-bg, white chips = a lighter mix of it, pill buttons). */
+.sell {
+  composes: card;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  text-align: left;
+}
+.sellGallery {
+  position: relative;
+  border-radius: calc(var(--t-card-radius) * 0.8);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--t-block-text) 6%, transparent);
+}
+.sellSlides {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.sellSlides::-webkit-scrollbar {
+  display: none;
+}
+.sellSlides:focus-visible {
+  outline: 3px solid var(--t-block-text);
+  outline-offset: -3px;
+}
+.sellSlide {
+  flex: 0 0 100%;
+  aspect-ratio: 1;
+  scroll-snap-align: start;
+  display: grid;
+  place-items: center;
+}
+.sellSlide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.sellNoImage svg {
+  width: 40px;
+  height: 40px;
+  opacity: 0.45;
+}
+.sellBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--t-block-text);
+  color: var(--t-bg-solid);
+}
+.sellBadgeOut {
+  background: color-mix(in srgb, var(--t-block-text) 55%, transparent);
+}
+.sellCount {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  min-width: 44px;
+  text-align: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+}
+.sellHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sellName {
+  flex: 1;
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.25;
+  font-family: var(--t-font-title, inherit);
+}
+.sellLabel {
+  margin: 0 0 2px 2px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.sellPrice {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+.sellStrike {
+  font-size: 0.8rem;
+  font-weight: 500;
+  opacity: 0.65;
+}
+.sellDesc {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.85;
+  white-space: pre-line;
+}
+.sellNote {
+  margin: 0;
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+.sellVariants {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sellVariantName {
+  font-size: 0.78rem;
+  font-weight: 600;
+  opacity: 0.75;
+  padding: 0;
+}
+.sellChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sellChip {
+  position: relative;
+  cursor: pointer;
+}
+.sellChip input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.sellChip span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
+  color: var(--t-block-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--t-block-text) 12%, transparent);
+}
+.sellChip input:checked + span {
+  background: var(--t-block-text);
+  color: var(--t-bg-solid);
+  box-shadow: none;
+}
+.sellChip input:focus-visible + span {
+  outline: 2px solid var(--t-block-text);
+  outline-offset: 2px;
+}
+.sellBtn {
+  composes: btn;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  border-radius: 999px;
+}
+.sellBtnSolo {
+  min-height: 56px;
+}
+.sellBtnWa {
+  /* WhatsApp's own green so the action is recognisable whatever the theme */
+  background: #1d7a4a;
+  color: #fff;
+  border-color: #1d7a4a;
+}
+.sellBtnOff {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+}
+.sellBtnIcon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.mark {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 9px;
+}
+.mark svg {
+  width: 17px;
+  height: 17px;
+}
+.markSm {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+}
+.markSm svg {
+  width: 14px;
+  height: 14px;
+}
+.markMono {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: var(--t-block-text);
+  color: var(--t-bg-solid);
+}
+.sellRows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sellRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 7px 16px 7px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-decoration: none;
+  color: var(--t-block-text);
+  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
+  transition: transform 0.15s ease;
+}
+.sellRow:hover {
+  transform: translateY(-1px);
+}
+.shopGrid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (min-width: 720px) {
+  .shopGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.shopItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: calc(var(--t-card-radius) * 0.75);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--t-block-text);
+  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
+}
+.shopItem:focus-visible {
+  outline: 2px solid var(--t-block-text);
+  outline-offset: 2px;
+}
+.shopThumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: calc(var(--t-card-radius) * 0.6);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--t-block-text) 6%, transparent);
+}
+.shopThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.shopThumb > svg {
+  width: 28px;
+  height: 28px;
+  opacity: 0.45;
+}
+.shopThumb .sellBadge {
+  top: 6px;
+  left: 6px;
+  font-size: 11px;
+  padding: 3px 8px;
+}
+.shopItemName {
+  font-weight: 700;
+  font-size: 0.86rem;
+  line-height: 1.25;
+}
+.shopItemPrice {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+.sellSheet {
+  width: min(480px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+.sellSheet::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+.sellSheet > .sell {
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  /* the card tint is translucent by default: give the sheet a solid page-coloured base */
+  background: linear-gradient(var(--t-block-bg), var(--t-block-bg)), var(--t-bg-solid);
+}
+.sellSheetClose {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  background: rgb(0 0 0 / 0.6);
+  color: #fff;
+}
+.sellSheetClose svg {
+  width: 20px;
+  height: 20px;
+}
+.waForm {
+  gap: 8px;
+}
+.waItems {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.waItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 14px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
+}
+.waItemName {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.waItemPrice {
+  font-weight: 500;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+.waStepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.waStepper button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--t-bg-solid);
+  background: var(--t-block-text);
+}
+.waStepper button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.waStepper svg {
+  width: 16px;
+  height: 16px;
+}
+.waStepper output {
+  min-width: 2ch;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.waField input,
+.waField textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--t-block-text) 15%, transparent);
+  border-radius: 14px;
+  font: inherit;
+  color: var(--t-block-text);
+  background: color-mix(in srgb, var(--t-block-bg) 35%, #fff);
+  resize: vertical;
+}
+.waTotal {
+  font-weight: 700;
+}

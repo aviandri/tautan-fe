@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { afterLoad, trackEvent } from "@/lib/track";
+import { fillTemplate, waLink } from "@/lib/sell/wa";
 import s from "./public.module.css";
 
 /**
@@ -17,6 +18,9 @@ import s from "./public.module.css";
  *   data-dismiss        announcement close; data-goto-form scrolls to a form block
  *   dialog[data-popup]  announcement popup, opened once unless dismissed
  *   data-share          share sheet (navigator.share, else a panel with a QR code)
+ *   data-open-dialog    opens <dialog id=…> (shop product sheet); data-close-dialog closes it
+ *   data-wa-template    product WhatsApp link: re-composed with the chosen variant radios at click time
+ *   data-slides         photo carousel; keeps its [data-slide-count] "n / total" in sync
  *
  * Vanilla DOM on purpose: it's a few kB, and nothing here needs React state.
  */
@@ -58,6 +62,7 @@ export function PageRuntime({
       const a = t.closest<HTMLAnchorElement>("a[href]");
       const plain = e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
 
+      if (a?.dataset.waTemplate) composeWa(a);
       if (preview && a) {
         e.preventDefault();
         if (a.dataset.tab) tabCb.current?.(a.dataset.tab);
@@ -85,11 +90,36 @@ export function PageRuntime({
         if (!preview) goToForm(goto.dataset.gotoForm!);
         return;
       }
+      const open = t.closest<HTMLElement>("[data-open-dialog]");
+      if (open) {
+        const d = document.getElementById(open.dataset.openDialog!);
+        if (d instanceof HTMLDialogElement && !d.open) {
+          d.showModal();
+          if (!d.dataset.wired) {
+            d.dataset.wired = "1";
+            d.addEventListener("click", (ev) => ev.target === d && d.close());
+          }
+        }
+        return;
+      }
+      if (t.closest("[data-close-dialog]")) return void t.closest("dialog")?.close();
       const share = t.closest<HTMLElement>("[data-share]");
       if (share && !preview) void openShare(share.dataset.share!, share.dataset.name ?? "");
     };
     root.addEventListener("click", onClick);
     cleanups.push(() => root.removeEventListener("click", onClick));
+
+    // scroll doesn't bubble: listen in the capture phase for any carousel on the page
+    const onScroll = (e: Event) => {
+      const el = e.target as HTMLElement;
+      if (!el?.dataset || !("slides" in el.dataset)) return;
+      const n = el.children.length;
+      const i = Math.min(n, Math.round(el.scrollLeft / Math.max(1, el.clientWidth)) + 1);
+      const c = el.parentElement?.querySelector("[data-slide-count]");
+      if (c && c.textContent !== `${i} / ${n}`) c.textContent = `${i} / ${n}`;
+    };
+    root.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    cleanups.push(() => root.removeEventListener("scroll", onScroll, { capture: true }));
 
     cleanups.push(startCountdowns(root));
 
@@ -167,6 +197,15 @@ function addScript(src: string) {
   sc.async = true;
   sc.src = src;
   document.head.append(sc);
+}
+
+// ---------- product WhatsApp link ----------
+
+function composeWa(a: HTMLAnchorElement) {
+  const card = a.closest("[data-product]");
+  const variant = card ? [...card.querySelectorAll<HTMLInputElement>("input[data-variant]:checked")].map((r) => r.value).join(", ") : "";
+  const href = waLink(a.dataset.waNumber, fillTemplate(a.dataset.waTemplate!, { name: a.dataset.waName, price: a.dataset.waPrice, variant }));
+  if (href) a.href = href;
 }
 
 // ---------- copy ----------
