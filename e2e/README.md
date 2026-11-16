@@ -18,3 +18,11 @@ Env: `BASE` (default `http://localhost:3000`), `API` (default `http://localhost:
 `HEADED=1`, `SLOWMO=<ms>`, `PAUSE=<ms>` (pause after each step, 1200 ms when headed).
 A screenshot per step lands in `e2e/shots/`. Exit code is non-zero if any check fails or any
 page error / 5xx happens.
+
+## Onboarding live preview
+
+`node onboarding-preview.mjs` (same setup and env) checks that the wizard's phone preview mirrors
+what the owner types and ticks on every step, before anything is saved: name, initial and bio;
+each ticked starter section in order (untick removes it); pasted links; the picked theme; and the
+local starters including the preview-only "Add your profiles" placeholder. Screenshots land in
+`e2e/shots/preview-*.png`.
