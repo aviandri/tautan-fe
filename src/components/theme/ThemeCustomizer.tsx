@@ -3,8 +3,8 @@
 import { useId, useRef, useState, type ReactNode } from "react";
 import { RotateCcw, Upload } from "lucide-react";
 import type { ButtonStyle, HeaderLayout, Theme, ThemeBg } from "@/lib/types";
-import { getPreset, hasOverrides, themeFromPreset } from "@/lib/theme/presets";
-import { isColor, isImageUrl, resolveTheme } from "@/lib/theme/resolve";
+import { PRESETS, getPreset, hasOverrides, themeFromPreset } from "@/lib/theme/presets";
+import { isColor, isImageUrl, resolveTheme, textOn } from "@/lib/theme/resolve";
 import { DEFAULT_GRADIENT, parseGradient, toGradientCss, type SimpleGradient } from "@/lib/theme/gradient";
 import { FONT_OPTIONS, fontStack } from "@/lib/theme/fonts-meta";
 import { themeFontVariables } from "@/lib/theme/fonts";
@@ -23,6 +23,7 @@ export function ThemeCustomizer({ value, onChange, onUploadImage }: ThemeCustomi
   const t = resolveTheme(value);
   const set = (patch: Partial<Theme>) => onChange({ ...t, ...patch });
   const setButton = (patch: Partial<Theme["button"]>) => set({ button: { ...t.button, ...patch } });
+  const paletteOn = !!t.palette && t.palette_mode !== "mono";
 
   // Kartu "Design" groups; the parent lays them out in a 2-column grid (span-2 groups go full width)
   return (
@@ -56,11 +57,17 @@ export function ThemeCustomizer({ value, onChange, onUploadImage }: ThemeCustomi
           onChange={(style) => setButton({ style })}
         />
         <RadiusField radius={t.button.radius} onChange={(radius) => setButton({ radius })} />
-        <div className="grid grid-cols-2 gap-2">
-          <ColorField label="Main button" value={t.button.color} onChange={(color) => setButton({ color })} />
-          <ColorField label="Button text" value={t.button.text_color} onChange={(text_color) => setButton({ text_color })} />
-        </div>
+        {paletteOn ? (
+          <p className="text-sm text-muted">Main buttons use the accent from Card colours.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <ColorField label="Main button" value={t.button.color} onChange={(color) => setButton({ color })} />
+            <ColorField label="Button text" value={t.button.text_color} onChange={(text_color) => setButton({ text_color })} />
+          </div>
+        )}
       </Group>
+
+      <PaletteGroup t={t} set={set} />
 
       <Group
         title="Colours"
@@ -75,7 +82,7 @@ export function ThemeCustomizer({ value, onChange, onUploadImage }: ThemeCustomi
       >
         <BackgroundEditor bg={t.bg} onChange={(bg) => set({ bg })} onUploadImage={onUploadImage} />
         <div className="grid grid-cols-2 gap-2">
-          <ColorField label="Text" value={t.text_color} onChange={(text_color) => set({ text_color })} />
+          <ColorField label="Text" value={t.text_color} onChange={(text_color) => set({ text_color, ...(t.palette ? { palette: { ...t.palette, ink: text_color } } : {}) })} />
           {t.block ? (
             <ColorField label="Cards" value={t.block.color} onChange={(color) => set({ block: { ...t.block!, color } })} />
           ) : (
@@ -144,6 +151,66 @@ export function ThemeCustomizer({ value, onChange, onUploadImage }: ThemeCustomi
         </div>
       </details>
     </>
+  );
+}
+
+type PaletteMode = NonNullable<Theme["palette_mode"]>;
+
+/** Themes v3: the card palette. Cards take these colours in turn (or by type); text on each is picked for contrast. */
+function PaletteGroup({ t, set }: { t: Theme; set: (patch: Partial<Theme>) => void }) {
+  const pal = t.palette ?? null;
+  const mode: PaletteMode = pal ? (t.palette_mode ?? "cycle") : "mono";
+  const starter = getPreset(t.preset).palette ?? PRESETS[0].palette!;
+  const setMode = (m: PaletteMode) => {
+    if (m === "mono") return set({ palette_mode: "mono" });
+    set({ palette: pal ?? { ...starter, surfaces: [...starter.surfaces], accents: [...starter.accents], ink: t.text_color }, palette_mode: m });
+  };
+  const setSurfaces = (surfaces: string[]) => pal && set({ palette: { ...pal, surfaces } });
+  return (
+    <Group title="Card colours" wide action={<span className="text-sm font-semibold text-muted">{mode === "mono" ? "One colour for every card" : "Text on each card is picked for contrast"}</span>}>
+      <Segmented<PaletteMode>
+        label="How cards are coloured"
+        value={mode}
+        options={[
+          { value: "cycle", label: "Cycle" },
+          { value: "by_type", label: "By card type" },
+          { value: "mono", label: "Single colour" },
+        ]}
+        onChange={setMode}
+      />
+      {pal && mode !== "mono" ? (
+        <>
+          <p className="-mt-1 text-sm text-muted">
+            {mode === "cycle" ? "Cards take these colours in turn, top to bottom." : "Links, shop cards, creator cards, forms and info cards each get their own colour."}
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            {pal.surfaces.map((c, i) => (
+              <div key={i} className="relative">
+                <ColorField label={`Card ${i + 1}`} value={c} onChange={(v) => setSurfaces(pal.surfaces.map((x, k) => (k === i ? v : x)))} />
+                {pal.surfaces.length > 4 ? (
+                  <button type="button" onClick={() => setSurfaces(pal.surfaces.filter((_, k) => k !== i))} aria-label={`Remove card colour ${i + 1}`} className="absolute right-0 top-0 rounded-full px-1.5 text-xs font-bold text-muted hover:text-foreground">
+                    ✕
+                  </button>
+                ) : null}
+              </div>
+            ))}
+            {pal.surfaces.length < 6 ? (
+              <button type="button" onClick={() => setSurfaces([...pal.surfaces, pal.surfaces[pal.surfaces.length - 1]])} className="mt-[22px] flex min-h-[48px] items-center justify-center rounded-2xl bg-sunken text-sm font-semibold text-ink-2 hover:bg-[#e1e1dd]">
+                Add colour
+              </button>
+            ) : null}
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:max-w-md">
+            <ColorField label="Accent (main buttons)" value={pal.accents[0]} onChange={(a) => set({ palette: { ...pal, accents: [a, ...pal.accents.slice(1)], ink_on_accent: textOn(a) } })} />
+            <div className="flex flex-col justify-end">
+              <span className="flex min-h-[48px] items-center justify-center rounded-full text-sm font-semibold" style={{ background: pal.accents[0], color: textOn(pal.accents[0], pal.ink_on_accent) }}>
+                Button preview
+              </span>
+            </div>
+          </div>
+        </>
+      ) : null}
+    </Group>
   );
 }
 

@@ -2618,3 +2618,55 @@ textarea.tp-input {
   font-weight: 600;
   color: var(--t-muted);
 }
+
+/* ---- Themes v3: palette surfaces. BlockList wraps each card in <div class="tp-sN [tp-sb]">;
+   display:contents keeps the layout untouched while the custom properties inherit. ---- */
+.tp-s1, .tp-s2, .tp-s3, .tp-s4, .tp-s5, .tp-s6 {
+  display: contents;
+}
+.tp-s1 {
+  --t-block-bg: var(--t-surface-1);
+  --t-block-text: var(--t-surface-1-text);
+}
+.tp-s2 {
+  --t-block-bg: var(--t-surface-2);
+  --t-block-text: var(--t-surface-2-text);
+}
+.tp-s3 {
+  --t-block-bg: var(--t-surface-3);
+  --t-block-text: var(--t-surface-3-text);
+}
+.tp-s4 {
+  --t-block-bg: var(--t-surface-4);
+  --t-block-text: var(--t-surface-4-text);
+}
+.tp-s5 {
+  --t-block-bg: var(--t-surface-5);
+  --t-block-text: var(--t-surface-5-text);
+}
+.tp-s6 {
+  --t-block-bg: var(--t-surface-6);
+  --t-block-text: var(--t-surface-6-text);
+}
+/* cards that are themselves buttons (links, files, bookings, folders) take the surface as their colour */
+.tp-sb {
+  --t-btn-bg: var(--t-block-bg);
+  --t-btn-text: var(--t-block-text);
+  --t-btn-border: transparent;
+}
+/* dark themes (Malam, Arang, …) keep link-style cards on the bright accent, not the muted tonal surfaces */
+.tp-dark .tp-sb {
+  --t-btn-bg: var(--t-accent);
+  --t-btn-text: var(--t-accent-text);
+}
+/* palette mode: a soft gradient band of the first two surfaces behind the header (not the banner layout) */
+.tp-palette .tp-header:not(.tp-headerBanner) {
+  background: var(--t-hero);
+  color: var(--t-hero-text);
+  border-radius: calc(var(--t-card-radius) + 10px);
+  padding: 28px 18px 22px;
+}
+.tp-palette .tp-header:not(.tp-headerBanner) .tp-bio {
+  color: inherit;
+  opacity: 0.8;
+}

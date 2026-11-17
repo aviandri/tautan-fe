@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { PRESETS, themeFromPreset, hasOverrides, DEFAULT_PRESET } from "../theme/presets";
 import { resolveTheme, themeToCssVars, isGradient, isColor } from "../theme/resolve";
+import { contrast, resolvePalette, textOn } from "../theme/resolve";
+import { makeSurfacer } from "../palette";
 import { parseGradient, toGradientCss } from "../theme/gradient";
 import { FONT_OPTIONS, findFont } from "../theme/fonts-meta";
 
@@ -82,14 +84,16 @@ describe("resolveTheme", () => {
 });
 
 describe("themeToCssVars", () => {
-  const vars = (id: string) => themeToCssVars(themeFromPreset(id)) as Record<string, string>;
-  it("maps button styles", () => {
-    expect(vars("laut")["--t-btn-bg"]).toBe("transparent");
-    expect(vars("kunyit")["--t-btn-shadow"]).toContain("4px 4px 0");
-    expect(vars("malam")["--t-btn-border"]).toBe("transparent");
+  it("maps button styles (single-colour themes)", () => {
+    const v = (style: "fill" | "outline" | "shadow") =>
+      themeToCssVars(resolveTheme({ preset: "batu", palette_mode: "mono", button: { style, radius: 8, color: "#123456", text_color: "#ffffff" } })) as Record<string, string>;
+    expect(v("outline")["--t-btn-bg"]).toBe("transparent");
+    expect(v("shadow")["--t-btn-shadow"]).toContain("4px 4px 0");
+    expect(v("fill")["--t-btn-border"]).toBe("transparent");
   });
   it("uses a gradient's first stop as the solid fallback", () => {
-    expect(vars("senja")["--t-bg-solid"]).toBe("#ff7a59");
+    const v = themeToCssVars(resolveTheme({ preset: "batu", bg: { type: "gradient", value: "linear-gradient(160deg, #ff7a59 0%, #ffb35c 100%)" } })) as Record<string, string>;
+    expect(v["--t-bg-solid"]).toBe("#ff7a59");
   });
   it("escapes quotes in image urls", () => {
     const v = themeToCssVars(resolveTheme({ preset: "batu", bg: { type: "image", value: 'https://x.test/a".jpg' } })) as Record<string, string>;
@@ -147,5 +151,52 @@ describe("theme v2", () => {
   });
   it("counts v2 keys as overrides", () => {
     expect(hasOverrides({ ...base, spacing: 20 })).toBe(true);
+  });
+});
+
+
+describe("palettes (themes v3)", () => {
+  it("every preset passes WCAG 4.5:1 for text on the ground, each surface and the accent", () => {
+    for (const p of PRESETS) {
+      const t = resolveTheme(themeFromPreset(p.preset));
+      const pal = resolvePalette(t)!;
+      expect(pal, p.preset).not.toBeNull();
+      expect(contrast(t.text_color, (t.bg as { value: string }).value), `${p.preset} ground`).toBeGreaterThanOrEqual(4.5);
+      for (const s of pal.surfaces) expect(contrast(s.text, s.bg), `${p.preset} ${s.bg}`).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(pal.accent.text, pal.accent.bg), `${p.preset} accent`).toBeGreaterThanOrEqual(4.5);
+      expect(pal.surfaces.length).toBeGreaterThanOrEqual(4);
+    }
+  });
+  it("uses no violet/lavender hues in preset surfaces", () => {
+    const hue = (hex: string) => {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+      const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+      if (d < 0.04) return null; // grey
+      const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      return (h * 60 + 360) % 360;
+    };
+    for (const p of PRESETS) for (const c of [...p.palette!.surfaces, ...p.palette!.accents]) {
+      const h = hue(c);
+      if (h !== null) expect(h < 250 || h > 320, `${p.preset} ${c} hue ${h}`).toBe(true);
+    }
+  });
+  it("leaves themes without a palette exactly as before (no surface vars)", () => {
+    const legacy = themeToCssVars(resolveTheme({ preset: "kunyit", bg: { type: "color", value: "#ffd23f" }, button: { style: "shadow", radius: 4, color: "#ffffff", text_color: "#111111" }, font: "Inter", text_color: "#111111" })) as Record<string, string>;
+    expect(legacy["--t-surface-1"]).toBeUndefined();
+    expect(legacy["--t-btn-bg"]).toBe("#ffffff");
+    const mono = themeToCssVars(resolveTheme({ ...themeFromPreset("senja"), palette_mode: "mono" })) as Record<string, string>;
+    expect(mono["--t-surface-1"]).toBeUndefined();
+  });
+  it("computes readable text when the ink fails on a surface", () => {
+    expect(textOn("#111111", "#222222")).toBe("#ffffff");
+    expect(textOn("#fbe49a", "#2a2208")).toBe("#2a2208");
+  });
+  it("assigns surfaces by cycle or by card type, skipping text/media cards", () => {
+    const cyc = makeSurfacer("cycle", 5);
+    expect(["link", "heading", "link", "product", "image", "faq"].map((t) => cyc(t)?.index ?? null)).toEqual([1, null, 2, 3, null, 4]);
+    expect(makeSurfacer("cycle", 5)("link")?.button).toBe(true);
+    const byType = makeSurfacer("by_type", 5);
+    expect(["link", "product", "media_kit", "poll", "faq"].map((t) => byType(t)?.index)).toEqual([1, 2, 3, 4, 5]);
+    expect(makeSurfacer("by_type", 4)("faq")?.index).toBe(1);
   });
 });

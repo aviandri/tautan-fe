@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Block, Profile, Tab } from "@/lib/types";
-import { isDarkColor, resolveTheme, themeToCssVars } from "@/lib/theme/resolve";
+import { isDarkColor, resolvePalette, resolveTheme, themeToCssVars } from "@/lib/theme/resolve";
 import { buildTabTree, selectTab, sortTabs, tabQuery } from "@/lib/page-structure";
 import { themeFontVariables } from "@/lib/theme/fonts";
 import { readAnnouncement, readSettings } from "@/lib/page-extras";
@@ -45,7 +45,8 @@ export function PublicPageView({ profile, tabs, blocks, media, activeTabSlug, pr
   const announcement = readAnnouncement(profile);
   const settings = readSettings(profile);
   const env: PageEnv = { username: profile.username, preview, tabs: sortedTabs, media };
-  const opts = { env, now: Date.now(), priorityId: firstImageId(tree.top) };
+  const pal = resolvePalette(theme);
+  const opts = { env, now: Date.now(), priorityId: firstImageId(tree.top), palette: pal ? { mode: pal.mode as "cycle" | "by_type", count: pal.surfaces.length } : undefined };
   const basePath = `/${profile.username}`;
   // dark themes tint the desktop sheet the other way (and the popup CTA flips to light)
   const dark = !isDarkColor(theme.text_color);
@@ -55,7 +56,7 @@ export function PublicPageView({ profile, tabs, blocks, media, activeTabSlug, pr
   return (
     <div
       data-tpage=""
-      className={[s.page, themeFontVariables, fullHeight && s.fullHeight, theme.bg_desktop && s.desktopBg, dark && s.dark, className].filter(Boolean).join(" ")}
+      className={[s.page, themeFontVariables, fullHeight && s.fullHeight, theme.bg_desktop && s.desktopBg, dark && s.dark, pal && s.palette, className].filter(Boolean).join(" ")}
       style={{ ...themeToCssVars(theme), ...style }}
       lang={settings.language}
     >

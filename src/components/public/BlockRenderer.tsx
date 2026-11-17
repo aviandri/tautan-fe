@@ -2,6 +2,8 @@ import type { Block } from "@/lib/types";
 import { groupBlocks } from "@/lib/page-structure";
 export { firstImageId } from "@/lib/page-structure";
 import type { PageEnv } from "./env";
+import { makeSurfacer, type PaletteMode, type SurfaceAssignment } from "@/lib/palette";
+import { s } from "./cls";
 import { LinkBlock, LinkGroup } from "./blocks/LinkBlock";
 import { ImageBlock, MusicBlock, TextBlock, VideoBlock } from "./blocks/MediaBlocks";
 import { SocialIconsBlock } from "./blocks/SocialIconsBlock";
@@ -24,6 +26,8 @@ export interface RenderOpts {
   now: number;
   /** the image block to load with high priority (the page's LCP candidate) */
   priorityId?: string;
+  /** themes v3: how cards take palette surfaces (absent = single colour, as before) */
+  palette?: { mode: PaletteMode; count: number };
 }
 
 export function BlockRenderer({ block, childBlocks = [], opts }: { block: Block; childBlocks?: Block[]; opts: RenderOpts }) {
@@ -141,16 +145,31 @@ export function BlockRenderer({ block, childBlocks = [], opts }: { block: Block;
   }
 }
 
+/** Wrapper classes for a surface: tp-sN, plus tp-sb when the card is itself a button. */
+function surfaceClass(a: SurfaceAssignment | null): string | undefined {
+  return a ? `${s[`s${a.index}`]}${a.button ? ` ${s.sb}` : ""}` : undefined;
+}
+
 export function BlockList({ blocks, childrenOf, opts }: { blocks: Block[]; childrenOf: Map<string, Block[]>; opts: RenderOpts }) {
+  // themes v3: each card sits in a display:contents wrapper whose class picks its palette surface
+  const next = opts.palette ? makeSurfacer(opts.palette.mode, opts.palette.count) : null;
   return (
     <>
-      {groupBlocks(blocks).map((it) =>
-        it.kind === "group" ? (
-          <LinkGroup key={`g-${it.blocks[0].id}`} layout={it.layout} blocks={it.blocks} env={opts.env} />
+      {groupBlocks(blocks).map((it) => {
+        if (it.kind === "group") {
+          const tiles = next ? new Map(it.blocks.map((b) => [b.id, surfaceClass(next(b.type))])) : null;
+          return <LinkGroup key={`g-${it.blocks[0].id}`} layout={it.layout} blocks={it.blocks} env={opts.env} tileClass={tiles ? (b) => tiles.get(b.id) : undefined} />;
+        }
+        const card = <BlockRenderer key={it.block.id} block={it.block} childBlocks={childrenOf.get(it.block.id)} opts={opts} />;
+        const cls = next ? surfaceClass(next(it.block.type)) : undefined;
+        return cls ? (
+          <div key={it.block.id} className={cls}>
+            {card}
+          </div>
         ) : (
-          <BlockRenderer key={it.block.id} block={it.block} childBlocks={childrenOf.get(it.block.id)} opts={opts} />
-        ),
-      )}
+          card
+        );
+      })}
     </>
   );
 }
