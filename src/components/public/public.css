@@ -2654,6 +2654,11 @@ textarea.tp-input {
   --t-btn-text: var(--t-block-text);
   --t-btn-border: transparent;
 }
+/* dark themes (Malam, Arang, …) keep link-style cards on the bright accent, not the muted tonal surfaces */
+.tp-dark .tp-sb {
+  --t-btn-bg: var(--t-accent);
+  --t-btn-text: var(--t-accent-text);
+}
 /* palette mode: a soft gradient band of the first two surfaces behind the header (not the banner layout) */
 .tp-palette .tp-header:not(.tp-headerBanner) {
   background: var(--t-hero);
