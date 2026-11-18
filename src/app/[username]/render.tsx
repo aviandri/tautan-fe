@@ -91,6 +91,7 @@ export async function renderPage(rawUsername: string, tabSlug: string | null) {
         tabs={data.tabs}
         blocks={data.blocks}
         media={data.media}
+        payments={data.payments}
         activeTabSlug={tabSlug}
         fullHeight
       />

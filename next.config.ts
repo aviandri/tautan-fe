@@ -37,6 +37,14 @@ const nextConfig: NextConfig = {
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   // Lets `next dev` and `next build` run side by side (e.g. NEXT_DIST_DIR=.next-dev pnpm dev).
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // Payments (b): order pages carry a capability token in ?t=; don't leak it in Referer or let
+  // search engines keep it. Checkout pages aren't worth indexing either.
+  async headers() {
+    return [
+      { source: "/:username/orders/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }, { key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      { source: "/:username/checkout", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+    ];
+  },
   webpack(config, { dev }) {
     if (!dev) patchCssModules(config.module?.rules as Rule[]);
     return config;

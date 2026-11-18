@@ -1,9 +1,10 @@
-import { Calendar, Copy, Download, FileText } from "../icons";
+import { Calendar, Copy, Download, FileText, ShoppingBag } from "../icons";
 import type { BlockOf } from "@/lib/types";
 import { safeHref } from "@/lib/safe-url";
 import { bookingEmbedSrc } from "@/lib/embeds";
 import { formatBytes } from "@/lib/format";
-import { track, type PageEnv } from "../env";
+import { canCheckout, checkoutHref, track, type PageEnv } from "../env";
+import { formatMoney } from "@/lib/sell/money";
 import { s } from "../cls";
 
 const align = (a?: "left" | "center" | "right") => (a === "left" ? s.alignLeft : a === "right" ? s.alignRight : "");
@@ -20,6 +21,7 @@ export function DividerBlock({ block }: { block: BlockOf<"divider"> }) {
 }
 
 export function FileBlock({ block, env }: { block: BlockOf<"file">; env: PageEnv }) {
+  if (block.data.price != null) return <PaidFile block={block} env={env} />;
   const href = safeHref(block.data.url);
   const meta = [block.data.file_name, formatBytes(block.data.size)].filter(Boolean).join(" · ");
   const body = (
@@ -37,6 +39,32 @@ export function FileBlock({ block, env }: { block: BlockOf<"file">; env: PageEnv
   if (!href) return <div className={s.btn}>{body}</div>;
   return (
     <a className={s.btn} href={href} download={env.preview ? undefined : block.data.file_name || true} {...track(block.id, "download")}>
+      {body}
+    </a>
+  );
+}
+
+/** Payments (b): a priced file is a plain link to the checkout page (server HTML, no JS). */
+function PaidFile({ block, env }: { block: BlockOf<"file">; env: PageEnv }) {
+  const d = block.data;
+  const ok = canCheckout(env, d.currency);
+  const price = formatMoney(d.price ?? 0, d.currency);
+  const meta = [ok ? price : `${price} · not available right now`, d.file_name].filter(Boolean).join(" · ");
+  const body = (
+    <>
+      <span className={s.fileIcon} aria-hidden>
+        <FileText />
+      </span>
+      <span className={s.btnLabel} style={{ textAlign: "left" }}>
+        <span className={s.linkTitle}>{d.title || d.file_name || "Digital download"}</span>
+        <span className={s.linkDesc}>{meta}</span>
+      </span>
+      <ShoppingBag className={s.fileDownload} aria-hidden />
+    </>
+  );
+  if (!ok) return <div className={s.btn} aria-disabled="true">{body}</div>;
+  return (
+    <a className={s.btn} href={checkoutHref(env, block.id)} rel="nofollow" aria-label={`Buy ${d.title || "this file"} for ${price}`} {...track(block.id, "buy")}>
       {body}
     </a>
   );

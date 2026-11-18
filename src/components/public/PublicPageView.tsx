@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { Block, Profile, Tab } from "@/lib/types";
+import type { Block, PagePayments, Profile, Tab } from "@/lib/types";
 import { isDarkColor, resolvePalette, resolveTheme, themeToCssVars } from "@/lib/theme/resolve";
 import { buildTabTree, selectTab, sortTabs, tabQuery } from "@/lib/page-structure";
 import { themeFontVariables } from "@/lib/theme/fonts";
@@ -22,6 +22,8 @@ export interface PublicPageViewProps {
   activeTabSlug?: string | null;
   /** GET /public/{u} `media` (image sizes and ready variants) */
   media?: MediaMap;
+  /** GET /public/{u} `payments` (payments b): enables buy buttons on priced cards */
+  payments?: PagePayments | null;
   /** Editor live preview: no events, no network, links don't navigate. */
   preview?: boolean;
   /** Preview only (a function can't cross from the server): called instead of navigating to a tab. */
@@ -37,14 +39,14 @@ export interface PublicPageViewProps {
  * Server Components (zero JS per card). PageRuntime is the one small client island that wires up
  * tracking, copy buttons, embeds and the rest by event delegation.
  */
-export function PublicPageView({ profile, tabs, blocks, media, activeTabSlug, preview = false, onTabChange, fullHeight = false, className, style }: PublicPageViewProps) {
+export function PublicPageView({ profile, tabs, blocks, media, payments, activeTabSlug, preview = false, onTabChange, fullHeight = false, className, style }: PublicPageViewProps) {
   const sortedTabs = sortTabs(tabs);
   const tab = selectTab(sortedTabs, activeTabSlug ?? null);
   const tree = buildTabTree(blocks, tab?.id);
   const theme = resolveTheme(profile.theme);
   const announcement = readAnnouncement(profile);
   const settings = readSettings(profile);
-  const env: PageEnv = { username: profile.username, preview, tabs: sortedTabs, media };
+  const env: PageEnv = { username: profile.username, preview, tabs: sortedTabs, media, payCurrencies: payments?.currencies ?? [] };
   const pal = resolvePalette(theme);
   const opts = { env, now: Date.now(), priorityId: firstImageId(tree.top), palette: pal ? { mode: pal.mode as "cycle" | "by_type", count: pal.surfaces.length } : undefined };
   const basePath = `/${profile.username}`;

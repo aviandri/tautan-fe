@@ -5,7 +5,7 @@ import { safeHref, safeImageSrc } from "@/lib/safe-url";
 import { formatMoney } from "@/lib/sell/money";
 import { MARKETPLACES } from "@/lib/sell/platforms";
 import { DEFAULT_PRODUCT_TEMPLATE, fillTemplate, waLink } from "@/lib/sell/wa";
-import { mediaFor, track, type PageEnv } from "../env";
+import { canCheckout, checkoutHref, mediaFor, track, type PageEnv } from "../env";
 import { Img } from "../Img";
 import { WaOrderIsland } from "../islands";
 import { s } from "../cls";
@@ -94,13 +94,29 @@ function Gallery({ d, env, priority, sizes }: { d: ProductData; env: PageEnv; pr
   );
 }
 
-function BuyButton({ d, blockId }: { d: ProductData; blockId: string }) {
+function BuyButton({ d, blockId, env }: { d: ProductData; blockId: string; env: PageEnv }) {
   const a = d.action;
   if (d.badge === "sold_out") {
     return (
       <span className={`${s.sellBtn} ${s.sellBtnOff}`} aria-disabled="true">
         Sold out
       </span>
+    );
+  }
+  if (a.kind === "checkout") {
+    // Payments (b): a plain link to our checkout page; the provider's page comes after.
+    if (d.price == null || !canCheckout(env, d.currency)) {
+      return (
+        <span className={`${s.sellBtn} ${s.sellBtnOff}`} aria-disabled="true">
+          Not available right now
+        </span>
+      );
+    }
+    const itemId = (d as ProductData & { id?: string }).id;
+    return (
+      <a className={s.sellBtn} href={checkoutHref(env, blockId, itemId)} rel="nofollow" {...track(blockId, "buy")}>
+        {a.label || "Buy now"}
+      </a>
     );
   }
   if (a.kind === "whatsapp") {
@@ -178,7 +194,7 @@ function ProductBody({ d, blockId, uid, env, priority, sizes }: { d: ProductData
         </fieldset>
       ))}
       {d.stock_note ? <p className={s.sellNote}>{d.stock_note}</p> : null}
-      <BuyButton d={d} blockId={blockId} />
+      <BuyButton d={d} blockId={blockId} env={env} />
     </>
   );
 }

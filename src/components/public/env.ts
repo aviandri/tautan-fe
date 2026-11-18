@@ -14,6 +14,8 @@ export interface PageEnv {
   tabs: Tab[];
   /** GET /public/{u} `media`: pixel size and ready ?w= variants per upload path */
   media?: MediaMap;
+  /** payments (b): currencies buyers can pay in right now ([] = no checkout) */
+  payCurrencies?: string[];
 }
 
 /** BE "Performance: implemented" 2b: keyed by the upload's pathname ("/uploads/x.jpg"). */
@@ -48,4 +50,14 @@ export function tabHref(env: PageEnv, tabId: string): { href: string; slug: stri
  */
 export function track(blockId: string, action?: string): Record<string, string> {
   return action ? { "data-b": blockId, "data-a": action } : { "data-b": blockId };
+}
+
+/** payments (b): can a priced card in this currency be bought on this page now? */
+export function canCheckout(env: PageEnv, currency: string | undefined): boolean {
+  return !!env.payCurrencies?.includes(currency || "IDR");
+}
+
+/** payments (b): the FE checkout page for a card (or a shop item). Plain link, no JS. */
+export function checkoutHref(env: PageEnv, blockId: string, itemId?: string): string {
+  return `/${env.username}/checkout?block=${encodeURIComponent(blockId)}${itemId ? `&item=${encodeURIComponent(itemId)}` : ""}`;
 }
