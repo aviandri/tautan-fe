@@ -84,6 +84,8 @@ export const UserSchema = z.object({
   email_verified: z.boolean().optional(),
   /** Email the owner about new form responses and contact messages (default on). */
   notify_submissions: z.boolean().optional(),
+  /** An email change waiting for its confirm link (POST /me/email). */
+  pending_email: z.string().nullable().optional(),
 });
 export type User = z.infer<typeof UserSchema>;
 
