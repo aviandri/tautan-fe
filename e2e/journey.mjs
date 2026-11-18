@@ -2,7 +2,8 @@
 // email from the link the backend mails, publishes, builds a page; a visitor uses it (poll, gate,
 // email sign-up, contact form → owner notification); the owner checks Insights and Audience, sells a
 // file through the API's dev-only fake payment provider (buyer pays, downloads, gets a receipt; a
-// failed payment too; the owner sees the Orders page), then resets their password through the
+// failed payment too; the owner sees the Orders page), sells from a shop cart (shipped items + a
+// download, two-step checkout, owner marks it shipped → email), then resets their password through the
 // emailed link. Runs against a live FE + BE started with PAYMENTS_FAKE=1 (dev-only; refused with APP_ENV=production).
 //
 //   cd e2e && npm install && npx playwright install chromium
@@ -356,6 +357,83 @@ await p.goto(BASE + '/dashboard/orders');
 await p.getByText(paidOrder?.code ?? '—').first().waitFor({ timeout: 15000 }).catch(() => {});
 await step(p, 'Owner: Orders');
 ok('Orders page lists the paid order', !!paidOrder && (await p.locator('body').innerText()).includes(paidOrder.code));
+
+// ---------- SHOP CART (payments c): two shipped items + a download, flat shipping fee, two-step checkout
+const shopCard = await add('shop', {
+  title: 'Dapur Nara merch', shipping_fee: 1500000, items: [
+    { id: 'apron', name: 'Apron', price: 9500000, currency: 'IDR', images: [], variants: [{ name: 'Size', options: ['M', 'L'] }], action: { kind: 'checkout', delivery: 'ship' } },
+    { id: 'jar', name: 'Cookie jar', price: 6500000, currency: 'IDR', images: [], action: { kind: 'checkout', delivery: 'ship' } },
+    { id: 'zine', name: 'Recipe zine (PDF)', price: 2000000, currency: 'IDR', images: [], action: { kind: 'checkout', download: { url: up.url, file_name: 'Resep-Brownies.pdf' } } },
+  ],
+});
+await new Promise((r) => setTimeout(r, 2500)); // let the revalidate webhook land
+
+const cartBuyer = `budi${stamp}@test.example`;
+const c = await vc.newPage();
+watch(c, 'cart', errs);
+await c.goto(`${BASE}/${user}`);
+const shopSec = c.locator(`#shop-${shopCard?.id}`);
+await shopSec.scrollIntoViewIfNeeded();
+const addToCart = async (name, id, option) => {
+  await shopSec.getByRole('button', { name: new RegExp('^' + name) }).click();
+  const dlg = c.locator(`#shop-${shopCard?.id}-${id}`);
+  await dlg.waitFor({ state: 'visible', timeout: 10000 });
+  if (option) await dlg.locator('label', { hasText: new RegExp(`^${option}$`) }).click();
+  await dlg.locator(`[data-cart-add="${id}"]`).click();
+  await dlg.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+};
+await addToCart('Apron', 'apron', 'L');
+await addToCart('Apron', 'apron', 'L'); // same item and option: quantity 2
+await addToCart('Cookie jar', 'jar');
+await addToCart('Recipe zine', 'zine');
+const cartBar = c.locator(`[data-cart-bar="${shopCard?.id}"]`);
+await step(c, 'Buyer: cart bar on the shop');
+ok('Cart bar shows 4 items and Rp 275.000', /4 in cart/.test(await cartBar.innerText().catch(() => '')) && /Rp\s?275\.000/.test(await cartBar.innerText().catch(() => '')), await cartBar.innerText().catch((e) => e.message));
+
+await cartBar.locator('[data-cart-go]').click();
+await c.getByRole('heading', { name: /your cart/i }).waitFor({ timeout: 15000 });
+await c.locator('select[name="line.1.qty"]').selectOption('2'); // the cookie jar
+await c.getByRole('button', { name: /^update$/i }).click();
+await c.waitForLoadState('load');
+await step(c, 'Buyer: cart review (2 aprons, 2 jars, 1 zine)');
+const reviewText = await c.locator('body').innerText();
+ok('Cart review totals items + shipping (Rp 355.000)', /Rp\s?355\.000/.test(reviewText) && /Rp\s?15\.000/.test(reviewText), reviewText.match(/Total[^\n]*\n?[^\n]*/)?.[0] ?? '');
+await c.getByRole('button', { name: /^continue$/i }).click();
+await c.locator('input[name=email]').waitFor({ timeout: 15000 });
+await c.locator('input[name=email]').fill(cartBuyer);
+await c.locator('input[name="shipping.name"]').fill('Budi Santoso');
+await c.locator('input[name="shipping.phone"]').fill('0812-3456-7890');
+await c.locator('textarea[name="shipping.address"]').fill('Jl. Melati 7, RT 02/RW 05');
+await c.locator('input[name="shipping.city"]').fill('Bandung');
+await c.locator('input[name="shipping.postal_code"]').fill('40115');
+await step(c, 'Buyer: checkout details and shipping address');
+await c.getByRole('button', { name: /^pay /i }).click();
+await c.waitForURL(/\/dev\/fake-checkout\/fk_/, { timeout: 15000 });
+ok('Cart checkout hands off with the full total', /Rp\s?355\.000/.test(await c.getByTestId('fake-total').innerText()));
+await c.getByTestId('fake-pay').click();
+await c.waitForURL(new RegExp(`/${user}/orders/[0-9a-f-]+\\?t=`), { timeout: 15000 });
+await c.getByText(/preparing your order/i).waitFor({ timeout: 15000 }).catch(() => {});
+await step(c, 'Buyer: cart order paid, preparing');
+const cartOrderText = await c.locator('body').innerText();
+ok('Cart order page: paid, preparing, shipping line, zine download', /Paid/.test(cartOrderText) && /preparing your order/i.test(cartOrderText) && /Shipping/.test(cartOrderText) && (await c.locator('a.tb-dl').count()) === 1);
+const cartOrderUrl = c.url();
+await c.goto(`${BASE}/${user}`);
+await c.waitForTimeout(800);
+ok('A paid cart is cleared in this browser', await cartBar.isHidden());
+
+// Owner: the order waits in "to ship" with the address; marking it shipped emails the buyer.
+const toShip = (await api('GET', '/orders?fulfilment=unfulfilled')).j;
+const cartOrder = toShip.items?.find((o) => o.buyer_email === cartBuyer);
+ok('Owner sees the cart order to ship, with the address', !!cartOrder && cartOrder.shipping?.city === 'Bandung' && cartOrder.amount === 35500000 && toShip.counts?.to_ship === 1, JSON.stringify(toShip.counts));
+const markShip = logMark();
+const shipped = await api('POST', `/orders/${cartOrder?.id}/ship`, { tracking: 'JNE123456' });
+ok('Owner marks the order shipped', shipped.s === 200 && shipped.j.order?.fulfilment === 'shipped', String(shipped.s));
+const shipMail = await waitForMail({ to: cartBuyer, since: markShip, subject: 'has shipped', re: /(JNE123456)/ }).catch((e) => e.message);
+ok('Buyer is emailed that it shipped, with tracking', shipMail === 'JNE123456', shipMail.slice(0, 90));
+await c.goto(cartOrderUrl);
+await c.getByText('JNE123456').waitFor({ timeout: 10000 }).catch(() => {});
+await step(c, 'Buyer: order shipped with tracking');
+ok('Order page shows shipped with the tracking number', /Shipped/.test(await c.locator('body').innerText()) && (await c.getByText('JNE123456').count()) > 0);
 
 // ---------- RESET PASSWORD (logged out, link from the email)
 const rc = await browser.newContext({ viewport: { width: 1280, height: 860 } });
