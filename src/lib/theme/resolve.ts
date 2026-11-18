@@ -141,6 +141,28 @@ export function assetCssUrl(u: string): string {
   return cssUrl(assetUrl(u) ?? u);
 }
 
+/**
+ * Inner tiles (shop items, marketplace/order rows, rate card, events, podcast, media kit) are the card's
+ * surface mixed toward white: `color-mix(surface keep%, #fff)`. Light themes lift far (35% surface) for a
+ * pale tile under dark ink; dark themes lift only a little (82%) so their light ink keeps ≥ 4.5:1.
+ * public.css reads the value as --t-inner-keep; innerTile() mirrors the mix for the contrast test.
+ */
+export const INNER_KEEP_LIGHT = 35;
+export const INNER_KEEP_DARK = 82;
+
+/** True when the theme has light text on dark grounds (the page gets the tp-dark class). */
+export function isDarkTheme(textColor: string): boolean {
+  return !isDarkColor(textColor);
+}
+
+/** sRGB colour-mix of a hex surface with white, keeping `keep`% of the surface (as CSS color-mix does). */
+export function innerTile(surface: string, keep: number): string {
+  const h = surface.replace("#", "");
+  const full = h.length <= 4 ? h.slice(0, 3).split("").map((x) => x + x).join("") : h.slice(0, 6);
+  const mix = (i: number) => Math.round((parseInt(full.slice(i, i + 2), 16) * keep + 255 * (100 - keep)) / 100);
+  return "#" + [0, 2, 4].map((i) => mix(i).toString(16).padStart(2, "0")).join("");
+}
+
 /** CSS custom properties consumed by components/public. */
 export function themeToCssVars(r: ResolvedTheme): CSSProperties {
   const { style, radius, color, text_color } = r.button;
@@ -157,6 +179,7 @@ export function themeToCssVars(r: ResolvedTheme): CSSProperties {
     "--t-btn-text": text_color,
     "--t-btn-border": style === "fill" ? "transparent" : style === "outline" ? color : r.text_color,
     "--t-btn-shadow": style === "shadow" ? `4px 4px 0 ${r.text_color}` : "none",
+    "--t-inner-keep": `${isDarkTheme(r.text_color) ? INNER_KEEP_DARK : INNER_KEEP_LIGHT}%`,
   };
   // ---- Theme v2 ----
   if (r.block) {

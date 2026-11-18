@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { PRESETS, themeFromPreset, hasOverrides, DEFAULT_PRESET } from "../theme/presets";
 import { resolveTheme, themeToCssVars, isGradient, isColor } from "../theme/resolve";
-import { contrast, resolvePalette, textOn } from "../theme/resolve";
+import { contrast, resolvePalette, textOn, innerTile, isDarkTheme, INNER_KEEP_DARK, INNER_KEEP_LIGHT } from "../theme/resolve";
 import { makeSurfacer } from "../palette";
 import { parseGradient, toGradientCss } from "../theme/gradient";
 import { FONT_OPTIONS, findFont } from "../theme/fonts-meta";
@@ -198,5 +200,36 @@ describe("palettes (themes v3)", () => {
     const byType = makeSurfacer("by_type", 5);
     expect(["link", "product", "media_kit", "poll", "faq"].map((t) => byType(t)?.index)).toEqual([1, 2, 3, 4, 5]);
     expect(makeSurfacer("by_type", 4)("faq")?.index).toBe(1);
+  });
+});
+
+describe("inner tiles (shop items, marketplace/order rows, rate card, events, podcast, media kit)", () => {
+  it("every preset's inner tile keeps its card text at WCAG 4.5:1 on every surface", () => {
+    const fails: string[] = [];
+    for (const p of PRESETS) {
+      const t = resolveTheme(themeFromPreset(p.preset));
+      const pal = resolvePalette(t)!;
+      const keep = isDarkTheme(t.text_color) ? INNER_KEEP_DARK : INNER_KEEP_LIGHT;
+      expect(themeToCssVars(t)["--t-inner-keep" as keyof ReturnType<typeof themeToCssVars>]).toBe(`${keep}%`);
+      pal.surfaces.forEach((s, i) => {
+        const tile = innerTile(s.bg, keep);
+        const c = contrast(s.text, tile);
+        if (c < 4.5) fails.push(`${p.preset} surface ${i + 1}: ${s.text} on ${tile} = ${c.toFixed(2)}:1`);
+      });
+    }
+    expect(fails).toEqual([]);
+  });
+
+  it("matches CSS color-mix toward white", () => {
+    expect(innerTile("#1c2a3d", 100)).toBe("#1c2a3d");
+    expect(innerTile("#1c2a3d", 0)).toBe("#ffffff");
+    // the old light-theme mix on Malam's first surface: the ~1.7:1 tile from the E2E report
+    expect(contrast("#f3ead8", innerTile("#1c2a3d", 35))).toBeLessThan(2);
+  });
+
+  it("public.css draws every inner tile from the token, never a fixed mix", () => {
+    const css = readFileSync(join(process.cwd(), "src/components/public/public.css"), "utf8");
+    expect(css).not.toMatch(/color-mix\(in srgb, var\(--t-block-bg\) \d+%, #fff\)/);
+    expect(css.match(/background: var\(--t-inner-mix\)/g)?.length).toBeGreaterThanOrEqual(11);
   });
 });
