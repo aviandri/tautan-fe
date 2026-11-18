@@ -184,6 +184,9 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     // ----- auth -----
     // P2-8: the mock has no Google round trip, so the button stays hidden.
     if (p === "/auth/providers") return ok({ google: false });
+    // The mock sends no email, so no reset link can be valid.
+    if (p === "/auth/password/forgot" && method === "POST") return ok({ accepted: true }, 202);
+    if (p === "/auth/password/reset" && method === "POST") return err(400, "invalid_token", "this reset link is invalid, used or expired");
     if (p === "/auth/username-available") {
       const u = (url.searchParams.get("u") ?? "").toLowerCase();
       const reserved = ["admin", "dashboard", "login", "signup", "api", "settings"];
