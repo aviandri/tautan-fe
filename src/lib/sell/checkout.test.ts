@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getMeta } from "../editor/block-meta";
 import { validateProductCore } from "../editor/sell-meta";
-import { isPrivateUpload, paidPriceError } from "./checkout";
+import { isOwnUpload, isPrivateUpload, paidPriceError } from "./checkout";
 
 describe("paidPriceError", () => {
   it("accepts whole-rupiah IDR and USD cents", () => {
@@ -55,5 +55,21 @@ describe("checkout product", () => {
     expect(r.data.action.download?.url).toBe("https://api.example/uploads/p_0123456789abcdef0123456789abcdef.pdf");
     const url = validateProductCore({ ...base, price: 1999, action: { kind: "url", url: "https://x.example", download: { url: "https://f" } } });
     expect(url.data.action.download).toBeUndefined();
+  });
+});
+
+describe("isOwnUpload", () => {
+  it("only trusts our API origin", () => {
+    expect(isOwnUpload("https://api.example/uploads/a.pdf", "https://api.example")).toBe(true);
+    expect(isOwnUpload("/uploads/a.pdf", "https://api.example")).toBe(true);
+    expect(isOwnUpload("https://blog.example/wp-content/uploads/a.pdf", "https://api.example")).toBe(false);
+    expect(isOwnUpload("https://bucket.s3.amazonaws.com/uploads/a.pdf", "https://api.example")).toBe(false);
+  });
+});
+
+describe("free file with a private upload", () => {
+  it("is rejected with a way out", () => {
+    const r = getMeta("file").validate({ title: "x", url: "https://api.example/uploads/p_0123456789abcdef0123456789abcdef.pdf" });
+    expect(r.errors.url).toMatch(/Upload it again/);
   });
 });

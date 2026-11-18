@@ -19,3 +19,9 @@ export function paidPriceError(price: number | undefined, currency: string | und
 export function isPrivateUpload(url: string | undefined): boolean {
   return !!url && /\/uploads\/p_[0-9a-f]{32}\.[a-z0-9]{2,5}$/.test(url.split("?")[0]);
 }
+
+/** True for files stored by our own API (absolute under apiUrl, or a relative /uploads/ path). */
+export function isOwnUpload(url: string | undefined, apiUrl: string): boolean {
+  if (!url) return false;
+  return url.startsWith("/uploads/") || url.startsWith(`${apiUrl.replace(/\/$/, "")}/uploads/`);
+}

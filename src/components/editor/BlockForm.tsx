@@ -20,6 +20,7 @@ import {
 } from "./fields-extra";
 import { MoneyField } from "./sell/sell-fields";
 import { CheckoutHint } from "./sell/CheckoutHint";
+import { isPrivateUpload } from "@/lib/sell/checkout";
 import dynamic from "next/dynamic";
 
 // Card-type forms load on demand (code split per family), so the editor's first load stays small.
@@ -409,8 +410,16 @@ function FileForm({ data, onChange, errors, autoFocus }: FormProps<"file">) {
         label="Sell this file"
         hint="Visitors pay before they can download it."
         checked={selling}
-        onChange={(on) => onChange(on ? { ...data, price: Number.NaN, currency } : { ...data, price: undefined, currency: undefined })}
+        onChange={(on) => {
+          if (on) return onChange({ ...data, price: Number.NaN, currency });
+          // A private deliverable can't be a free download (/uploads never serves it).
+          const cleared = isPrivateUpload(data.url) ? { url: "", file_name: undefined, size: undefined } : {};
+          onChange({ ...data, ...cleared, price: undefined, currency: undefined });
+        }}
       />
+      {!selling && isPrivateUpload(data.url) && (
+        <p className="text-[13px] text-muted">This file was uploaded privately for sale. Upload it again to give it away for free.</p>
+      )}
       {selling && (
         <>
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
@@ -419,7 +428,8 @@ function FileForm({ data, onChange, errors, autoFocus }: FormProps<"file">) {
               label="Currency"
               size="sm"
               value={currency}
-              onChange={(c) => onChange({ ...data, currency: c })}
+              // amounts are minor units, so Rp 85.000 isn't $85,000.00: start the price again
+              onChange={(c) => onChange({ ...data, currency: c, ...(c !== currency ? { price: Number.NaN } : {}) })}
               options={[
                 { value: "IDR", label: "IDR" },
                 { value: "USD", label: "USD" },

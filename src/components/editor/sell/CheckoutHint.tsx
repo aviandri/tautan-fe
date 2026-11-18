@@ -2,7 +2,8 @@
 
 import { AlertTriangle, Lock } from "lucide-react";
 import Link from "next/link";
-import { isPrivateUpload } from "@/lib/sell/checkout";
+import { API_URL } from "@/lib/api";
+import { isOwnUpload, isPrivateUpload } from "@/lib/sell/checkout";
 import { usePaymentProviders } from "@/lib/payments";
 
 /**
@@ -13,7 +14,7 @@ export function CheckoutHint({ currency, fileUrl }: { currency: string; fileUrl?
   const q = usePaymentProviders();
   const on = q.data?.providers.filter((p) => p.enabled) ?? [];
   const fits = on.some((p) => p.currencies.includes(currency));
-  const external = !!fileUrl && !fileUrl.includes("/uploads/");
+  const external = !!fileUrl && !isOwnUpload(fileUrl, API_URL);
   return (
     <div className="flex flex-col gap-2 text-[13px]">
       {q.data && !fits && (
