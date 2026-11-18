@@ -35,8 +35,9 @@ Env:
 - `BE_LOG` (**required** for the journey): the backend's log file. With the default log mail driver, the backend prints each email's text there, including the confirm (`/verify-email?token=…`) and reset (`/reset-password?token=…`) links. `mail.mjs` waits for and parses those lines. Production (`APP_ENV=production`) never logs mail bodies, so this only works against a dev backend.
 - `BASE` (default `http://localhost:3000`), `API` (default `http://localhost:8080/api/v1`).
 - `HEADED=1`, `SLOWMO=<ms>`, `PAUSE=<ms>` (pause after each step; 1200 ms when headed).
+- `CSP_STRICT=1`: CSP Report-Only violations (`[Report Only] Refused to …` in the console) fail the run. By default they're warnings, printed at the end grouped by page and directive with counts (`CSP REPORT-ONLY: …`). Run with `CSP_STRICT=1` before switching a policy from report-only to enforced.
 
-A screenshot per step lands in `e2e/shots/`. The exit code is non-zero if any check fails or any page error, console error or 5xx happens. The one expected 400, when the used reset link is opened again, is exempted.
+A screenshot per step lands in `e2e/shots/`. The exit code is non-zero if any check fails or any page error, console error (CSP report-only messages excepted unless `CSP_STRICT=1`) or 5xx happens. The one expected 400, when the used reset link is opened again, is exempted.
 
 Google sign-in stays off unless the backend has `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `GOOGLE_REDIRECT_URL` set. The journey doesn't cover it, because the OAuth round trip needs a real Google account.
 

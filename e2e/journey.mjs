@@ -13,7 +13,8 @@
 //
 // Env: BASE (default http://localhost:3000), API (default http://localhost:8080/api/v1),
 //      BE_LOG (required: the backend's log file, where the log mail driver prints confirm/reset links),
-//      HEADED=1 shows the browser, SLOWMO=<ms> slows every action, PAUSE=<ms> pause after each step (headed default 1200).
+//      HEADED=1 shows the browser, SLOWMO=<ms> slows every action, PAUSE=<ms> pause after each step (headed default 1200),
+//      CSP_STRICT=1 fails the run on CSP Report-Only violations (by default they're listed as warnings at the end).
 // The FE needs REVALIDATE_SECRET set to the BE's, or published edits show up only after 60 s.
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
@@ -52,9 +53,36 @@ async function step(page, title) {
   await page.screenshot({ path: `${SHOTS}${label.replace(/[^\w-]+/g, '-')}.png` });
 }
 
+// CSP Report-Only violations ("[Report Only] Refused to …" in the console) are collected as warnings and
+// printed grouped by page and directive at the end; they don't fail the run unless CSP_STRICT=1.
+const CSP_STRICT = process.env.CSP_STRICT === '1';
+const cspSeen = new Map(); // "tag path | directive" → { n, what: Set }
+const cspPath = (url) => {
+  try {
+    const u = new URL(url);
+    return `${u.port === new URL(BASE).port ? '' : u.host}${u.pathname}`
+      .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, '<id>')
+      .replace(/\/(nara\d+)(?=\/|$)/, '/<user>')
+      .replace(/fk_[0-9a-f]+/, 'fk_<ref>');
+  } catch { return url; }
+};
+function recordCsp(tag, page, text) {
+  const directive = text.match(/directive: "([a-z-]+)/)?.[1] ?? '?';
+  const what = text.match(/Refused to [a-z ]+? '([^']+)'/)?.[1] ?? (text.match(/Refused to ([a-z ]+?) because/)?.[1] ?? 'inline');
+  const key = `${tag} ${cspPath(page.url())} | ${directive}`;
+  const e = cspSeen.get(key) ?? { n: 0, what: new Set() };
+  e.n += 1;
+  e.what.add(what.replace(/^(apply|execute) /, '').slice(0, 120));
+  cspSeen.set(key, e);
+}
+
 function watch(page, tag, errs, third) {
   page.on('pageerror', (e) => errs.push(`${tag} pageerror: ${e.message}`));
-  page.on('console', (m) => { if (m.type() === 'error' && !/401/.test(m.text())) errs.push(`${tag} console: ${m.text()}`); });
+  page.on('console', (m) => {
+    const t = m.text();
+    if (t.startsWith('[Report Only]')) return recordCsp(tag, page, t);
+    if (m.type() === 'error' && !/401/.test(t)) errs.push(`${tag} console: ${t}`);
+  });
   page.on('response', (r) => { if (r.status() >= 500) errs.push(`${tag} HTTP ${r.status()} ${r.url()}`); });
   if (third) page.on('request', (q) => {
     const u = new URL(q.url());
@@ -470,6 +498,11 @@ await r.getByRole('button', { name: /save and log in/i }).click();
 await r.getByRole('heading', { name: /link has expired/i }).waitFor({ timeout: 10000 }).catch(() => {});
 ok('A reset link works only once', /link has expired/i.test(await r.locator('body').innerText()));
 errs.splice(errsBeforeReuse, errs.length - errsBeforeReuse, ...errs.slice(errsBeforeReuse).filter((e) => !/^reset console: .*status of 400/.test(e)));
+
+const cspTotal = [...cspSeen.values()].reduce((k, e) => k + e.n, 0);
+console.log(`\nCSP REPORT-ONLY: ${cspTotal} violation(s), ${cspSeen.size} page/directive group(s)${CSP_STRICT ? ' (CSP_STRICT=1: they fail the run)' : ' (warnings; CSP_STRICT=1 makes them fail)'}`);
+for (const [k, e] of [...cspSeen].sort()) console.log(`  ${k}  ×${e.n}  ${[...e.what].join(', ')}`);
+if (CSP_STRICT && cspTotal) ok('No CSP Report-Only violations (CSP_STRICT=1)', false, `${cspTotal} violation(s)`);
 
 console.log('\nERRORS:', errs.length ? '\n' + errs.slice(0, 15).join('\n') : 'none');
 const passed = results.filter((r) => r[0] === 'PASS').length;
