@@ -25,6 +25,7 @@ export function OrderDetail({ id, embedded = false }: { id: string; embedded?: b
     onError: (e) => toast.error(errorMessage(e)),
   });
   const [copied, setCopied] = useState(false);
+  const [showLink, setShowLink] = useState(false);
 
   if (q.isLoading) return <Spinner />;
   if (q.error || !q.data) return <Alert>{errorMessage(q.error)}</Alert>;
@@ -103,7 +104,11 @@ export function OrderDetail({ id, embedded = false }: { id: string; embedded?: b
               await navigator.clipboard.writeText(order_page_url);
               setCopied(true);
               setTimeout(() => setCopied(false), 1500);
-            } catch {}
+            } catch {
+              // clipboard blocked (permissions, insecure origin): show the link to copy by hand
+              setShowLink(true);
+              toast.error("Couldn't copy. Select the link below and copy it.");
+            }
           }}
         >
           {copied ? <Check className="size-3.5 text-brand" /> : <Copy className="size-3.5" />} Copy buyer&apos;s order link
@@ -119,6 +124,16 @@ export function OrderDetail({ id, embedded = false }: { id: string; embedded?: b
           </Link>
         )}
       </div>
+      {showLink && (
+        <input
+          readOnly
+          value={order_page_url}
+          aria-label="Buyer's order link"
+          onFocus={(e) => e.currentTarget.select()}
+          autoFocus
+          className="-mt-2 h-10 w-full rounded-xl border border-line bg-background px-3 font-mono text-[12px]"
+        />
+      )}
       <p className="-mt-2 text-[13px] text-muted">The buyer&apos;s link opens their order page with fresh download links. Share it only with them.</p>
 
       <div>
