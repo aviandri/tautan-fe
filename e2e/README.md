@@ -5,13 +5,20 @@ One script that walks the whole product against a running app:
 - The owner confirms the email from the link the backend mails, publishes from the dashboard, and adds cards.
 - A phone visitor uses the page: WhatsApp buy link, poll, password unlock, email sign-up, and a contact form, which emails the owner.
 - The owner checks Insights, Audience, Design and Settings.
+- The owner sells a file using the backend's **dev-only fake payment provider**, so no provider keys are needed:
+  - The owner connects "Fake (dev only)" in Settings → Payments and uploads a priced file card.
+  - A buyer checks out and lands on the test checkout page, then presses Pay. The order page shows Paid, the download link serves the file, and the receipt email carries the order link.
+  - A second attempt presses Fail and gets "not paid" with no download.
+  - The owner's Orders API and page show both orders.
+  - The fake provider is strictly opt-in: the backend needs `PAYMENTS_FAKE=1` and an `APP_ENV` other than `production`, and refuses to start with both set. Without the flag, the journey stops early with a clear message (tautan-be `docs/ENV.md`, `docs/SPEC.md` → "Dev-only `fake` payment provider").
 - Finally the owner resets their password through the emailed link: the new password works, the old one doesn't, and the link is single-use.
 
 Kept out of the app's package.json on purpose, so it doesn't touch the app's lockfile or bundle.
 
 ```bash
 # 1. backend (tautan-be), output to a file so the scripts can read the mails it "sends":
-#      make dev 2>&1 | tee /tmp/tautan-be.log      → :8080 (MAIL_DRIVER=log is the default)
+#      PAYMENTS_FAKE=1 make dev 2>&1 | tee /tmp/tautan-be.log   → :8080 (MAIL_DRIVER=log is the default;
+#      PAYMENTS_FAKE=1 turns on the dev-only fake payment provider the journey pays with)
 #    set REVALIDATE_SECRET=<s> here and on the frontend, or published edits take up to 60 s to show
 # 2. frontend (this repo): pnpm build && REVALIDATE_SECRET=<s> pnpm start   (NEXT_PUBLIC_API_URL=http://localhost:8080)
 cd e2e && npm install && npx playwright install chromium
@@ -40,4 +47,4 @@ Google sign-in stays off unless the backend has `GOOGLE_CLIENT_ID`, `GOOGLE_CLIE
 
 Screenshots land in `e2e/shots/preview-*.png`.
 
-Last run (2026-11-18, headless, fresh local BE `cb602d3` + FE `f07f76c` on main): journey **46/46**, onboarding-preview **8/8**, no errors.
+Last run (2026-11-19, headless, fresh local BE from tautan-be#47 with `PAYMENTS_FAKE=1` + FE from this branch, both on main with the cart): journey **57/57**, no errors. Without the flag it stops at the start with the PAYMENTS_FAKE message.

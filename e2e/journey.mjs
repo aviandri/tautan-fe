@@ -1,10 +1,12 @@
 // End-to-end journey test for Tautan: owner signs up, onboards (unverified → draft), confirms their
 // email from the link the backend mails, publishes, builds a page; a visitor uses it (poll, gate,
-// email sign-up, contact form → owner notification); the owner checks Insights and Audience, then
-// resets their password through the emailed link. Runs against a live FE + BE.
+// email sign-up, contact form → owner notification); the owner checks Insights and Audience, sells a
+// file through the API's dev-only fake payment provider (buyer pays, downloads, gets a receipt; a
+// failed payment too; the owner sees the Orders page), then resets their password through the
+// emailed link. Runs against a live FE + BE started with PAYMENTS_FAKE=1 (dev-only; refused with APP_ENV=production).
 //
 //   cd e2e && npm install && npx playwright install chromium
-//   cd tautan-be && make dev 2>&1 | tee /tmp/tautan-be.log          # BE with the log mail driver
+//   cd tautan-be && PAYMENTS_FAKE=1 make dev 2>&1 | tee /tmp/tautan-be.log   # BE: log mail driver + fake payment provider
 //   BE_LOG=/tmp/tautan-be.log HEADED=1 SLOWMO=350 node journey.mjs  # watch it in a real browser window
 //   BE_LOG=/tmp/tautan-be.log node journey.mjs                      # headless
 //
@@ -118,6 +120,13 @@ const api = async (m, path, body) => {
   const t = await r.text(); let j; try { j = JSON.parse(t); } catch { j = t; }
   return { s: r.status, j };
 };
+// The payments section needs the backend's dev-only fake provider (PAYMENTS_FAKE=1); fail fast with a clear message.
+const provsAtStart = (await api('GET', '/payments/providers')).j;
+if (!provsAtStart.providers?.some((x) => x.provider === 'fake')) {
+  console.error('The backend doesn\'t offer the fake payment provider. Start it with PAYMENTS_FAKE=1 (and APP_ENV not production): PAYMENTS_FAKE=1 make dev');
+  await browser.close();
+  process.exit(2);
+}
 let me = (await api('GET', '/me')).j;
 ok('Signed up unverified, page saved as a draft', me.user?.email_verified === false && me.profile.is_published === false);
 const early = await api('PATCH', '/profile', { is_published: true });
@@ -273,6 +282,80 @@ for (const [path, title, re] of [
   await step(p, title);
   ok(`${title.replace('Owner: ', '')} page renders`, re.test(await p.locator('body').innerText()));
 }
+
+// ---------- SELL A FILE → BUY → PAY → DOWNLOAD (the API's dev-only fake provider: no provider keys)
+await p.goto(BASE + '/dashboard/settings');
+const fakePanel = p.getByRole('button', { name: /Fake \(dev only\)/ });
+await fakePanel.waitFor({ timeout: 20000 });
+await fakePanel.scrollIntoViewIfNeeded();
+await fakePanel.click();
+await p.getByLabel('Key', { exact: true }).fill('fake_e2e');
+const acceptSwitch = p.getByRole('switch', { name: /accept payments with fake/i });
+if ((await acceptSwitch.getAttribute('aria-checked')) !== 'true') await acceptSwitch.click(); // on by default for a new provider
+await step(p, 'Owner: connect the test payment provider');
+await p.getByRole('button', { name: /^connect$/i }).click();
+await p.waitForTimeout(1500);
+const provs = (await api('GET', '/payments/providers')).j;
+ok('Test payment provider connected and on (settings UI)', !!provs.providers?.some((x) => x.provider === 'fake' && x.enabled), JSON.stringify(provs).slice(0, 160));
+
+const pdfText = `%PDF-1.4\n% Tautan e2e ${stamp}\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n`;
+const fd = new FormData();
+fd.append('file', new Blob([pdfText], { type: 'application/pdf' }), 'Resep-Brownies.pdf');
+const upRes = await fetch(API + '/uploads?kind=file', { method: 'POST', headers: { authorization: 'Bearer ' + tok }, body: fd });
+const up = await upRes.json().catch(() => ({}));
+ok('Upload the file to sell', upRes.status === 201 && !!up.url, String(upRes.status));
+const fileCard = await add('file', { title: 'Brownies recipe e-book', url: up.url, file_name: 'Resep-Brownies.pdf', price: 2500000 });
+await new Promise((r) => setTimeout(r, 2500)); // let the revalidate webhook land
+
+const buyer = `sari${stamp}@test.example`;
+const b = await vc.newPage();
+watch(b, 'buyer', errs);
+await b.goto(`${BASE}/${user}`);
+const buyLink = b.locator(`a[href*="/checkout?block=${fileCard?.id}"]`).first();
+await buyLink.waitFor({ timeout: 15000 }).catch(() => {});
+ok('Public page shows the paid file with a buy button', (await buyLink.count()) > 0);
+await buyLink.scrollIntoViewIfNeeded().catch(() => {});
+await step(b, 'Buyer: paid file card');
+await buyLink.click();
+await b.waitForURL(/\/checkout\?/);
+await b.locator('input[name=email]').fill(buyer);
+await b.locator('input[name=name]').fill('Sari');
+await step(b, 'Buyer: checkout');
+await b.getByRole('button', { name: /^pay /i }).click();
+await b.waitForURL(/\/dev\/fake-checkout\/fk_/, { timeout: 15000 });
+await step(b, 'Buyer: test provider checkout page');
+ok('Checkout hands off to the provider page with the right total', /Rp\s?25\.000/.test(await b.getByTestId('fake-total').innerText()));
+const markReceipt = logMark();
+await b.getByTestId('fake-pay').click();
+await b.waitForURL(new RegExp(`/${user}/orders/[0-9a-f-]+\\?t=`), { timeout: 15000 });
+await b.getByRole('heading', { name: /thanks, sari/i }).waitFor({ timeout: 15000 }).catch(() => {});
+await step(b, 'Buyer: paid, download ready');
+ok('Order page shows paid with a download', /Paid/.test(await b.locator('.tb-status').innerText().catch(() => '')) && (await b.locator('a.tb-dl').count()) === 1);
+const dlHref = await b.locator('a.tb-dl').first().getAttribute('href').catch(() => null);
+const dl = dlHref ? await fetch(dlHref) : null;
+const dlBody = dl ? await dl.text() : '';
+ok('Download link serves the file', !!dl && dl.status === 200 && dlBody.includes(`Tautan e2e ${stamp}`) && /Resep-Brownies\.pdf/.test(dl.headers.get('content-disposition') || ''), dl ? `${dl.status} ${dl.headers.get('content-disposition')}` : 'no link');
+const receipt = await waitForMail({ to: buyer, since: markReceipt, re: /(\/orders\/[0-9a-f-]+\?t=[A-Za-z0-9_-]+)/ }).catch((e) => e.message);
+ok('Buyer is emailed a receipt with the order link', /^\/orders\//.test(receipt), receipt.slice(0, 90));
+
+// A second attempt where the payment fails: no download, and the order is marked failed.
+await b.goto(`${BASE}/${user}/checkout?block=${fileCard?.id}`);
+await b.locator('input[name=email]').fill(buyer);
+await b.getByRole('button', { name: /^pay /i }).click();
+await b.waitForURL(/\/dev\/fake-checkout\/fk_/, { timeout: 15000 });
+await b.getByTestId('fake-fail').click();
+await b.waitForURL(new RegExp(`/${user}/orders/`), { timeout: 15000 });
+await step(b, 'Buyer: payment failed');
+ok('A failed payment shows "not paid" and no download', /wasn.t paid/i.test(await b.locator('body').innerText()) && (await b.locator('a.tb-dl').count()) === 0);
+
+// Owner sees both orders.
+const orders = (await api('GET', '/orders')).j;
+const paidOrder = orders.items?.find((o) => o.status === 'paid' && o.buyer_email === buyer);
+ok('Orders API: one paid, one failed, revenue counted', !!paidOrder && orders.counts?.paid === 1 && orders.counts?.failed === 1 && orders.revenue?.IDR === 2500000, JSON.stringify(orders.counts));
+await p.goto(BASE + '/dashboard/orders');
+await p.getByText(paidOrder?.code ?? '—').first().waitFor({ timeout: 15000 }).catch(() => {});
+await step(p, 'Owner: Orders');
+ok('Orders page lists the paid order', !!paidOrder && (await p.locator('body').innerText()).includes(paidOrder.code));
 
 // ---------- RESET PASSWORD (logged out, link from the email)
 const rc = await browser.newContext({ viewport: { width: 1280, height: 860 } });

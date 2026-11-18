@@ -6,13 +6,14 @@
  */
 import type { Block, PagePayments, ProductData, ShopItem } from "./types";
 
-export type Provider = "xendit" | "midtrans" | "stripe";
+export type Provider = "xendit" | "midtrans" | "stripe" | "fake";
 
 /** How each provider reads to a buyer (methods, not brand jargon). */
 export const PROVIDER_LABEL: Record<Provider, { name: string; methods: string }> = {
   xendit: { name: "Xendit", methods: "QRIS, e-wallets, virtual account, cards" },
   midtrans: { name: "Midtrans", methods: "QRIS, GoPay, ShopeePay, virtual account, cards" },
   stripe: { name: "Stripe", methods: "Card, Apple Pay, Google Pay" },
+  fake: { name: "Test checkout", methods: "Development only, no money moves" },
 };
 
 export interface Purchasable {

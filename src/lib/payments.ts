@@ -6,7 +6,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 
-export type PaymentProvider = "xendit" | "midtrans" | "stripe";
+/** "fake" is the API's dev-only provider: it is never listed when APP_ENV=production. */
+export type PaymentProvider = "xendit" | "midtrans" | "stripe" | "fake";
 export type PaymentMode = "sandbox" | "live";
 
 export interface ProviderError {
@@ -66,7 +67,8 @@ export const PROVIDER_INFO: Record<
     webhookPlaceholder?: string;
     webhookHint: string;
     webhookEvents?: string[];
-    dashboard: Record<PaymentMode, string>;
+    /** Provider dashboard link (none for the dev-only fake provider). */
+    dashboard?: Record<PaymentMode, string>;
   }
 > = {
   xendit: {
@@ -107,6 +109,14 @@ export const PROVIDER_INFO: Record<
     ],
     dashboard: { sandbox: "https://dashboard.stripe.com/test/webhooks", live: "https://dashboard.stripe.com/webhooks" },
   },
+  fake: {
+    name: "Fake (dev only)",
+    methods: "Pay / Fail / Expire buttons on a test checkout page. No money moves.",
+    keyLabel: "Key",
+    keyPlaceholder: { sandbox: "fake_…", live: "fake_… (sandbox only)" },
+    keyHint: "Any value starting with fake_. Only offered when the API isn't running in production.",
+    webhookHint: "Nothing to paste: the test checkout page notifies this URL itself.",
+  },
 };
 
 /**
@@ -133,6 +143,9 @@ export function keyErrors(
       if (sk.includes("-client-")) e.secret_key = "This is the client key. Use the server key.";
       else if (mode === "live" && sk.startsWith("SB-")) e.secret_key = "This is a sandbox key. Live needs the production server key.";
       else if (mode === "sandbox" && sk.startsWith("Mid-server-")) e.secret_key = "This is a production key. Sandbox needs the SB-Mid-server-… key.";
+    } else if (provider === "fake") {
+      if (mode === "live") e.secret_key = "The fake provider is sandbox-only.";
+      else if (!sk.startsWith("fake_")) e.secret_key = "Use any key starting with fake_.";
     } else {
       if (sk.startsWith("pk_")) e.secret_key = "This is a publishable key. Use a secret key (sk_…) or a restricted key (rk_…).";
       else if (mode === "sandbox" && !/^(sk|rk)_test_/.test(sk)) e.secret_key = "Sandbox needs a test key (sk_test_… or rk_test_…).";
