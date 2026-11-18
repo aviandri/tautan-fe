@@ -9,6 +9,7 @@ import { cx, Field, PrefixInput, Spinner, Switch } from "@/components/ui";
 import { Section, sectionId, useSection } from "./section";
 import { AccountSection } from "./AccountSection";
 import { AnnouncementSection } from "./AnnouncementSection";
+import { PaymentsSection } from "./PaymentsSection";
 import { toast } from "@/components/ui/toast";
 import { API_BASE, ApiError, assetUrl } from "@/lib/api";
 import { useUpdateProfile } from "@/lib/profile";
@@ -355,13 +356,17 @@ function SettingsInner({ profile, user }: { profile: Profile; user: User }) {
         />
       </Section>
 
+      <div className="min-w-0 xl:col-span-2">
+        <PaymentsSection />
+      </div>
+
       <AccountSection user={user} />
       </div>
     </div>
   );
 }
 
-const SECTIONS = ["Profile", "Page address", "Visibility", "Announcement", "Search and sharing", "Page options", "Tracking", "Account"];
+const SECTIONS = ["Profile", "Page address", "Visibility", "Announcement", "Search and sharing", "Page options", "Tracking", "Payments", "Account"];
 
 /** Kartu settings nav: sticky section links on large screens (current one highlighted), chips on phones. */
 function SettingsNav() {
