@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { UsernameStatusLine } from "@/components/auth/UsernameStatusLine";
@@ -73,6 +74,8 @@ export function SignupForm() {
       <p className="mt-2.5 text-[17px] leading-relaxed text-ink-2">
         {withUsername ? "Your username becomes your page address. You can change it later." : "Email and a password for now. You choose your page address at the end."}
       </p>
+
+      <GoogleButton />
 
       <form onSubmit={onSubmit} noValidate className="mt-7 flex flex-col gap-4">
         {formError && <Alert>{formError}</Alert>}
