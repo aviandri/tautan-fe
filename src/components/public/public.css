@@ -2504,6 +2504,11 @@ textarea.tp-input {
     background: color-mix(in srgb, #fff 38%, transparent);
     pointer-events: none;
   }
+  /* dark grounds: white at 38% reads as grey slabs; keep it a faint lift */
+  .tp-fullHeight.tp-dark:not(.tp-desktopBg)::before,
+  .tp-fullHeight.tp-dark:not(.tp-desktopBg)::after {
+    background: color-mix(in srgb, #fff 4%, transparent);
+  }
   .tp-fullHeight:not(.tp-desktopBg)::before {
     width: 220px;
     height: 140px;
