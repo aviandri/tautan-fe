@@ -55,9 +55,9 @@ export function BlockRenderer({ block, childBlocks = [], opts }: { block: Block;
         </FolderBlock>
       );
     case "faq":
-      return <FaqBlock block={block} />;
+      return <FaqBlock block={block} preview={env.preview} />;
     case "testimonial":
-      return <TestimonialBlock block={block} />;
+      return <TestimonialBlock block={block} preview={env.preview} />;
     case "contact_form":
       return <ContactFormIsland block={block} username={env.username} preview={env.preview} />;
     case "heading":

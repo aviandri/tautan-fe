@@ -21,13 +21,12 @@ describe("onboarding", () => {
         expect(BLOCK_META[st.type].needsInputFirst, st.key).toBe(false);
       }
   });
-  it("list starters seed one sample item so the section shows right after onboarding", () => {
+  it("starters publish no owner instructions: list cards start empty (public renders nothing, preview hints)", () => {
     for (const list of Object.values(STARTERS))
       for (const st of list) {
-        const d = st.data() as { items?: Record<string, string>[] };
-        if (st.type === "social_icons" || !d.items) continue; // profiles need real URLs; see the editor's empty state
-        expect(d.items.length, st.key).toBeGreaterThan(0);
-        for (const it of d.items) expect(Object.values(it).every((v) => typeof v === "string" && v.trim().length > 0), st.key).toBe(true);
+        const d = st.data() as { items?: unknown[] };
+        if (d.items) expect(d.items, st.key).toEqual([]);
+        expect(JSON.stringify(d), st.key).not.toMatch(/replace|goes here|add your|customer name|tap the/i);
       }
   });
   it("applyPatch merges onboarding and marks a claimed username", () => {
