@@ -13,7 +13,7 @@ export type PublicPageResult =
  * FE reach the API over the private network (e.g. http://api:8080 in docker-compose) instead of
  * going out through the public hostname, CDN and TLS. Browsers always use NEXT_PUBLIC_API_URL.
  */
-const SERVER_API_BASE = process.env.API_INTERNAL_URL
+export const SERVER_API_BASE = process.env.API_INTERNAL_URL
   ? `${process.env.API_INTERNAL_URL.replace(/\/$/, "")}/api/v1`
   : API_BASE;
 

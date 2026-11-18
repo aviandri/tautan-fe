@@ -237,7 +237,7 @@ export function Editor() {
     return <BlockInspector key={selectedBlock.id} block={selectedBlock} tabs={tabs} autoFocus={fresh === selectedBlock.id} onDeleted={() => setSel(null)} />;
   })();
 
-  const previewProps = { profile, tabs, blocks, activeTabSlug: active.slug, onTabChange: selectBySlug };
+  const previewProps = { profile, tabs, blocks, payments: data?.payments, activeTabSlug: active.slug, onTabChange: selectBySlug };
 
   return (
     <div className="grid flex-1 items-start gap-4 px-4 pb-6 pt-1 lg:grid-cols-[minmax(320px,380px)_minmax(0,1fr)] xl:grid-cols-[minmax(320px,380px)_minmax(0,1fr)_minmax(320px,360px)]">

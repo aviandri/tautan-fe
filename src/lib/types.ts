@@ -874,6 +874,13 @@ export interface PageResponse {
   blocks: Block[];
   /** every uploaded image the page references (GET /public/{u} and GET /profile/editor) */
   media?: MediaMap;
+  /** payments (b): the providers buyers can pay with; null when none is on */
+  payments?: PagePayments | null;
+}
+export interface PagePayments {
+  providers: { provider: "xendit" | "midtrans" | "stripe"; currencies: string[] }[];
+  /** union of the providers' currencies ("IDR", "USD") */
+  currencies: string[];
 }
 /** GET /profile/editor — includes hidden blocks. */
 export type EditorResponse = PageResponse;

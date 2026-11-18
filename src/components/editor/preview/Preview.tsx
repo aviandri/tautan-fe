@@ -2,18 +2,19 @@
 
 /** Live previews (phone and desktop frames), rendered with the public page renderer in preview mode. */
 import { PublicPage } from "@/components/public";
-import type { Block, Profile, Tab } from "@/lib/types";
+import type { Block, PagePayments, Profile, Tab } from "@/lib/types";
 
 interface PreviewProps {
   profile: Profile;
   tabs: Tab[];
   blocks: Block[];
+  payments?: PagePayments | null;
   activeTabSlug?: string;
   onTabChange?: (slug: string) => void;
 }
 
 function Page(p: PreviewProps) {
-  return <PublicPage profile={p.profile} tabs={p.tabs} blocks={p.blocks} activeTabSlug={p.activeTabSlug} onTabChange={p.onTabChange} preview />;
+  return <PublicPage profile={p.profile} tabs={p.tabs} blocks={p.blocks} payments={p.payments} activeTabSlug={p.activeTabSlug} onTabChange={p.onTabChange} preview />;
 }
 
 export function PhonePreview(p: PreviewProps & { width?: number; height?: number }) {
