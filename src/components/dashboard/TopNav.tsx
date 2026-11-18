@@ -8,6 +8,7 @@ import { Logo } from "@/components/brand";
 import { Button, cx } from "@/components/ui";
 import { Menu, MenuItem, MenuLabel } from "@/components/ui/menu";
 import { toast } from "@/components/ui/toast";
+import { PUBLISH_BLOCKED } from "@/lib/verify-email";
 import { ApiError, assetUrl } from "@/lib/api";
 import { useUpdateProfile } from "@/lib/profile";
 import { useLogout, useSession } from "@/lib/session";
@@ -85,7 +86,13 @@ function PublishControl({ profile }: { profile: Profile }) {
       {
         onSuccess: () => toast.success(is_published ? "Your page is live" : "Your page is a draft again"),
         onError: (e) =>
-          toast.error(e instanceof ApiError && e.code === "username_not_claimed" ? "Pick your page address in Settings first." : "Couldn't change that. Try again."),
+          toast.error(
+            e instanceof ApiError && e.code === "username_not_claimed"
+              ? "Pick your page address in Settings first."
+              : e instanceof ApiError && e.code === "email_unverified"
+                ? PUBLISH_BLOCKED
+                : "Couldn't change that. Try again.",
+          ),
       },
     );
   if (!profile.is_published)

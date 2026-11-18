@@ -271,7 +271,9 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     const { password: _pw, ...pubUser } = user;
     void _pw;
 
-    if (p === "/me") return ok({ user: { ...pubUser, has_password: true, identities: [] }, profile });
+    if (p === "/me") return ok({ user: { ...pubUser, has_password: true, identities: [], email_verified: true }, profile });
+    if (p === "/me/verification-email" && method === "POST") return ok({ already_verified: true });
+    if (p === "/auth/verify-email" && method === "POST") return err(400, "invalid_token", "this confirmation link is invalid, used or expired");
     if (p === "/me/password" && method === "PATCH") return err(409, "password_already_set", "this account already has a password");
 
     if (p === "/profile" && method === "PATCH") {

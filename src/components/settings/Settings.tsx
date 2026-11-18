@@ -14,6 +14,7 @@ import { toast } from "@/components/ui/toast";
 import { API_BASE, ApiError, assetUrl } from "@/lib/api";
 import { useUpdateProfile } from "@/lib/profile";
 import { useSession } from "@/lib/session";
+import { PUBLISH_BLOCKED } from "@/lib/verify-email";
 import type { PageSettings, Profile, ProfilePatch, User } from "@/lib/types";
 import { urlError } from "@/lib/url";
 import { compactSettings, LANGUAGES, settingsErrors } from "@/lib/settings";
@@ -39,6 +40,8 @@ function profileError(err: unknown): string {
         return err.message.replace(/^\w/, (c) => c.toUpperCase());
       case "username_not_claimed":
         return "Pick your page address before publishing.";
+      case "email_unverified":
+        return PUBLISH_BLOCKED;
       default:
         return err.message;
     }

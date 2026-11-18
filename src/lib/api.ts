@@ -221,6 +221,9 @@ export const api = {
     /** Signs the user in (login shape) and ends every other session. */
     resetPassword: (b: { token: string; new_password: string }) =>
       request<AuthResponse>("/auth/password/reset", { method: "POST", body: b, auth: false }).then(withToken),
+    /** No auth: the emailed link may be opened on another device. */
+    verifyEmail: (token: string) =>
+      request<{ verified: boolean }>("/auth/verify-email", { method: "POST", body: { token }, auth: false }),
     usernameAvailable: (u: string, signal?: AbortSignal) =>
       request<{ available: boolean }>(
         `/auth/username-available?u=${encodeURIComponent(u)}`,
@@ -230,6 +233,9 @@ export const api = {
 
   me: () => request<MeResponse>("/me"),
   /** P2-8: add a password to a Google-only account (409 password_already_set otherwise). */
+  /** 202 {sent} or 200 {already_verified}; 429 rate_limited after 3/hour. */
+  resendVerification: () =>
+    request<{ sent?: boolean; already_verified?: boolean }>("/me/verification-email", { method: "POST" }),
   setPassword: (new_password: string) =>
     request<void>("/me/password", { method: "PATCH", body: { new_password } }),
   /** Payments (a): the creator's provider accounts. Keys are write-only. */

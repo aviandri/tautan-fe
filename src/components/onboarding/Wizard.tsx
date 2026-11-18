@@ -23,7 +23,9 @@ import { api, ApiError } from "@/lib/api";
 import { byPosition, useEditorData } from "@/lib/editor/queries";
 import { INTENTS, STARTERS, starterBlock, type Starter } from "@/lib/onboarding/starters";
 import { setProfileEverywhere, useUpdateProfile } from "@/lib/profile";
-import { qk, useLogout } from "@/lib/session";
+import { qk, useLogout, useSession } from "@/lib/session";
+import { isUnverified } from "@/lib/verify-email";
+import { VerifyEmailNotice } from "@/components/auth/VerifyEmailNotice";
 import type { Block, ImportPreview, OnboardingIntent, Profile, Theme } from "@/lib/types";
 import { isTempUsername } from "@/lib/constants";
 import { useUsernameCheck } from "@/lib/use-username-check";
@@ -510,9 +512,14 @@ function ThemeStep({
 
 function ClaimStep({ profile, onBack, onPreview }: { profile: Profile; onBack: () => void; onPreview: (username: string | null) => void }) {
   const update = useUpdateProfile();
+  const session = useSession();
   const claimed = profile.onboarding?.username_claimed !== false && !isTempUsername(profile.username);
   const [username, setUsername] = useState(claimed ? profile.username : (profile.onboarding?.suggested_username ?? ""));
-  const [publish, setPublish] = useState(true);
+  // Unverified accounts can't publish yet: finish as a draft, publish after confirming.
+  const [blocked, setBlocked] = useState(false);
+  const unverified = blocked || isUnverified(session.data?.user);
+  const [publishWanted, setPublish] = useState(true);
+  const publish = publishWanted && !unverified;
   const [error, setError] = useState<string | null>(null);
   const check = useUsernameCheck(username, { current: claimed ? profile.username : undefined });
   const busy = update.isPending;
@@ -533,7 +540,13 @@ function ClaimStep({ profile, onBack, onPreview }: { profile: Profile; onBack: (
       },
       {
         onSuccess: () => window.location.assign(publish ? "/onboarding/live" : "/dashboard"),
-        onError: (e) => setError(onboardingError(e)),
+        onError: (e) => {
+          if (e instanceof ApiError && e.code === "email_unverified") {
+            setBlocked(true); // the notice below explains; "Finish setup" saves a draft
+            return;
+          }
+          setError(onboardingError(e));
+        },
       },
     );
   }
@@ -561,8 +574,14 @@ function ClaimStep({ profile, onBack, onPreview }: { profile: Profile; onBack: (
           <p className="text-[15px] font-bold">Publish now</p>
           <p className="text-sm text-muted">{publish ? "Anyone with the link can see your page." : "Keep it as a draft until you're ready."}</p>
         </div>
-        <Switch label="Publish now" checked={publish} onChange={setPublish} />
+        <Switch label="Publish now" checked={publish} onChange={setPublish} disabled={unverified} />
       </div>
+      {unverified && session.data && (
+        <div className="mt-4">
+          <VerifyEmailNotice email={session.data.user.email} variant="inline" />
+          <p className="mt-2 text-sm text-muted">Finish setup now; you can publish from the dashboard once your email is confirmed.</p>
+        </div>
+      )}
       {error && (
         <div className="mt-4">
           <Alert>{error}</Alert>
