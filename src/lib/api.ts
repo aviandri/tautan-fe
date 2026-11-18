@@ -323,10 +323,11 @@ export const api = {
 
   uploads: {
     /** kind "file" (P2-1) also accepts PDF, ZIP, MP3, MP4 and text up to 25 MB; images stay ≤5 MB. */
-    create: (file: File, kind: "image" | "file" = "image") => {
+    /** kind "private" (payments b): a paid deliverable, stored where /uploads never serves it. */
+    create: (file: File, kind: "image" | "file" | "private" = "image") => {
       const fd = new FormData();
       fd.append("file", file);
-      return request<UploadResult>(`/uploads${kind === "file" ? "?kind=file" : ""}`, { method: "POST", body: fd });
+      return request<UploadResult>(`/uploads${kind === "image" ? "" : `?kind=${kind}`}`, { method: "POST", body: fd });
     },
   },
 

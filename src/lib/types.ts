@@ -268,10 +268,14 @@ export const DividerDataSchema = z.object({
 });
 export const FileDataSchema = z.object({
   title: z.string(),
+  /** "" in public reads when the file has a price (payments b) */
   url: z.string(),
   file_name: z.string().optional(),
   /** bytes */
   size: z.number().optional(),
+  /** payments (b): sold through checkout when set; minor units */
+  price: z.number().int().positive().optional(),
+  currency: z.enum(["IDR", "USD"]).optional(),
   ...schedule,
 });
 export const DiscountCodeDataSchema = z.object({
@@ -354,7 +358,8 @@ export type MarketplacePlatform = (typeof MARKETPLACE_PLATFORMS)[number];
 
 
 export const ProductActionSchema = z.object({
-  kind: z.enum(["url", "whatsapp", "marketplace"]),
+  /** checkout (payments b): pay on the provider's page, then download */
+  kind: z.enum(["url", "whatsapp", "marketplace", "checkout"]),
   /** kind=url, and kind=marketplace (the listing URL) */
   url: z.string().optional(),
   /** kind=whatsapp: E.164 */
@@ -365,6 +370,8 @@ export const ProductActionSchema = z.object({
   marketplace: z.enum(MARKETPLACE_PLATFORMS).optional(),
   /** button text; renderer default per kind ("Order on WhatsApp", "Buy on Shopee", "Buy") */
   label: z.string().max(40).optional(),
+  /** kind=checkout: the file delivered after payment. Editor only; never in public reads. */
+  download: z.object({ url: z.string(), file_name: z.string().optional() }).optional(),
 });
 export type ProductAction = z.infer<typeof ProductActionSchema>;
 

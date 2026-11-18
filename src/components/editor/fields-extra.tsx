@@ -168,11 +168,14 @@ export function FileUploadField({
   value,
   onUploaded,
   error,
+  kind = "file",
 }: {
   label: string;
   value: { url: string; file_name?: string; size?: number };
   onUploaded: (r: { url: string; file_name?: string; size?: number }) => void;
   error?: string;
+  /** "private" for paid deliverables (payments b) */
+  kind?: "file" | "private";
 }) {
   const ref = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -184,7 +187,7 @@ export function FileUploadField({
     if (f.size > FILE_MAX) return setErr("Files can be up to 25 MB.");
     setBusy(true);
     try {
-      const r = await api.uploads.create(f, "file");
+      const r = await api.uploads.create(f, kind);
       onUploaded({ url: r.url, file_name: r.file_name ?? f.name, size: r.size ?? f.size });
     } catch (e) {
       setErr(uploadErrorMessage(e).replace("Use a PNG, JPEG, GIF or WebP image.", "Use a PDF, ZIP, MP3, MP4, text file or image."));

@@ -18,6 +18,8 @@ import {
   Segmented,
   ToggleRow,
 } from "./fields-extra";
+import { MoneyField } from "./sell/sell-fields";
+import { CheckoutHint } from "./sell/CheckoutHint";
 import dynamic from "next/dynamic";
 
 // Card-type forms load on demand (code split per family), so the editor's first load stays small.
@@ -391,15 +393,42 @@ function FolderForm({ data, onChange, autoFocus }: FormProps<"folder">) {
 }
 
 function FileForm({ data, onChange, errors, autoFocus }: FormProps<"file">) {
+  const selling = data.price !== undefined;
+  const currency = data.currency ?? "IDR";
   return (
     <>
       <FileUploadField
         label="File"
         value={data}
         error={errors.url}
+        kind={selling ? "private" : "file"}
         onUploaded={(r) => onChange({ ...data, ...r, title: data.title || (r.file_name ?? "").replace(/\.[a-z0-9]+$/i, "") })}
       />
-      <TextField label="Title" value={data.title} onChange={(title) => onChange({ ...data, title })} placeholder="Free guide (PDF)" maxLength={120} error={errors.title} autoFocus={autoFocus} />
+      <TextField label="Title" value={data.title} onChange={(title) => onChange({ ...data, title })} placeholder={selling ? "Lightroom preset pack" : "Free guide (PDF)"} maxLength={120} error={errors.title} autoFocus={autoFocus} />
+      <ToggleRow
+        label="Sell this file"
+        hint="Visitors pay before they can download it."
+        checked={selling}
+        onChange={(on) => onChange(on ? { ...data, price: Number.NaN, currency } : { ...data, price: undefined, currency: undefined })}
+      />
+      {selling && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <MoneyField label="Price" value={data.price} currency={currency} onChange={(price) => onChange({ ...data, price: price ?? Number.NaN })} error={errors.price} />
+            <Segmented<"IDR" | "USD">
+              label="Currency"
+              size="sm"
+              value={currency}
+              onChange={(c) => onChange({ ...data, currency: c })}
+              options={[
+                { value: "IDR", label: "IDR" },
+                { value: "USD", label: "USD" },
+              ]}
+            />
+          </div>
+          <CheckoutHint currency={currency} fileUrl={data.url} />
+        </>
+      )}
     </>
   );
 }

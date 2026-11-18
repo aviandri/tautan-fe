@@ -14,7 +14,8 @@ import { COURIER_LABELS, detectMarketplace, detectTipPlatform, MARKETPLACES, TIP
 import type { BlockDataMap, MarketplacePlatform, ProductAction, ProductData, ShopItem } from "@/lib/types";
 import { COURIERS, MARKETPLACE_PLATFORMS, PRODUCT_BADGES, TIP_PLATFORMS, WA_ORDER_FIELDS } from "@/lib/constants";
 import { ImageField, ItemsEditor, TextField, UrlField } from "../fields";
-import { MoreOptions, Segmented, ToggleRow } from "../fields-extra";
+import { FileUploadField, MoreOptions, Segmented, ToggleRow } from "../fields-extra";
+import { CheckoutHint } from "./CheckoutHint";
 import type { FormProps } from "../BlockForm";
 import { HoursEditor, sortHours, TzSelect } from "./HoursEditor";
 import { ChipsInput, CurrencySelect, Mark, MoneyField, MultiImageField, PhoneField, selectCls, StarsInput, ToggleChips } from "./sell-fields";
@@ -49,7 +50,7 @@ function PlaceholderHint({ names, onInsert }: { names: string[]; onInsert: (p: s
 // ---------- product ----------
 
 
-function BuyAction({ value, onChange, errors }: { value: ProductAction; onChange: (a: ProductAction) => void; errors: FieldErrors }) {
+function BuyAction({ value, onChange, errors, currency }: { value: ProductAction; onChange: (a: ProductAction) => void; errors: FieldErrors; currency?: string }) {
   const set = (p: Partial<ProductAction>) => onChange({ ...value, ...p });
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-line p-3.5">
@@ -62,8 +63,21 @@ function BuyAction({ value, onChange, errors }: { value: ProductAction; onChange
           { value: "whatsapp", label: "WhatsApp" },
           { value: "marketplace", label: "Marketplace" },
           { value: "url", label: "Link" },
+          { value: "checkout", label: "Checkout", title: "Visitors pay online, then download a file" },
         ]}
       />
+      {value.kind === "checkout" && (
+        <>
+          <FileUploadField
+            label="File buyers get"
+            kind="private"
+            value={{ url: value.download?.url ?? "", file_name: value.download?.file_name }}
+            error={errors["download.url"]}
+            onUploaded={(r) => set({ download: { url: r.url, ...(r.file_name ? { file_name: r.file_name } : {}) } })}
+          />
+          <CheckoutHint currency={currency ?? "IDR"} fileUrl={value.download?.url} />
+        </>
+      )}
       {value.kind === "whatsapp" && (
         <>
           <PhoneField value={value.wa_number} onChange={(wa_number) => set({ wa_number })} error={errors.wa_number} />
@@ -100,7 +114,7 @@ function BuyAction({ value, onChange, errors }: { value: ProductAction; onChange
         onChange={(label) => set({ label })}
         maxLength={40}
         error={errors.label}
-        placeholder={value.kind === "whatsapp" ? "Order on WhatsApp" : value.kind === "marketplace" && value.marketplace ? `Buy on ${MARKETPLACES[value.marketplace].label}` : "Buy"}
+        placeholder={value.kind === "whatsapp" ? "Order on WhatsApp" : value.kind === "marketplace" && value.marketplace ? `Buy on ${MARKETPLACES[value.marketplace].label}` : value.kind === "checkout" ? "Buy now" : "Buy"}
       />
     </div>
   );
@@ -189,7 +203,7 @@ function ProductFields<T extends Omit<ProductData, "schedule">>({
         onChange={(b) => set({ badge: (b || undefined) as T["badge"] } as Partial<T>)}
         options={[{ value: "", label: "None" }, ...PRODUCT_BADGES.map((b) => ({ value: b, label: BADGE_LABEL[b] }))]}
       />
-      <BuyAction value={data.action} onChange={(action) => set({ action } as Partial<T>)} errors={sub(errors, "action")} />
+      <BuyAction value={data.action} onChange={(action) => set({ action } as Partial<T>)} errors={sub(errors, "action")} currency={currency ?? data.currency} />
       <MoreOptions title="Description, options and stock" badge={data.description || data.variants?.length || data.stock_note ? <span className="size-1.5 rounded-full bg-brand" /> : undefined} defaultOpen={Object.keys(errors).some((k) => /^(description|variants|stock_note)/.test(k))}>
         <TextField label="Description" multiline value={data.description ?? ""} onChange={(description) => set({ description } as Partial<T>)} maxLength={1000} error={errors.description} />
         <VariantsEditor value={data.variants ?? []} onChange={(variants) => set({ variants } as Partial<T>)} errors={errors} />
