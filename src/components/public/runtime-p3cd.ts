@@ -10,12 +10,14 @@
  *                       enter   giveaway entry
  *                       unlock  card-level gate → render the card (unlock-render, lazy)
  *   restore(root, ctx) re-open gated cards ([data-x-lock]) from tokens saved in localStorage
+ *   restorePolls(root, ctx) show "you voted" on polls this browser voted on today
  *
  * Requests use a text/plain JSON body (a CORS "simple" request: no preflight); the BE decodes JSON
  * whatever the Content-Type. Inside an unlocked card, endpoints get ?unlock=<token>.
  */
 import type { PollResults } from "@/lib/types";
 import { trackEvent } from "@/lib/track";
+import { clearVoted, localStore, markVoted, visitorId, votedToday } from "@/lib/visitor-id";
 
 export interface P3cdContext {
   username: string;
@@ -111,7 +113,7 @@ function readContact(form: HTMLFormElement): { email: string; name: string; subs
 }
 
 /** Replace a finished form with a short message (focus moves to it for screen readers). */
-function done(form: HTMLElement, text: string, extra?: HTMLElement) {
+function done(form: HTMLElement, text: string, extra?: HTMLElement, focus = true) {
   const box = document.createElement("div");
   box.dataset.p = "done";
   box.setAttribute("role", "status");
@@ -121,7 +123,7 @@ function done(form: HTMLElement, text: string, extra?: HTMLElement) {
   box.append(p);
   if (extra) box.append(extra);
   form.replaceWith(box);
-  box.focus({ preventScroll: true });
+  if (focus) box.focus({ preventScroll: true });
 }
 
 // ---------- handlers ----------
@@ -158,30 +160,61 @@ async function poll(form: HTMLFormElement, ctx: P3cdContext) {
   if (!option) return setStatus(form, "Pick an answer first.");
   if (ctx.preview) return setStatus(form, "Voting works on your live page.", "ok");
   busy(form, true);
-  const r = await post(cardPath(ctx, form, form.dataset.block!, "vote"), { option_id: String(option) });
+  const store = localStore();
+  const r = await post(cardPath(ctx, form, form.dataset.block!, "vote"), { option_id: String(option), visitor_id: visitorId(store) });
   busy(form, false);
-  const results = r.body?.results as PollResults | undefined;
   if (r.ok) tap(ctx, form.dataset.block, "vote");
   if (r.ok || (r.status === 409 && (r.body?.error as { code?: string })?.code === "already_voted")) {
-    let options: { id: string; label: string }[] = [];
-    try {
-      options = JSON.parse(form.dataset.options || "[]");
-    } catch {
-      options = [];
-    }
-    const already = !r.ok;
-    if (results && form.dataset.show !== "never") {
-      const wrap = document.createElement("div");
-      wrap.append(pollResultsEl(options, results, String(option)));
-      const total = document.createElement("p");
-      total.dataset.p = "fine";
-      total.textContent = `${already ? "You already voted today · " : ""}${results.total} vote${results.total === 1 ? "" : "s"}`;
-      wrap.append(total);
-      return done(form, already ? "Here are the results so far." : "Thanks for voting!", wrap);
-    }
-    return done(form, already ? "You already voted today. Thanks!" : "Thanks for voting!");
+    markVoted(store, form.dataset.block!);
+    return showVoted(form, String(r.body?.voted ?? option), r.body?.results as PollResults | undefined, !r.ok, true);
   }
   setStatus(form, errMsg(r));
+}
+
+/** Replace a poll form with its voted state: results (unless show_results is never) and a note. */
+function showVoted(form: HTMLFormElement, mine: string, results: PollResults | undefined, already: boolean, focus: boolean) {
+  let options: { id: string; label: string }[] = [];
+  try {
+    options = JSON.parse(form.dataset.options || "[]");
+  } catch {
+    options = [];
+  }
+  if (results && form.dataset.show !== "never") {
+    const wrap = document.createElement("div");
+    wrap.append(pollResultsEl(options, results, mine));
+    const total = document.createElement("p");
+    total.dataset.p = "fine";
+    total.textContent = `${already ? "You voted today · " : ""}${results.total} vote${results.total === 1 ? "" : "s"}`;
+    wrap.append(total);
+    return done(form, already ? "Here are the results so far." : "Thanks for voting!", wrap, focus);
+  }
+  return done(form, already ? "You voted today. Thanks!" : "Thanks for voting!", undefined, focus);
+}
+
+/**
+ * Polls this browser voted on today show their voted state right away instead of the Vote button
+ * (the cached page can't know). Asks the BE (GET .../vote?visitor_id=) so results are current and a
+ * vote that didn't count (e.g. the poll was reset) brings the form back.
+ */
+export async function restorePolls(root: HTMLElement, c: P3cdContext) {
+  if (c.preview) return;
+  const store = localStore();
+  const forms = [...root.querySelectorAll<HTMLFormElement>('form[data-x="poll"]')].filter((f) => votedToday(store, f.dataset.block!));
+  await Promise.all(
+    forms.map(async (form) => {
+      const id = form.dataset.block!;
+      const path = cardPath(c, form, id, "vote");
+      try {
+        const res = await fetch(`${API_BASE}${path}${path.includes("?") ? "&" : "?"}visitor_id=${encodeURIComponent(visitorId(store))}`);
+        if (!res.ok) return;
+        const body = (await res.json()) as { voted?: string | null; results?: PollResults };
+        if (body.voted) showVoted(form, body.voted, body.results, true, false);
+        else clearVoted(store, id);
+      } catch {
+        // offline: keep the form; voting again still gets the server's answer
+      }
+    }),
+  );
 }
 
 async function ask(form: HTMLFormElement, ctx: P3cdContext) {
@@ -191,7 +224,7 @@ async function ask(form: HTMLFormElement, ctx: P3cdContext) {
   if (!question) return setStatus(form, "Type a question first.");
   if (ctx.preview) return setStatus(form, "Questions can be sent from your live page.", "ok");
   busy(form, true);
-  const r = await post(cardPath(ctx, form, form.dataset.block!, "ask"), { question });
+  const r = await post(cardPath(ctx, form, form.dataset.block!, "ask"), { question, visitor_id: visitorId(localStore()) });
   busy(form, false);
   if (r.ok) {
     tap(ctx, form.dataset.block, "ask");
