@@ -1,28 +1,43 @@
 # E2E journey
 
-One script that walks the whole product against a running app: an owner signs up, onboards,
-adds cards and publishes; a phone visitor uses the page (WhatsApp buy link, poll, password unlock,
-email sign-up); the owner checks Insights, Audience, Design and Settings.
+One script that walks the whole product against a running app:
+- An owner signs up and onboards. With the email unconfirmed, the page is saved as a draft and publishing is refused.
+- The owner confirms the email from the link the backend mails, publishes from the dashboard, and adds cards.
+- A phone visitor uses the page: WhatsApp buy link, poll, password unlock, email sign-up, and a contact form, which emails the owner.
+- The owner checks Insights, Audience, Design and Settings.
+- Finally the owner resets their password through the emailed link: the new password works, the old one doesn't, and the link is single-use.
 
-Kept out of the app's package.json on purpose so it doesn't touch the app's lockfile or bundle.
+Kept out of the app's package.json on purpose, so it doesn't touch the app's lockfile or bundle.
 
 ```bash
-# 1. backend (tautan-be): make dev            → :8080
-# 2. frontend (this repo): pnpm build && pnpm start   (NEXT_PUBLIC_API_URL=http://localhost:8080)
+# 1. backend (tautan-be), output to a file so the scripts can read the mails it "sends":
+#      make dev 2>&1 | tee /tmp/tautan-be.log      → :8080 (MAIL_DRIVER=log is the default)
+#    set REVALIDATE_SECRET=<s> here and on the frontend, or published edits take up to 60 s to show
+# 2. frontend (this repo): pnpm build && REVALIDATE_SECRET=<s> pnpm start   (NEXT_PUBLIC_API_URL=http://localhost:8080)
 cd e2e && npm install && npx playwright install chromium
-npm run journey:watch     # visible browser, slowed down, a banner names each step
-npm run journey           # headless
+BE_LOG=/tmp/tautan-be.log npm run journey:watch     # visible browser, slowed down, a banner names each step
+BE_LOG=/tmp/tautan-be.log npm run journey           # headless
 ```
 
-Env: `BASE` (default `http://localhost:3000`), `API` (default `http://localhost:8080/api/v1`),
-`HEADED=1`, `SLOWMO=<ms>`, `PAUSE=<ms>` (pause after each step, 1200 ms when headed).
-A screenshot per step lands in `e2e/shots/`. Exit code is non-zero if any check fails or any
-page error / 5xx happens.
+Env:
+- `BE_LOG` (**required** for the journey): the backend's log file. With the default log mail driver, the backend prints each email's text there, including the confirm (`/verify-email?token=…`) and reset (`/reset-password?token=…`) links. `mail.mjs` waits for and parses those lines. Production (`APP_ENV=production`) never logs mail bodies, so this only works against a dev backend.
+- `BASE` (default `http://localhost:3000`), `API` (default `http://localhost:8080/api/v1`).
+- `HEADED=1`, `SLOWMO=<ms>`, `PAUSE=<ms>` (pause after each step; 1200 ms when headed).
+
+A screenshot per step lands in `e2e/shots/`. The exit code is non-zero if any check fails or any page error, console error or 5xx happens. The one expected 400, when the used reset link is opened again, is exempted.
+
+Google sign-in stays off unless the backend has `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `GOOGLE_REDIRECT_URL` set. The journey doesn't cover it, because the OAuth round trip needs a real Google account.
 
 ## Onboarding live preview
 
-`node onboarding-preview.mjs` (same setup and env) checks that the wizard's phone preview mirrors
-what the owner types and ticks on every step, before anything is saved: name, initial and bio;
-each ticked starter section in order (untick removes it); pasted links; the picked theme; and the
-local starters including the preview-only "Add your profiles" placeholder. Screenshots land in
-`e2e/shots/preview-*.png`.
+`node onboarding-preview.mjs` (same setup; it doesn't need `BE_LOG`) checks that the wizard's phone preview mirrors what the owner types and ticks on every step, before anything is saved:
+- name, initial and bio;
+- each ticked starter section, in order (unticking removes it). Empty FAQ and testimonial starters show their "Add your first question" / "Add a customer quote" hints, which are preview-only;
+- pasted links;
+- the picked theme;
+- the claim step for an unconfirmed email: "Publish now" disabled, the confirm-email notice, and "Finish setup";
+- the local starters, including the preview-only "Add your profiles" placeholder.
+
+Screenshots land in `e2e/shots/preview-*.png`.
+
+Last run (2026-11-18, headless, fresh local BE `cb602d3` + FE `f07f76c` on main): journey **46/46**, onboarding-preview **8/8**, no errors.

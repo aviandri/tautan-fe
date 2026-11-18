@@ -1,5 +1,6 @@
 // Onboarding live preview: the phone preview must mirror what the owner types and ticks on every
-// step, before anything is saved. Runs against a live FE + BE, like journey.mjs.
+// step, before anything is saved. Runs against a live FE + BE, like journey.mjs. The new account's
+// email stays unconfirmed, so the last step must offer "Finish setup" (draft) instead of publishing.
 //
 //   cd e2e && npm install && npx playwright install chromium
 //   node onboarding-preview.mjs            # headless;  HEADED=1 to watch
@@ -62,9 +63,11 @@ await check("Profile: clearing the name brings the placeholder back", async () =
 });
 await page.getByRole("button", { name: /^continue$/i }).click();
 
+// Empty list starters (testimonials, FAQ) show an editor-only hint in the preview and nothing on
+// the public page (E2E 2026-11-18 #3), so the preview lists the hints in their place.
 await check("Cards: every ticked section shows in the preview, in order", async () => {
   await page.getByRole("heading", { name: "Pick your starting sections" }).waitFor();
-  const titles = ["Shop", "What customers say", "Be first to hear about new drops", "Good to know"];
+  const titles = ["Shop", "Add a customer quote", "Be first to hear about new drops", "Add your first question"];
   for (const t of titles) await preview().getByText(t).first().waitFor({ timeout: 5000 });
   if (await preview().getByText("Nothing here yet").count()) throw new Error('"Nothing here yet" shown');
   const text = await preview().innerText();
@@ -74,9 +77,9 @@ await check("Cards: every ticked section shows in the preview, in order", async 
 });
 await check("Cards: unticking removes the section at once, ticking brings it back", async () => {
   await page.getByRole("checkbox", { name: /FAQ/ }).uncheck();
-  await preview().getByText("Good to know").waitFor({ state: "detached", timeout: 2000 });
+  await preview().getByText("Add your first question").waitFor({ state: "detached", timeout: 2000 });
   await page.getByRole("checkbox", { name: /FAQ/ }).check();
-  await preview().getByText("Good to know").waitFor({ timeout: 2000 });
+  await preview().getByText("Add your first question").waitFor({ timeout: 2000 });
 });
 await check("Cards: a pasted link appears as a card", async () => {
   await page.getByLabel("Paste a link, video or email").fill("https://example.com/shop");
@@ -93,6 +96,15 @@ await check("Look: the picked theme and its colour palette apply to the preview 
   await page.waitForFunction(() => !!document.querySelector("aside .tp-palette"), null, { timeout: 3000 });
   await shot("3-look");
 });
+await page.getByRole("button", { name: /^continue$/i }).click();
+await check("Claim: an unconfirmed email can't publish yet; the step offers Finish setup (draft)", async () => {
+  await page.getByText("Claim your link").waitFor({ timeout: 10000 });
+  if (!(await page.getByRole("switch", { name: /publish now/i }).isDisabled())) throw new Error("Publish now is enabled");
+  await page.getByText(/confirm your email/i).first().waitFor({ timeout: 5000 });
+  await page.getByRole("button", { name: /finish setup/i }).waitFor({ timeout: 2000 });
+  if (await page.getByRole("button", { name: /publish my page/i }).count()) throw new Error('"Publish my page" shown');
+  await shot("3b-claim-unverified");
+});
 await page.close();
 
 await signup("local");
@@ -100,9 +112,9 @@ await page.getByRole("radio", { name: /^A local business/ }).click();
 await page.getByRole("button", { name: /^continue$/i }).click();
 await page.getByLabel("Name").fill("Warung Bu Sri");
 await page.getByRole("button", { name: /^continue$/i }).click();
-await check('Local starters render, including the "Add your profiles" placeholder', async () => {
+await check('Local starters render, including the "Add your profiles" and FAQ hints', async () => {
   await page.getByRole("heading", { name: "Pick your starting sections" }).waitFor();
-  for (const t of ["Request a booking", "Good to know", "Ask us anything", "Add your profiles"]) await preview().getByText(t).first().waitFor({ timeout: 8000 });
+  for (const t of ["Request a booking", "Add your first question", "Ask us anything", "Add your profiles"]) await preview().getByText(t).first().waitFor({ timeout: 8000 });
   await shot("4-local-cards");
 });
 
