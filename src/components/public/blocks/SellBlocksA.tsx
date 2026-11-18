@@ -105,7 +105,8 @@ function BuyButton({ d, blockId, env }: { d: ProductData; blockId: string; env: 
   }
   if (a.kind === "checkout") {
     // Payments (b): a plain link to our checkout page; the provider's page comes after.
-    if (d.price == null || !canCheckout(env, d.currency)) {
+    // payments (c): shipped items need the cart (coming next); not buyable alone yet
+    if (d.price == null || !canCheckout(env, d.currency) || a.delivery === "ship") {
       return (
         <span className={`${s.sellBtn} ${s.sellBtnOff}`} aria-disabled="true">
           Not available right now

@@ -50,7 +50,7 @@ function PlaceholderHint({ names, onInsert }: { names: string[]; onInsert: (p: s
 // ---------- product ----------
 
 
-function BuyAction({ value, onChange, errors, currency }: { value: ProductAction; onChange: (a: ProductAction) => void; errors: FieldErrors; currency?: string }) {
+function BuyAction({ value, onChange, errors, currency, inShop }: { value: ProductAction; onChange: (a: ProductAction) => void; errors: FieldErrors; currency?: string; inShop?: boolean }) {
   const set = (p: Partial<ProductAction>) => onChange({ ...value, ...p });
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-line p-3.5">
@@ -66,7 +66,28 @@ function BuyAction({ value, onChange, errors, currency }: { value: ProductAction
           { value: "checkout", label: "Checkout", title: "Visitors pay online, then download a file" },
         ]}
       />
-      {value.kind === "checkout" && (
+      {value.kind === "checkout" && inShop && (
+        <Segmented<"download" | "ship">
+          label="Buyers get"
+          size="sm"
+          value={value.delivery === "ship" ? "ship" : "download"}
+          onChange={(d) => set({ delivery: d === "ship" ? "ship" : undefined })}
+          options={[
+            { value: "download", label: "A file", title: "A private download link after paying" },
+            { value: "ship", label: "A shipped item", title: "Buyers add it to a cart and give a shipping address" },
+          ]}
+        />
+      )}
+      {value.kind === "checkout" && value.delivery === "ship" && inShop && (
+        <>
+          <p className="text-[13px] text-muted">
+            Buyers can add it to a cart with other products, choose how many, and enter a shipping address. You&apos;ll see the address in Orders, where you mark it shipped.
+          </p>
+          <CheckoutHint currency={currency ?? "IDR"} ships />
+        </>
+      )}
+      {errors.delivery && <p className="text-[13px] text-danger">{errors.delivery}</p>}
+      {value.kind === "checkout" && !(value.delivery === "ship" && inShop) && (
         <>
           <FileUploadField
             label="File buyers get"
@@ -171,6 +192,7 @@ function ProductFields<T extends Omit<ProductData, "schedule">>({
   errors,
   autoFocus,
   currency,
+  inShop,
   children,
 }: {
   data: T;
@@ -178,6 +200,7 @@ function ProductFields<T extends Omit<ProductData, "schedule">>({
   errors: FieldErrors;
   autoFocus?: boolean;
   currency?: Currency;
+  inShop?: boolean;
   children?: React.ReactNode;
 }) {
   const set = (p: Partial<T>) => onChange({ ...data, ...p });
@@ -203,7 +226,7 @@ function ProductFields<T extends Omit<ProductData, "schedule">>({
         onChange={(b) => set({ badge: (b || undefined) as T["badge"] } as Partial<T>)}
         options={[{ value: "", label: "None" }, ...PRODUCT_BADGES.map((b) => ({ value: b, label: BADGE_LABEL[b] }))]}
       />
-      <BuyAction value={data.action} onChange={(action) => set({ action } as Partial<T>)} errors={sub(errors, "action")} currency={currency ?? data.currency} />
+      <BuyAction value={data.action} onChange={(action) => set({ action } as Partial<T>)} errors={sub(errors, "action")} currency={currency ?? data.currency} inShop={inShop} />
       <MoreOptions title="Description, options and stock" badge={data.description || data.variants?.length || data.stock_note ? <span className="size-1.5 rounded-full bg-brand" /> : undefined} defaultOpen={Object.keys(errors).some((k) => /^(description|variants|stock_note)/.test(k))}>
         <TextField label="Description" multiline value={data.description ?? ""} onChange={(description) => set({ description } as Partial<T>)} maxLength={1000} error={errors.description} />
         <VariantsEditor value={data.variants ?? []} onChange={(variants) => set({ variants } as Partial<T>)} errors={errors} />
@@ -297,7 +320,7 @@ export function ShopForm({ data, onChange, errors, autoFocus }: FormProps<"shop"
               </div>
               {expanded && (
                 <div className="flex flex-col gap-4 border-t border-line p-3">
-                  <ProductFields data={it} onChange={(next) => setItem(i, next)} errors={itemErrors} autoFocus={!it.name} />
+                  <ProductFields data={it} onChange={(next) => setItem(i, next)} errors={itemErrors} autoFocus={!it.name} inShop />
                   {categories.length > 0 && (
                     <Field label="Category">
                       {(p) => (
@@ -323,6 +346,17 @@ export function ShopForm({ data, onChange, errors, autoFocus }: FormProps<"shop"
           </Button>
         )}
       </div>
+      {items.some((it) => it.action.kind === "checkout" && it.action.delivery === "ship") && (
+        <MoneyField
+          label="Shipping fee"
+          value={data.shipping_fee}
+          currency={(items.find((it) => it.action.kind === "checkout")?.currency as Currency | undefined) ?? "IDR"}
+          onChange={(shipping_fee) => set({ shipping_fee })}
+          error={errors.shipping_fee}
+          placeholder="Free"
+          hint="Added once per order when the cart has something to ship. Leave it empty for free shipping."
+        />
+      )}
     </>
   );
 }

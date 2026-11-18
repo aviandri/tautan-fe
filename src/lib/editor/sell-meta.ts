@@ -15,7 +15,7 @@ import { COURIERS, MARKETPLACE_PLATFORMS, TIP_PLATFORMS, WA_ORDER_FIELDS } from 
 import { urlError } from "../url";
 import { compact, maxLen, plural, put, required, withSchedule, type BlockMeta, type FieldErrors } from "./meta-core";
 import { moneyError } from "../sell/money";
-import { paidPriceError } from "../sell/checkout";
+import { mixedCurrencyIndex, paidPriceError, shippingFeeError } from "../sell/checkout";
 import { e164Error } from "../sell/phone";
 import { detectMarketplace, detectTipPlatform, MARKETPLACES, TIPS } from "../sell/platforms-meta";
 
@@ -88,7 +88,7 @@ export function browserTz(): string {
 
 // ---------- product (also used for shop items) ----------
 
-function validateAction(a: ProductAction): { errors: FieldErrors; data: ProductAction } {
+function validateAction(a: ProductAction, inShop: boolean): { errors: FieldErrors; data: ProductAction } {
   const e: FieldErrors = {};
   const label = trim(a.label);
   put(e, "label", maxLen(label, 40));
@@ -102,6 +102,10 @@ function validateAction(a: ProductAction): { errors: FieldErrors; data: ProductA
     const t = trim(a.wa_template);
     put(e, "wa_template", maxLen(t, 500));
     if (t) out.wa_template = t;
+  } else if (a.kind === "checkout" && a.delivery === "ship") {
+    // payments (c): a physical shop item; nothing to download
+    if (inShop) out.delivery = "ship";
+    else put(e, "delivery", "Shipping works in a Shop card");
   } else if (a.kind === "checkout") {
     const url = trim(a.download?.url);
     if (!url) put(e, "download.url", "Upload the file buyers get");
@@ -116,7 +120,7 @@ function validateAction(a: ProductAction): { errors: FieldErrors; data: ProductA
 }
 
 /** Shared by product and shop items. Returns trimmed data without empty optionals. */
-export function validateProductCore<T extends Omit<ProductData, "schedule">>(d: T): { errors: FieldErrors; data: T } {
+export function validateProductCore<T extends Omit<ProductData, "schedule">>(d: T, inShop = false): { errors: FieldErrors; data: T } {
   const e: FieldErrors = {};
   const images = d.images.map((u) => u.trim()).filter(Boolean);
   if (images.length > LIMITS.images) put(e, "images", `Up to ${LIMITS.images} photos`);
@@ -147,7 +151,7 @@ export function validateProductCore<T extends Omit<ProductData, "schedule">>(d: 
 
   const stock_note = trim(d.stock_note);
   put(e, "stock_note", maxLen(stock_note, 60));
-  const action = validateAction(d.action);
+  const action = validateAction(d.action, inShop);
   nest(e, "action", action.errors);
   if (d.action.kind === "checkout") put(e, "price", paidPriceError(d.price, d.currency));
 
@@ -215,7 +219,7 @@ export const SELL_META: { [K in SellType]: BlockMeta<K> } = {
       if (d.items.length > LIMITS.shopItems) put(e, "items", `Up to ${LIMITS.shopItems} products`);
       const ids = new Set<string>();
       const items = d.items.map((it, i) => {
-        const r = validateProductCore(it);
+        const r = validateProductCore(it, true);
         nest(e, `items.${i}`, r.errors);
         let id = it.id;
         if (!/^[a-z0-9_-]{1,40}$/.test(id) || ids.has(id)) id = newItemId(ids);
@@ -224,7 +228,16 @@ export const SELL_META: { [K in SellType]: BlockMeta<K> } = {
         if (!out.category || !categories.includes(out.category)) delete out.category;
         return out;
       });
-      return { errors: e, data: compact({ ...d, title, categories: categories.length ? categories : undefined, items }, ["title", "categories"]) };
+      const odd = mixedCurrencyIndex(items);
+      if (odd >= 0) put(e, `items.${odd}.price`, "Products sold by checkout in one shop share a cart, so they need the same currency");
+      const ships = items.some((it) => it.action.kind === "checkout" && it.action.delivery === "ship");
+      const shipCurrency = items.find((it) => it.action.kind === "checkout")?.currency;
+      if (ships) put(e, "shipping_fee", shippingFeeError(d.shipping_fee, shipCurrency));
+      const shipping_fee = ships && d.shipping_fee ? d.shipping_fee : undefined;
+      return {
+        errors: e,
+        data: compact({ ...d, title, categories: categories.length ? categories : undefined, items, shipping_fee }, ["title", "categories", "shipping_fee"]),
+      };
     }),
   },
 

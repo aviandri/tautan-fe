@@ -374,6 +374,8 @@ export const ProductActionSchema = z.object({
   label: z.string().max(40).optional(),
   /** kind=checkout: the file delivered after payment. Editor only; never in public reads. */
   download: z.object({ url: z.string(), file_name: z.string().optional() }).optional(),
+  /** kind=checkout (payments c): "ship" = a physical shop item (cart, shipping address); absent = download */
+  delivery: z.enum(["download", "ship"]).optional(),
 });
 export type ProductAction = z.infer<typeof ProductActionSchema>;
 
@@ -418,6 +420,8 @@ export const ShopDataSchema = z.object({
   categories: z.array(z.string().max(30)).optional(),
   /** 1–60 */
   items: z.array(ShopItemSchema),
+  /** payments (c): flat fee per order when the cart has an item that ships (minor units, the shop's checkout currency) */
+  shipping_fee: money.optional(),
   ...schedule,
 });
 

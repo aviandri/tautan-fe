@@ -44,6 +44,8 @@ export function findPurchasable(blocks: Block[], blockId: string | undefined, it
   if (b.type === "product") p = b.data;
   else if (b.type === "shop" && itemId && ID.test(itemId)) p = b.data.items.find((it) => it.id === itemId);
   if (!p || p.action.kind !== "checkout" || p.price == null || p.badge === "sold_out") return null;
+  // payments (c): shipped items go through the cart checkout
+  if (p.action.delivery === "ship") return null;
   return {
     blockId: b.id,
     itemId: b.type === "shop" ? itemId : undefined,
