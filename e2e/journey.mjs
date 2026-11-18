@@ -1,14 +1,20 @@
-// End-to-end journey test for Tautan: owner signs up, onboards, builds a page, a visitor uses it,
-// and the owner checks Insights and Audience. Runs against a live FE + BE.
+// End-to-end journey test for Tautan: owner signs up, onboards (unverified → draft), confirms their
+// email from the link the backend mails, publishes, builds a page; a visitor uses it (poll, gate,
+// email sign-up, contact form → owner notification); the owner checks Insights and Audience, then
+// resets their password through the emailed link. Runs against a live FE + BE.
 //
 //   cd e2e && npm install && npx playwright install chromium
-//   HEADED=1 SLOWMO=350 node journey.mjs        # watch it in a real browser window
-//   node journey.mjs                            # headless
+//   cd tautan-be && make dev 2>&1 | tee /tmp/tautan-be.log          # BE with the log mail driver
+//   BE_LOG=/tmp/tautan-be.log HEADED=1 SLOWMO=350 node journey.mjs  # watch it in a real browser window
+//   BE_LOG=/tmp/tautan-be.log node journey.mjs                      # headless
 //
 // Env: BASE (default http://localhost:3000), API (default http://localhost:8080/api/v1),
+//      BE_LOG (required: the backend's log file, where the log mail driver prints confirm/reset links),
 //      HEADED=1 shows the browser, SLOWMO=<ms> slows every action, PAUSE=<ms> pause after each step (headed default 1200).
+// The FE needs REVALIDATE_SECRET set to the BE's, or published edits show up only after 60 s.
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
+import { BE_LOG, logMark, waitForMail } from './mail.mjs';
 
 const BASE = process.env.BASE || 'http://localhost:3000';
 const API = process.env.API || 'http://localhost:8080/api/v1';
@@ -53,6 +59,10 @@ function watch(page, tag, errs, third) {
   });
 }
 
+if (!BE_LOG) {
+  console.error('BE_LOG is not set. Run the backend with its output in a file (make dev 2>&1 | tee /tmp/tautan-be.log) and pass BE_LOG=/tmp/tautan-be.log');
+  process.exit(2);
+}
 const browser = await chromium.launch({ headless: !HEADED, slowMo: Number(process.env.SLOWMO || 0), args: ['--no-sandbox'] });
 const errs = [];
 
@@ -67,6 +77,7 @@ await p.goto(BASE + '/');
 await step(p, 'Landing page');
 ok('Landing page renders', (await p.locator('h1').first().innerText()).length > 5);
 
+const mark = logMark();
 await p.goto(BASE + '/signup');
 await p.locator('input[type=email]').fill(email);
 await p.locator('input[type=password]').first().fill(pw);
@@ -91,20 +102,15 @@ await p.getByRole('button', { name: /^continue$/i }).click();
 await p.getByText('Claim your link').waitFor();
 await p.getByLabel('Your page address').fill(user);
 await p.waitForTimeout(800);
-await step(p, 'Onboarding: claim your address');
-await p.getByRole('button', { name: /publish my page/i }).click();
-await p.waitForURL(/\/onboarding\/live/, { timeout: 15000 });
-await p.getByRole('heading', { name: /your page is live/i }).waitFor();
-await step(p, 'Onboarding: your page is live');
-ok('Live screen shows heading, username and Copy link',
-  (await p.getByRole('heading', { name: /your page is live/i }).count()) > 0 &&
-  (await p.locator('body').innerText()).includes(user) &&
-  (await p.getByRole('button', { name: /copy link/i }).count()) > 0);
-await p.getByRole('link', { name: /go to my dashboard/i }).or(p.getByRole('button', { name: /go to my dashboard/i })).first().click();
-await p.waitForURL(/dashboard/, { timeout: 15000 });
+await step(p, 'Onboarding: claim your address (email not confirmed yet)');
+// Email verification gates publishing (tautan-be #38): an unconfirmed owner finishes as a draft.
+const publishSwitch = p.getByRole('switch', { name: /publish now/i });
+ok('Unconfirmed owner can\'t publish from onboarding',
+  (await publishSwitch.isDisabled().catch(() => false)) && /confirm your email/i.test(await p.locator('body').innerText()));
+await p.getByRole('button', { name: /finish setup/i }).click();
+await p.waitForURL(/\/dashboard/, { timeout: 15000 });
 await p.waitForTimeout(1200);
-await step(p, 'Dashboard after publishing');
-ok('Onboarding → published → dashboard', true, user);
+await step(p, 'Dashboard: draft, confirm-email notice');
 
 const tok = (await (await fetch(API + '/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password: pw }) })).json()).access_token;
 const api = async (m, path, body) => {
@@ -112,8 +118,32 @@ const api = async (m, path, body) => {
   const t = await r.text(); let j; try { j = JSON.parse(t); } catch { j = t; }
   return { s: r.status, j };
 };
-const me = (await api('GET', '/me')).j.profile;
-ok('Profile saved from onboarding', me.display_name === 'Dapur Nara' && me.is_published && me.theme?.preset === 'senja');
+let me = (await api('GET', '/me')).j;
+ok('Signed up unverified, page saved as a draft', me.user?.email_verified === false && me.profile.is_published === false);
+const early = await api('PATCH', '/profile', { is_published: true });
+ok('API refuses to publish before the email is confirmed', early.s >= 400 && early.j?.error?.code === 'email_unverified', `${early.s} ${early.j?.error?.code ?? ''}`);
+
+// ---------- confirm the email with the link from the signup mail (BE log mail driver)
+const verifyToken = await waitForMail({ to: email, since: mark, re: /verify-email\?token=([A-Za-z0-9_%-]+)/ });
+ok('Signup sent a confirmation email', !!verifyToken);
+const vp = await oc.newPage();
+watch(vp, 'owner', errs);
+await vp.goto(`${BASE}/verify-email?token=${verifyToken}`);
+await vp.getByRole('heading', { name: /email confirmed/i }).waitFor({ timeout: 15000 });
+await step(vp, 'Email confirmed (link from the mail)');
+await vp.close();
+me = (await api('GET', '/me')).j;
+ok('Email is confirmed', me.user?.email_verified === true);
+
+// ---------- publish from the dashboard
+await p.bringToFront();
+await p.reload();
+await p.getByRole('button', { name: /^publish page$/i }).click({ timeout: 15000 });
+await p.getByText(/your page is live/i).first().waitFor({ timeout: 15000 });
+await step(p, 'Dashboard: published');
+me = (await api('GET', '/me')).j;
+ok('Published from the dashboard after confirming', me.profile.is_published === true, user);
+ok('Profile saved from onboarding', me.profile.display_name === 'Dapur Nara' && me.profile.theme?.preset === 'senja');
 
 // ---------- EDITOR: product card through the Add a card dialog
 await p.getByRole('button', { name: /^add card$/i }).click();
@@ -150,6 +180,7 @@ await add('media_kit', { updated_at: '2026-11-01', platforms: [{ platform: 'tikt
 await add('events', { mode: 'weekly', tz: 'Asia/Jakarta', weekly: [{ days: ['fri'], start: '20:00', duration_min: 120, platform: 'tiktok', title: 'Live restock' }] });
 await add('poll', { question: 'Which flavour next?', show_results: 'after_vote', options: [{ label: 'Pandan' }, { label: 'Ube' }] });
 await add('link', { title: 'Members-only recipe', url: 'https://example.com/recipe' }, { gate: { kind: 'password', password: 'kue12345', message: 'Enter the password from my story' } });
+await add('contact_form', { title: 'Custom cake orders', button_label: 'Send' });
 await p.reload();
 await p.waitForTimeout(1500);
 await step(p, 'Editor with all the new cards');
@@ -209,6 +240,20 @@ await v.getByRole('button', { name: /subscribe|join|sign up/i }).first().click()
 await v.waitForTimeout(1500);
 await step(v, 'Visitor: subscribed by email');
 ok('Email sign-up confirmed', /on the list|thank|subscribed/i.test(await text()));
+// contact form → the owner gets a notification email (tautan-be #40)
+const markContact = logMark();
+const cf = v.locator('form[aria-label="Custom cake orders"]');
+await cf.scrollIntoViewIfNeeded();
+await cf.getByLabel('Name').fill('Sari');
+await cf.getByLabel('Email').fill(`sari${stamp}@test.example`);
+await cf.getByLabel('Message').fill('Can you do a 3-tier pandan cake for 40 people on Saturday?');
+await step(v, 'Visitor: contact form filled');
+await cf.getByRole('button', { name: /^send$/i }).click();
+await v.getByText(/message sent/i).first().waitFor({ timeout: 10000 }).catch(() => {});
+await step(v, 'Visitor: message sent');
+ok('Contact form confirms the message', /message sent/i.test(await text()));
+const note = await waitForMail({ to: email, since: markContact, subject: 'New response', re: /subject="?([^"]+)"?/ }).catch((e) => e.message);
+ok('Owner is emailed about the new message', /New response/.test(note), note.slice(0, 90));
 ok('No third-party requests from the public page', third.length === 0, third.slice(0, 3).join(' | '));
 
 // ---------- OWNER: Insights + Audience
@@ -228,6 +273,42 @@ for (const [path, title, re] of [
   await step(p, title);
   ok(`${title.replace('Owner: ', '')} page renders`, re.test(await p.locator('body').innerText()));
 }
+
+// ---------- RESET PASSWORD (logged out, link from the email)
+const rc = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+const r = await rc.newPage();
+watch(r, 'reset', errs);
+const markReset = logMark();
+await r.goto(BASE + '/forgot-password');
+await r.getByLabel('Email').fill(email);
+await step(r, 'Forgot password');
+await r.getByRole('button', { name: /send reset link/i }).click();
+await r.getByRole('heading', { name: /check your email/i }).waitFor({ timeout: 10000 });
+ok('Forgot password says to check your email', true);
+const resetToken = await waitForMail({ to: email, since: markReset, re: /reset-password\?token=([A-Za-z0-9_%-]+)/ });
+ok('Reset email sent with a link', !!resetToken);
+const pw2 = 'e2e-new-password-456';
+await r.goto(`${BASE}/reset-password?token=${resetToken}`);
+await r.getByRole('heading', { name: /choose a new password/i }).waitFor();
+await r.locator('input[autocomplete="new-password"]').nth(0).fill(pw2);
+await r.getByLabel('Confirm password').fill(pw2);
+await step(r, 'Choose a new password');
+await r.getByRole('button', { name: /save and log in/i }).click();
+await r.waitForURL(/\/dashboard/, { timeout: 15000 });
+await step(r, 'Logged in with the new password');
+ok('Reset logs in and lands on the dashboard', true);
+const login = async (password) => (await fetch(API + '/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) })).status;
+ok('New password works, old one doesn\'t', (await login(pw2)) === 200 && (await login(pw)) === 401);
+// reusing the link: the API answers 400 invalid_token, which the browser logs as a console error;
+// that one is expected, so it is dropped from the error list below
+const errsBeforeReuse = errs.length;
+await r.goto(`${BASE}/reset-password?token=${resetToken}`);
+await r.locator('input[autocomplete="new-password"]').nth(0).fill('e2e-third-password-789');
+await r.getByLabel('Confirm password').fill('e2e-third-password-789');
+await r.getByRole('button', { name: /save and log in/i }).click();
+await r.getByRole('heading', { name: /link has expired/i }).waitFor({ timeout: 10000 }).catch(() => {});
+ok('A reset link works only once', /link has expired/i.test(await r.locator('body').innerText()));
+errs.splice(errsBeforeReuse, errs.length - errsBeforeReuse, ...errs.slice(errsBeforeReuse).filter((e) => !/^reset console: .*status of 400/.test(e)));
 
 console.log('\nERRORS:', errs.length ? '\n' + errs.slice(0, 15).join('\n') : 'none');
 const passed = results.filter((r) => r[0] === 'PASS').length;
