@@ -18,6 +18,9 @@ import {
   Segmented,
   ToggleRow,
 } from "./fields-extra";
+import { MoneyField } from "./sell/sell-fields";
+import { CheckoutHint } from "./sell/CheckoutHint";
+import { isPrivateUpload } from "@/lib/sell/checkout";
 import dynamic from "next/dynamic";
 
 // Card-type forms load on demand (code split per family), so the editor's first load stays small.
@@ -391,15 +394,51 @@ function FolderForm({ data, onChange, autoFocus }: FormProps<"folder">) {
 }
 
 function FileForm({ data, onChange, errors, autoFocus }: FormProps<"file">) {
+  const selling = data.price !== undefined;
+  const currency = data.currency ?? "IDR";
   return (
     <>
       <FileUploadField
         label="File"
         value={data}
         error={errors.url}
+        kind={selling ? "private" : "file"}
         onUploaded={(r) => onChange({ ...data, ...r, title: data.title || (r.file_name ?? "").replace(/\.[a-z0-9]+$/i, "") })}
       />
-      <TextField label="Title" value={data.title} onChange={(title) => onChange({ ...data, title })} placeholder="Free guide (PDF)" maxLength={120} error={errors.title} autoFocus={autoFocus} />
+      <TextField label="Title" value={data.title} onChange={(title) => onChange({ ...data, title })} placeholder={selling ? "Lightroom preset pack" : "Free guide (PDF)"} maxLength={120} error={errors.title} autoFocus={autoFocus} />
+      <ToggleRow
+        label="Sell this file"
+        hint="Visitors pay before they can download it."
+        checked={selling}
+        onChange={(on) => {
+          if (on) return onChange({ ...data, price: Number.NaN, currency });
+          // A private deliverable can't be a free download (/uploads never serves it).
+          const cleared = isPrivateUpload(data.url) ? { url: "", file_name: undefined, size: undefined } : {};
+          onChange({ ...data, ...cleared, price: undefined, currency: undefined });
+        }}
+      />
+      {!selling && isPrivateUpload(data.url) && (
+        <p className="text-[13px] text-muted">This file was uploaded privately for sale. Upload it again to give it away for free.</p>
+      )}
+      {selling && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <MoneyField label="Price" value={data.price} currency={currency} onChange={(price) => onChange({ ...data, price: price ?? Number.NaN })} error={errors.price} />
+            <Segmented<"IDR" | "USD">
+              label="Currency"
+              size="sm"
+              value={currency}
+              // amounts are minor units, so Rp 85.000 isn't $85,000.00: start the price again
+              onChange={(c) => onChange({ ...data, currency: c, ...(c !== currency ? { price: Number.NaN } : {}) })}
+              options={[
+                { value: "IDR", label: "IDR" },
+                { value: "USD", label: "USD" },
+              ]}
+            />
+          </div>
+          <CheckoutHint currency={currency} fileUrl={data.url} />
+        </>
+      )}
     </>
   );
 }

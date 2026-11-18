@@ -15,6 +15,7 @@ import { COURIERS, MARKETPLACE_PLATFORMS, TIP_PLATFORMS, WA_ORDER_FIELDS } from 
 import { urlError } from "../url";
 import { compact, maxLen, plural, put, required, withSchedule, type BlockMeta, type FieldErrors } from "./meta-core";
 import { moneyError } from "../sell/money";
+import { paidPriceError } from "../sell/checkout";
 import { e164Error } from "../sell/phone";
 import { detectMarketplace, detectTipPlatform, MARKETPLACES, TIPS } from "../sell/platforms-meta";
 
@@ -101,6 +102,10 @@ function validateAction(a: ProductAction): { errors: FieldErrors; data: ProductA
     const t = trim(a.wa_template);
     put(e, "wa_template", maxLen(t, 500));
     if (t) out.wa_template = t;
+  } else if (a.kind === "checkout") {
+    const url = trim(a.download?.url);
+    if (!url) put(e, "download.url", "Upload the file buyers get");
+    else out.download = { url, ...(trim(a.download?.file_name) ? { file_name: trim(a.download?.file_name) } : {}) };
   } else {
     out.marketplace = a.marketplace;
     out.url = trim(a.url);
@@ -144,6 +149,7 @@ export function validateProductCore<T extends Omit<ProductData, "schedule">>(d: 
   put(e, "stock_note", maxLen(stock_note, 60));
   const action = validateAction(d.action);
   nest(e, "action", action.errors);
+  if (d.action.kind === "checkout") put(e, "price", paidPriceError(d.price, d.currency));
 
   const data = compact(
     { ...d, images, name, description, stock_note, variants: variants.length ? variants : undefined, action: action.data },

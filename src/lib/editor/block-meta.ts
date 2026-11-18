@@ -34,6 +34,7 @@ import { ENGAGE_META } from "./engage-meta";
 import { LAYOUT_META } from "./layout-meta";
 import { DONATE_PLATFORMS, TEXT_STYLES } from "../constants";
 import { prettyUrl, urlError } from "../url";
+import { isPrivateUpload, paidPriceError } from "../sell/checkout";
 
 export type { BlockMeta, FieldErrors } from "./meta-core";
 export { validateSchedule } from "./meta-core";
@@ -224,7 +225,10 @@ export const BLOCK_META: { [K in BlockType]: BlockMeta<K> } = {
       put(e, "url", d.url ? urlError(d.url, true) : "Upload a file");
       put(e, "title", required(d.title));
       put(e, "file_name", maxLen(d.file_name, 200));
-      return { errors: e, data: compact({ ...d, title: d.title.trim() }, ["file_name", "size"]) };
+      if (d.price !== undefined) put(e, "price", paidPriceError(d.price, d.currency));
+      else if (isPrivateUpload(d.url)) put(e, "url", "This file was uploaded privately for sale. Upload it again to give it away for free.");
+      const sold = d.price !== undefined ? { currency: d.currency ?? "IDR" } : { currency: undefined };
+      return { errors: e, data: compact({ ...d, ...sold, title: d.title.trim() }, ["file_name", "size", "price", "currency"]) };
     }),
   },
   discount_code: {
