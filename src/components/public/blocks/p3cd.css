@@ -724,13 +724,44 @@
   background: color-mix(in srgb, var(--t-btn-bg) 15%, transparent);
 }
 .tpx [data-p="steps"] {
-  margin: 0 0 10px;
-  padding-left: 20px;
-  line-height: 1.7;
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  counter-reset: gs;
+}
+.tpx [data-p="steps"] li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  line-height: 1.45;
+  counter-increment: gs;
+}
+.tpx [data-p="steps"] li::before {
+  content: counter(gs);
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--t-btn-bg) 18%, transparent);
 }
 .tpx [data-p="steps"] a {
   color: inherit;
   font-weight: 650;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.tpx [data-p="steps"] a::after {
+  content: "\2009\2197";
+  content: "\2009\2197" / "";
+  text-decoration: none;
+  display: inline-block;
 }
 
 /* gate stub */
