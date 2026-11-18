@@ -127,6 +127,18 @@ export function themeFromPreset(id: string): Theme {
 
 export const DEFAULT_THEME: Theme = themeFromPreset(DEFAULT_PRESET);
 
+/** True when id is one of the presets the picker shows. */
+export const isPresetId = (id: string | undefined | null) => PRESETS.some((p) => p.preset === id);
+
+/**
+ * Onboarding's Look step pre-selects a tile: a theme that isn't one of the
+ * presets (new accounts start with the API's "classic") becomes the default
+ * preset, saved on Continue. Returns null when the stored theme already is one.
+ */
+export function lookStepDraft(theme: Theme | undefined | null): Theme | null {
+  return isPresetId(theme?.preset) ? null : themeFromPreset(DEFAULT_PRESET);
+}
+
 /** True when the stored theme differs from its preset (it has advanced overrides). */
 export function hasOverrides(theme: Theme): boolean {
   const p = getPreset(theme.preset);

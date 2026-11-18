@@ -32,7 +32,7 @@ function Meta({ block, taps }: { block: Block; taps?: number }) {
         </span>
       ) : taps ? (
         <span className="shrink-0">
-          · <b className="font-semibold text-foreground">{taps.toLocaleString("en-US")}</b> taps
+          · <b className="font-semibold text-foreground">{taps.toLocaleString("en-US")}</b> {taps === 1 ? "tap" : "taps"}
         </span>
       ) : null}
       {state && (

@@ -249,3 +249,16 @@ describe("inner tiles (shop items, marketplace/order rows, rate card, events, po
     expect(css.match(/background: var\(--t-inner-mix\)/g)?.length).toBeGreaterThanOrEqual(11);
   });
 });
+
+describe("onboarding look step default (E2E finding #6)", () => {
+  it("pre-selects the default preset for a non-preset theme", async () => {
+    const { lookStepDraft, DEFAULT_PRESET, isPresetId } = await import("../theme/presets");
+    expect(lookStepDraft({ preset: "classic" } as never)?.preset).toBe(DEFAULT_PRESET);
+    expect(lookStepDraft(undefined)?.preset).toBe(DEFAULT_PRESET);
+    expect(isPresetId(DEFAULT_PRESET)).toBe(true);
+  });
+  it("keeps a theme that already is a preset", async () => {
+    const { lookStepDraft, themeFromPreset } = await import("../theme/presets");
+    expect(lookStepDraft(themeFromPreset("kertas"))).toBeNull();
+  });
+});
