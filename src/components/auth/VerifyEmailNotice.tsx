@@ -48,7 +48,7 @@ export function VerifyEmailNotice({ email, variant = "banner" }: { email: string
     >
       <MailCheck className="size-4 shrink-0" aria-hidden />
       <p className="min-w-0 flex-1">
-        <b>Confirm your email to publish.</b> We sent a link to <span className="font-medium">{email}</span>.
+        <b>Confirm your email to publish.</b> We sent a link to <span className="font-medium [overflow-wrap:anywhere]">{email}</span>.
       </p>
       <Button type="button" size="sm" variant="secondary" onClick={resend} loading={sending}>
         Resend link

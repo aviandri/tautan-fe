@@ -106,7 +106,7 @@ function SettingsInner({ profile, user }: { profile: Profile; user: User }) {
   return (
     <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-4 pb-10 pt-2 sm:px-7 lg:flex-row lg:items-start">
       <SettingsNav />
-      <div className="grid min-w-0 flex-1 items-start gap-[14px] xl:grid-cols-2">
+      <div className="grid min-w-0 flex-1 grid-cols-1 items-start gap-[14px] xl:grid-cols-2">
 
       <Section
         title="Profile"

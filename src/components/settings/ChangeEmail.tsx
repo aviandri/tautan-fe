@@ -83,7 +83,7 @@ export function ChangeEmail({ user, actions }: { user: User; actions: React.Reac
       {pending && !open && (
         <Alert tone="info">
           <p>
-            We sent a link to <strong className="font-semibold">{pending}</strong>. Your email changes once you open it (within 24
+            We sent a link to <strong className="font-semibold [overflow-wrap:anywhere]">{pending}</strong>. Your email changes once you open it (within 24
             hours).
           </p>
           <div className="mt-2 flex flex-wrap gap-2">

@@ -74,7 +74,7 @@ export function EmailChangeLink({ kind }: { kind: "confirm" | "revert" }) {
       <>
         <h1 className={h1}>Email changed</h1>
         <p className={lead}>
-          You now sign in with <strong className="font-semibold text-foreground">{state.email}</strong>. We signed out your other devices and let your old address know.
+          You now sign in with <strong className="font-semibold text-foreground [overflow-wrap:anywhere]">{state.email}</strong>. We signed out your other devices and let your old address know.
         </p>
         <Link href="/dashboard/settings" className={cta}>
           Go to Settings
@@ -84,7 +84,7 @@ export function EmailChangeLink({ kind }: { kind: "confirm" | "revert" }) {
       <>
         <h1 className={h1}>Your email is back</h1>
         <p className={lead}>
-          Your account uses <strong className="font-semibold text-foreground">{state.email}</strong> again, and every other device is signed out. Someone else may know your password, so reset it now.
+          Your account uses <strong className="font-semibold text-foreground [overflow-wrap:anywhere]">{state.email}</strong> again, and every other device is signed out. Someone else may know your password, so reset it now.
         </p>
         <Link href={`/forgot-password?email=${encodeURIComponent(state.email)}`} className={cta}>
           Reset my password
