@@ -1,13 +1,13 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, ExternalLink, RefreshCw } from "lucide-react";
+import { Check, Copy, ExternalLink, RefreshCw, Truck } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Alert, Button, cx, Spinner } from "@/components/ui";
 import { toast } from "@/components/ui/toast";
 import { errorMessage } from "@/lib/editor/queries";
-import { eventLabel, ordersApi, PROVIDER_NAME, type OrderDetail as Detail } from "@/lib/orders";
+import { addressLines, eventLabel, ordersApi, PROVIDER_NAME, type Order, type OrderDetail as Detail } from "@/lib/orders";
 import { formatMoney } from "@/lib/sell/money";
 import { dateTimeFormat, relativeTime } from "@/lib/time";
 import { OrderStatusBadge } from "./Orders";
@@ -59,12 +59,20 @@ export function OrderDetail({ id, embedded = false }: { id: string; embedded?: b
               <span className="shrink-0">{money(it.unit_amount * it.quantity)}</span>
             </li>
           ))}
+          {o.fulfilment && (
+            <li className="flex justify-between gap-3">
+              <span>Shipping</span>
+              <span className="shrink-0">{o.shipping_fee ? money(o.shipping_fee) : "Free"}</span>
+            </li>
+          )}
           <li className="flex justify-between gap-3 border-t border-line pt-2 font-bold">
             <span>Total</span>
             <span>{money(o.amount)}</span>
           </li>
         </ul>
       </div>
+
+      {o.fulfilment && <Shipping o={o} />}
 
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
         <dt className="text-muted">Created</dt>
@@ -151,6 +159,86 @@ export function OrderDetail({ id, embedded = false }: { id: string; embedded?: b
           ))}
         </ol>
       </div>
+    </div>
+  );
+}
+
+/** Payments (c): where to send it, and marking it shipped (the buyer gets one email). */
+function Shipping({ o }: { o: Order }) {
+  const qc = useQueryClient();
+  const [tracking, setTracking] = useState(o.tracking);
+  const [copied, setCopied] = useState(false);
+  const ship = useMutation({
+    mutationFn: () => ordersApi.ship(o.id, tracking.trim()),
+    onSuccess: (d) => {
+      qc.setQueryData<Detail>(["order", o.id], d);
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      toast.success(o.fulfilment === "shipped" ? "Tracking number saved" : "Marked shipped. We emailed the buyer.");
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+  const lines = o.shipping ? addressLines(o.shipping) : [];
+  const shipped = o.fulfilment === "shipped";
+  const canShip = o.status === "paid";
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-line p-4">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 text-[15px] font-semibold">
+          <Truck className="size-4" aria-hidden /> Ship to
+        </h3>
+        <span className={cx("rounded-full px-2.5 py-1 text-[12px] font-semibold", shipped ? "bg-ok-soft text-ok" : canShip ? "bg-butter text-warn" : "bg-sunken text-ink-2")}>
+          {shipped ? "Shipped" : canShip ? "To ship" : "Not paid"}
+        </span>
+      </div>
+      {lines.length ? (
+        <>
+          <address className="whitespace-pre-line text-[15px] not-italic leading-relaxed">{lines.join("\n")}</address>
+          {o.shipping?.notes && <p className="text-[13px] text-muted">Note: {o.shipping.notes}</p>}
+          <Button
+            size="sm"
+            variant="secondary"
+            className="self-start"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(lines.join("\n"));
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              } catch {
+                toast.error("Couldn't copy. Select the address and copy it.");
+              }
+            }}
+          >
+            {copied ? <Check className="size-3.5 text-brand" /> : <Copy className="size-3.5" />} Copy address
+          </Button>
+        </>
+      ) : (
+        <p className="text-[13px] text-muted">The address was cleared because this order was never paid.</p>
+      )}
+      {canShip && (
+        <form
+          className="flex flex-col gap-2 sm:flex-row sm:items-end"
+          onSubmit={(e) => {
+            e.preventDefault();
+            ship.mutate();
+          }}
+        >
+          <label className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <span className="text-[13px] font-medium">Tracking number (optional)</span>
+            <input
+              value={tracking}
+              onChange={(e) => setTracking(e.target.value)}
+              maxLength={100}
+              placeholder="JNE, J&T, SiCepat…"
+              className="h-10 rounded-xl border border-line bg-surface px-3 font-mono text-[14px] focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10"
+            />
+          </label>
+          <Button size="sm" type="submit" loading={ship.isPending} disabled={shipped && tracking.trim() === o.tracking}>
+            {shipped ? "Save tracking" : "Mark shipped"}
+          </Button>
+        </form>
+      )}
+      {shipped && o.shipped_at && <p className="text-[13px] text-muted">Shipped {dateTimeFormat.format(new Date(o.shipped_at))}. The buyer was emailed once; changing the tracking number doesn&apos;t email them again.</p>}
+      {!shipped && canShip && <p className="text-[13px] text-muted">Marking it shipped emails the buyer, with the tracking number if you add one.</p>}
     </div>
   );
 }
