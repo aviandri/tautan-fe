@@ -19,6 +19,8 @@ import type {
   UploadResult,
   ApiErrorBody,
   AuthResponse,
+  AuthProviders,
+  GoogleAuthResponse,
   Block,
   ContactSubmission,
   CreateBlockInput,
@@ -204,6 +206,13 @@ export const api = {
       request<void>("/auth/logout", { method: "POST", auth: false }).finally(() =>
         tokenStore.set(null),
       ),
+    /** P2-8: which sign-in providers the API has configured. */
+    providers: () => request<AuthProviders>("/auth/providers", { auth: false }),
+    /** P2-8: a browser navigation target (not a fetch). The API redirects to Google. */
+    googleStartUrl: `${API_BASE}/auth/google/start`,
+    /** P2-8: redeem Google's code; the API checks state against its cookie. */
+    googleCallback: (b: { code: string; state: string }) =>
+      request<GoogleAuthResponse>("/auth/google/callback", { method: "POST", body: b, auth: false }).then(withToken),
     usernameAvailable: (u: string, signal?: AbortSignal) =>
       request<{ available: boolean }>(
         `/auth/username-available?u=${encodeURIComponent(u)}`,

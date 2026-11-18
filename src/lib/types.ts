@@ -837,6 +837,14 @@ export interface AuthResponse {
   user: User;
   profile: Profile;
 }
+/** P2-8: POST /auth/google/callback answers like /auth/login plus is_new_user (201 when true). */
+export interface GoogleAuthResponse extends AuthResponse {
+  is_new_user: boolean;
+}
+/** P2-8: GET /auth/providers. Show a provider's button only when its flag is true. */
+export interface AuthProviders {
+  google: boolean;
+}
 export interface MeResponse {
   user: User;
   profile: Profile;

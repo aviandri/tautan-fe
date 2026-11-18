@@ -182,6 +182,8 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
 
   function route() {
     // ----- auth -----
+    // P2-8: the mock has no Google round trip, so the button stays hidden.
+    if (p === "/auth/providers") return ok({ google: false });
     if (p === "/auth/username-available") {
       const u = (url.searchParams.get("u") ?? "").toLowerCase();
       const reserved = ["admin", "dashboard", "login", "signup", "api", "settings"];
