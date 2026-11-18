@@ -28,7 +28,7 @@ export interface Order {
   items: OrderItem[];
   amount: number;
   currency: Currency;
-  provider: "xendit" | "midtrans" | "stripe";
+  provider: "xendit" | "midtrans" | "stripe" | "fake";
   mode: "sandbox" | "live";
   provider_ref: string | null;
   downloads: number;
@@ -91,7 +91,7 @@ export const FILTERS: { value: OrderFilter; label: string }[] = [
   { value: "refunded", label: "Refunded" },
 ];
 
-export const PROVIDER_NAME = { xendit: "Xendit", midtrans: "Midtrans", stripe: "Stripe" } as const;
+export const PROVIDER_NAME = { xendit: "Xendit", midtrans: "Midtrans", stripe: "Stripe", fake: "Fake (dev)" } as const;
 
 /** "Rp 85.000 (Format: EPUB)" style summary of an order's items. */
 export function itemsSummary(items: OrderItem[]): string {

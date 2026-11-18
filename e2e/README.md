@@ -5,6 +5,12 @@ One script that walks the whole product against a running app:
 - The owner confirms the email from the link the backend mails, publishes from the dashboard, and adds cards.
 - A phone visitor uses the page: WhatsApp buy link, poll, password unlock, email sign-up, and a contact form, which emails the owner.
 - The owner checks Insights, Audience, Design and Settings.
+- The owner sells a file using the backend's **dev-only fake payment provider**, so no provider keys are needed:
+  - The owner connects "Fake (dev only)" in Settings → Payments and uploads a priced file card.
+  - A buyer checks out and lands on the test checkout page, then presses Pay. The order page shows Paid, the download link serves the file, and the receipt email carries the order link.
+  - A second attempt presses Fail and gets "not paid" with no download.
+  - The owner's Orders API and page show both orders.
+  - The fake provider exists only when the backend's `APP_ENV` isn't `production` (tautan-be `docs/SPEC.md` → "Dev-only `fake` provider").
 - Finally the owner resets their password through the emailed link: the new password works, the old one doesn't, and the link is single-use.
 
 Kept out of the app's package.json on purpose, so it doesn't touch the app's lockfile or bundle.
@@ -40,4 +46,4 @@ Google sign-in stays off unless the backend has `GOOGLE_CLIENT_ID`, `GOOGLE_CLIE
 
 Screenshots land in `e2e/shots/preview-*.png`.
 
-Last run (2026-11-18, headless, fresh local BE `cb602d3` + FE `f07f76c` on main): journey **46/46**, onboarding-preview **8/8**, no errors.
+Last run (2026-11-18, headless, fresh local BE with the fake provider (tautan-be#47) + FE from this branch): journey **57/57**, no errors.

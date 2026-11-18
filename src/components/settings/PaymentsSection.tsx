@@ -308,9 +308,11 @@ function WebhookUrl({ p, mode }: { p: ProviderSettings; mode: PaymentMode }) {
             ))}
           </span>
         )}{" "}
-        <a href={info.dashboard[mode]} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 font-medium text-brand underline-offset-2 hover:underline">
-          Open {info.name} <ExternalLink className="size-3" aria-hidden />
-        </a>
+        {info.dashboard && (
+          <a href={info.dashboard[mode]} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 font-medium text-brand underline-offset-2 hover:underline">
+            Open {info.name} <ExternalLink className="size-3" aria-hidden />
+          </a>
+        )}
       </div>
     </div>
   );

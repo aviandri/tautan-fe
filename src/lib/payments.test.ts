@@ -45,6 +45,11 @@ describe("keyErrors", () => {
     expect(keyErrors("midtrans", "sandbox", "Mid-server-1", "").secret_key).toMatch(/production key/);
     expect(keyErrors("stripe", "sandbox", "sk_test 1", "").secret_key).toMatch(/spaces/);
   });
+  it("checks the dev-only fake provider's keys", () => {
+    expect(keyErrors("fake", "sandbox", "fake_dev", "")).toEqual({});
+    expect(keyErrors("fake", "sandbox", "sk_test_1", "").secret_key).toMatch(/fake_/);
+    expect(keyErrors("fake", "live", "fake_dev", "").secret_key).toMatch(/sandbox-only/);
+  });
 });
 
 describe("providerInput", () => {

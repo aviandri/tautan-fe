@@ -884,7 +884,7 @@ export interface PageResponse {
   payments?: PagePayments | null;
 }
 export interface PagePayments {
-  providers: { provider: "xendit" | "midtrans" | "stripe"; currencies: string[] }[];
+  providers: { provider: "xendit" | "midtrans" | "stripe" | "fake"; currencies: string[] }[];
   /** union of the providers' currencies ("IDR", "USD") */
   currencies: string[];
 }
