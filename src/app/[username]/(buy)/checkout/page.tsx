@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { API_URL, assetUrl } from "@/lib/api";
-import { checkoutErrorMessage, eligibleProviders, findPurchasable, PROVIDER_LABEL } from "@/lib/buy";
+import { checkoutErrorMessage, findPurchasable, parseCartQuery, providerLabel, providersFor, resolveCart } from "@/lib/buy";
 import { getPublicPageCached } from "@/lib/get-public-page";
 import { formatMoney } from "@/lib/sell/money";
 import { Seller, sellerName } from "../seller";
+import { CartCheckout } from "./cart";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false, follow: false } };
 
@@ -23,8 +24,10 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   if (result.kind === "moved") permanentRedirect(`/${result.to}/checkout?${new URLSearchParams(q as Record<string, string>).toString()}`);
   if (result.kind !== "page") notFound();
   const { profile, blocks, payments } = result.data;
-  const item = findPurchasable(blocks, one(q.block), one(q.item));
-  const providers = item ? eligibleProviders(payments, item.currency) : [];
+  // payments (c): a shop card checks out as a cart (one item or many)
+  const cart = blocks.some((b) => b.id === one(q.block) && b.type === "shop") ? resolveCart(blocks, one(q.block), parseCartQuery(q)) : null;
+  const item = cart ? null : findPurchasable(blocks, one(q.block), one(q.item));
+  const providers = item ? providersFor(payments, item.currency, item.price) : [];
   const error = checkoutErrorMessage(one(q.error));
   const seller = sellerName(profile);
   const image = assetUrl(item?.image);
@@ -33,7 +36,9 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
     <main className="tb-wrap">
       <Seller profile={profile} />
       <div className="tb-card">
-        {!item ? (
+        {cart ? (
+          <CartCheckout username={profile.username} seller={seller} cart={cart} payments={payments} q={q} />
+        ) : !item ? (
           <>
             <h1 className="tb-h1">This item isn&apos;t available</h1>
             <p className="tb-sub">It may have been removed or taken off sale.</p>
@@ -108,14 +113,14 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                       <label key={p} className="tb-radio" style={{ marginBottom: 8 }}>
                         <input type="radio" name="provider" value={p} defaultChecked={i === 0} required />
                         <span>
-                          <b>{PROVIDER_LABEL[p].methods}</b>
-                          <span>via {PROVIDER_LABEL[p].name}</span>
+                          <b>{providerLabel(p).methods}</b>
+                          <span>via {providerLabel(p).name}</span>
                         </span>
                       </label>
                     ))}
                   </fieldset>
                 ) : (
-                  <p className="tb-hint">Pay with {PROVIDER_LABEL[providers[0]].methods}, on {PROVIDER_LABEL[providers[0]].name}&apos;s secure page.</p>
+                  <p className="tb-hint">Pay with {providerLabel(providers[0]).methods}, on {providerLabel(providers[0]).name}&apos;s secure page.</p>
                 )}
 
                 <button className="tb-btn" type="submit">

@@ -6,6 +6,7 @@ import { formatMoney } from "@/lib/sell/money";
 import { MARKETPLACES } from "@/lib/sell/platforms";
 import { DEFAULT_PRODUCT_TEMPLATE, fillTemplate, waLink } from "@/lib/sell/wa";
 import { canCheckout, checkoutHref, mediaFor, track, type PageEnv } from "../env";
+import { cartHref } from "@/lib/buy";
 import { Img } from "../Img";
 import { WaOrderIsland } from "../islands";
 import { s } from "../cls";
@@ -105,8 +106,7 @@ function BuyButton({ d, blockId, env }: { d: ProductData; blockId: string; env: 
   }
   if (a.kind === "checkout") {
     // Payments (b): a plain link to our checkout page; the provider's page comes after.
-    // payments (c): shipped items need the cart (coming next); not buyable alone yet
-    if (d.price == null || !canCheckout(env, d.currency) || a.delivery === "ship") {
+    if (d.price == null || !canCheckout(env, d.currency) || (a.delivery === "ship" && !(d as ShopItem).id)) {
       return (
         <span className={`${s.sellBtn} ${s.sellBtnOff}`} aria-disabled="true">
           Not available right now
@@ -114,6 +114,23 @@ function BuyButton({ d, blockId, env }: { d: ProductData; blockId: string; env: 
       );
     }
     const itemId = (d as ProductData & { id?: string }).id;
+    if (itemId) {
+      // Payments (c): shop items go in the shop's cart. The lazy cart runtime (runtime-cart) takes
+      // the click; without JS the link opens the checkout with just this item.
+      return (
+        <a
+          className={s.sellBtn}
+          href={cartHref(env.username, blockId, [{ item: itemId, qty: 1, options: {} }])}
+          rel="nofollow"
+          data-cart-add={itemId}
+          data-cart-price={d.price}
+          data-cart-ship={a.delivery === "ship" ? "1" : undefined}
+          {...track(blockId, "add_to_cart")}
+        >
+          {a.label || "Add to cart"}
+        </a>
+      );
+    }
     return (
       <a className={s.sellBtn} href={checkoutHref(env, blockId, itemId)} rel="nofollow" {...track(blockId, "buy")}>
         {a.label || "Buy now"}
@@ -187,7 +204,7 @@ function ProductBody({ d, blockId, uid, env, priority, sizes }: { d: ProductData
           <div className={s.sellChips}>
             {v.options.map((o, oi) => (
               <label key={oi} className={s.sellChip}>
-                <input type="radio" name={`${uid}-v${gi}`} value={o} defaultChecked={oi === 0} data-variant />
+                <input type="radio" name={`${uid}-v${gi}`} value={o} defaultChecked={oi === 0} data-variant={v.name} />
                 <span>{o}</span>
               </label>
             ))}
@@ -255,6 +272,17 @@ export function ShopBlock({ block, env }: { block: BlockOf<"shop">; env: PageEnv
           );
         })}
       </ul>
+      {items.some((it) => it.action.kind === "checkout" && it.price != null && canCheckout(env, it.currency)) ? (
+        <div className={s.cartBar} data-cart-bar={block.id} data-cart-currency={items.find((it) => it.action.kind === "checkout")?.currency ?? "IDR"} hidden>
+          <a className={s.cartBarLink} href={`/${env.username}/checkout?block=${encodeURIComponent(block.id)}`} rel="nofollow" data-cart-go>
+            <ShoppingBag aria-hidden />
+            <span>
+              <span data-cart-n>0</span> in cart · <span data-cart-total />
+            </span>
+            <b>Checkout</b>
+          </a>
+        </div>
+      ) : null}
       {items.map((it) => (
         <dialog key={it.id} id={`${rootId}-${it.id}`} className={s.sellSheet} aria-label={it.name}>
           <div className={s.sell} data-product>
