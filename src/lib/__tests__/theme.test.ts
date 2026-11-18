@@ -201,6 +201,22 @@ describe("palettes (themes v3)", () => {
     expect(["link", "product", "media_kit", "poll", "faq"].map((t) => byType(t)?.index)).toEqual([1, 2, 3, 4, 5]);
     expect(makeSurfacer("by_type", 4)("faq")?.index).toBe(1);
   });
+
+  it("a locked (gated) button card keeps its surface but not button-ish, so its unlock button stays on the accent", () => {
+    for (const type of ["link", "file", "booking", "folder"]) {
+      const cyc = makeSurfacer("cycle", 5);
+      expect(cyc(type)).toEqual({ index: 1, button: true });
+      expect(cyc(type, true)).toEqual({ index: 2, button: false }); // still advances the cycle
+    }
+    expect(makeSurfacer("by_type", 5)("link", true)).toEqual({ index: 1, button: false });
+  });
+
+  it("every preset's accent stands out from each card surface (the gate/giveaway buttons)", () => {
+    for (const p of PRESETS) {
+      const pal = resolvePalette(resolveTheme(themeFromPreset(p.preset)))!;
+      for (const s of pal.surfaces) expect(contrast(pal.accent.bg, s.bg), `${p.preset} accent on ${s.bg}`).toBeGreaterThanOrEqual(3);
+    }
+  });
 });
 
 describe("inner tiles (shop items, marketplace/order rows, rate card, events, podcast, media kit)", () => {

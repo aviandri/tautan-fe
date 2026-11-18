@@ -27,13 +27,17 @@ export interface SurfaceAssignment {
   button: boolean;
 }
 
-/** A stateful assigner for one page render: call it for each card in order. */
-export function makeSurfacer(mode: PaletteMode, count: number): (type: string) => SurfaceAssignment | null {
+/**
+ * A stateful assigner for one page render: call it for each card in order. A locked card (card-level
+ * gate) keeps its surface but is never button-ish: it renders as a stub with its own unlock button,
+ * which must stay on the accent instead of taking the card's surface colour (E2E 2026-11-18 #2).
+ */
+export function makeSurfacer(mode: PaletteMode, count: number): (type: string, locked?: boolean) => SurfaceAssignment | null {
   let i = 0;
   const n = Math.max(1, Math.min(6, count));
-  return (type) => {
+  return (type, locked = false) => {
     if (NO_SURFACE.has(type)) return null;
     const idx = mode === "by_type" ? (FAMILY[type] ?? 4) % n : i++ % n;
-    return { index: idx + 1, button: BUTTONISH.has(type) };
+    return { index: idx + 1, button: BUTTONISH.has(type) && !locked };
   };
 }
