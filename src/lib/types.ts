@@ -82,6 +82,8 @@ export const UserSchema = z.object({
   identities: z.array(z.string()).optional(),
   /** Unverified accounts can't publish an unpublished page (403 email_unverified). */
   email_verified: z.boolean().optional(),
+  /** Email the owner about new form responses and contact messages (default on). */
+  notify_submissions: z.boolean().optional(),
 });
 export type User = z.infer<typeof UserSchema>;
 

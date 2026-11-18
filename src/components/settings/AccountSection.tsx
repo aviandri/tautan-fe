@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { PasswordField } from "@/components/auth/PasswordField";
+import { ToggleRow } from "@/components/editor/fields-extra";
 import { Alert, Button } from "@/components/ui";
 import { toast } from "@/components/ui/toast";
 import { api, ApiError } from "@/lib/api";
@@ -27,6 +28,20 @@ export function AccountSection({ user }: { user: User }) {
   // Older API builds don't send has_password: assume a password exists.
   const needsPassword = user.has_password === false;
   const removedNotice = needsPassword && params.get("notice") === "password_removed";
+
+  // Older API builds omit the flag: hide the toggle rather than guess.
+  const notify = user.notify_submissions;
+  async function setNotify(v: boolean) {
+    const prev = notify;
+    qc.setQueryData<MeResponse | null>(qk.me, (m) => (m ? { ...m, user: { ...m.user, notify_submissions: v } } : m));
+    try {
+      await api.setNotifications({ submissions: v });
+      toast.success(v ? "We'll email you about new messages and responses." : "Submission emails are off.");
+    } catch {
+      qc.setQueryData<MeResponse | null>(qk.me, (m) => (m ? { ...m, user: { ...m.user, notify_submissions: prev } } : m));
+      toast.error("Couldn't save. Check your connection.");
+    }
+  }
 
   function markHasPassword() {
     qc.setQueryData<MeResponse | null>(qk.me, (m) => (m ? { ...m, user: { ...m.user, has_password: true } } : m));
@@ -78,6 +93,19 @@ export function AccountSection({ user }: { user: User }) {
           {!needsPassword && <li className="rounded-full bg-sunken px-3 py-1 font-medium">Email and password</li>}
         </ul>
       </div>
+
+      {notify !== undefined && (
+        <ToggleRow
+          label="Email me about new submissions"
+          hint={
+            user.email_verified === false
+              ? "Contact messages and form responses. Starts once your email is confirmed."
+              : "Contact messages and form responses, sent as they arrive. Reply to answer the visitor."
+          }
+          checked={notify}
+          onChange={setNotify}
+        />
+      )}
 
       {needsPassword && (
         <div className="flex flex-col gap-3">
