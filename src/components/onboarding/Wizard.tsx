@@ -28,6 +28,7 @@ import { isUnverified } from "@/lib/verify-email";
 import { VerifyEmailNotice } from "@/components/auth/VerifyEmailNotice";
 import type { Block, ImportPreview, OnboardingIntent, Profile, Theme } from "@/lib/types";
 import { isTempUsername } from "@/lib/constants";
+import { lookStepDraft } from "@/lib/theme/presets";
 import { useUsernameCheck } from "@/lib/use-username-check";
 
 export const STEPS = ["start", "profile", "sections", "theme", "claim"] as const;
@@ -80,6 +81,13 @@ export function Wizard({ profile }: { profile: Profile }) {
     ...(themeDraft ? { theme: themeDraft } : {}),
   };
   const idx = STEPS.indexOf(step);
+  // Look step: never leave nothing selected (E2E finding #6).
+  useEffect(() => {
+    if (step === "theme" && !themeDraft) {
+      const d = lookStepDraft(profile.theme);
+      if (d) setThemeDraft(d);
+    }
+  }, [step, themeDraft, profile.theme]);
 
   const go = (s: Step, extra: Parameters<typeof update.mutate>[0] = {}) => {
     setStepState(s);
