@@ -15,6 +15,27 @@ export function paidPriceError(price: number | undefined, currency: string | und
   return null;
 }
 
+/** Payments (c): a shop's flat shipping fee. Empty or 0 is free shipping. */
+export function shippingFeeError(fee: number | undefined, currency: string | undefined): string | null {
+  if (fee == null || fee === 0) return null;
+  if (Number.isNaN(fee)) return "Enter an amount, like 20.000";
+  if (fee < 0) return "The fee can't be negative";
+  if ((currency || "IDR") === "IDR" && fee % 100 !== 0) return "Use whole rupiah";
+  return null;
+}
+
+/** Payments (c): checkout items of one shop go in one cart, so they share a currency. Index of the first odd one out. */
+export function mixedCurrencyIndex(items: { currency?: string; action: { kind: string } }[]): number {
+  let first: string | undefined;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].action.kind !== "checkout") continue;
+    const c = items[i].currency || "IDR";
+    if (first === undefined) first = c;
+    else if (c !== first) return i;
+  }
+  return -1;
+}
+
 /** Our private deliverable uploads (never served at /uploads). */
 export function isPrivateUpload(url: string | undefined): boolean {
   return !!url && /\/uploads\/p_[0-9a-f]{32}\.[a-z0-9]{2,5}$/.test(url.split("?")[0]);

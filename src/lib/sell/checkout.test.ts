@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getMeta } from "../editor/block-meta";
 import { validateProductCore } from "../editor/sell-meta";
-import { isOwnUpload, isPrivateUpload, paidPriceError } from "./checkout";
+import { isOwnUpload, isPrivateUpload, mixedCurrencyIndex, paidPriceError, shippingFeeError } from "./checkout";
 
 describe("paidPriceError", () => {
   it("accepts whole-rupiah IDR and USD cents", () => {
@@ -71,5 +71,49 @@ describe("free file with a private upload", () => {
   it("is rejected with a way out", () => {
     const r = getMeta("file").validate({ title: "x", url: "https://api.example/uploads/p_0123456789abcdef0123456789abcdef.pdf" });
     expect(r.errors.url).toMatch(/Upload it again/);
+  });
+});
+
+describe("shop items that ship (payments c)", () => {
+  const shop = getMeta("shop");
+  const ship = (id: string, extra: Record<string, unknown> = {}) => ({
+    id,
+    images: [],
+    name: id,
+    price: 5000000,
+    action: { kind: "checkout" as const, delivery: "ship" as const, download: { url: "/uploads/x.pdf" } },
+    ...extra,
+  });
+
+  it("needs no file, drops any download and keeps the delivery", () => {
+    const r = shop.validate({ items: [ship("tee")] });
+    expect(r.errors).toEqual({});
+    expect(r.data.items[0].action).toEqual({ kind: "checkout", delivery: "ship" });
+  });
+
+  it("isn't allowed on a single product card", () => {
+    const r = validateProductCore({ images: [], name: "Mug", price: 5000000, action: { kind: "checkout", delivery: "ship" } });
+    expect(r.errors["action.delivery"]).toMatch(/Shop card/);
+  });
+
+  it("checks the shipping fee and drops it when nothing ships", () => {
+    expect(shop.validate({ items: [ship("tee")], shipping_fee: 150 }).errors.shipping_fee).toBe("Use whole rupiah");
+    expect(shop.validate({ items: [ship("tee")], shipping_fee: 2000000 }).data.shipping_fee).toBe(2000000);
+    expect(shop.validate({ items: [ship("tee")], shipping_fee: 0 }).data).not.toHaveProperty("shipping_fee");
+    const digital = { ...ship("zine"), action: { kind: "checkout" as const, download: { url: "/uploads/z.pdf" } } };
+    expect(shop.validate({ items: [digital], shipping_fee: 2000000 }).data).not.toHaveProperty("shipping_fee");
+  });
+
+  it("wants one currency across checkout items", () => {
+    const r = shop.validate({ items: [ship("a"), ship("b", { currency: "USD", price: 500 })] });
+    expect(r.errors["items.1.price"]).toMatch(/same currency/);
+    expect(mixedCurrencyIndex([{ action: { kind: "whatsapp" }, currency: "USD" }, { action: { kind: "checkout" } }])).toBe(-1);
+  });
+
+  it("shippingFeeError", () => {
+    expect(shippingFeeError(undefined, "IDR")).toBeNull();
+    expect(shippingFeeError(Number.NaN, "IDR")).toMatch(/amount/);
+    expect(shippingFeeError(-100, "IDR")).toMatch(/negative/);
+    expect(shippingFeeError(150, "USD")).toBeNull();
   });
 });
