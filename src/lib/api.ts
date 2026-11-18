@@ -37,6 +37,7 @@ import type {
   PollResults,
   Question,
 } from "./types";
+import type { PaymentProvider, ProviderInput, ProvidersResponse, ProviderWriteResponse } from "./payments";
 
 export const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
@@ -225,6 +226,15 @@ export const api = {
   /** P2-8: add a password to a Google-only account (409 password_already_set otherwise). */
   setPassword: (new_password: string) =>
     request<void>("/me/password", { method: "PATCH", body: { new_password } }),
+  /** Payments (a): the creator's provider accounts. Keys are write-only. */
+  payments: {
+    list: () => request<ProvidersResponse>("/payments/providers"),
+    save: (provider: PaymentProvider, input: ProviderInput) =>
+      request<ProviderWriteResponse>(`/payments/providers/${provider}`, { method: "PUT", body: input }),
+    test: (provider: PaymentProvider) =>
+      request<ProviderWriteResponse>(`/payments/providers/${provider}/test`, { method: "POST" }),
+    remove: (provider: PaymentProvider) => request<void>(`/payments/providers/${provider}`, { method: "DELETE" }),
+  },
 
   profile: {
     update: (patch: ProfilePatch) =>
