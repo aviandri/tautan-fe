@@ -251,7 +251,9 @@ async function lead(form: HTMLFormElement, ctx: P3cdContext) {
     a.dataset.p = "download";
     a.textContent = "Download";
     a.rel = "noopener";
-    return done(form, form.dataset.done || "Here's your download.", a);
+    // The BE also emails a 7-day copy when it can (SMTP on, owner confirmed).
+    const msg = form.dataset.done || "Here's your download.";
+    return done(form, r.body?.emailed ? `${msg} We also emailed you the link.` : msg, a);
   }
   setStatus(form, errMsg(r));
 }
