@@ -224,6 +224,12 @@ export const api = {
     /** No auth: the emailed link may be opened on another device. */
     verifyEmail: (token: string) =>
       request<{ verified: boolean }>("/auth/verify-email", { method: "POST", body: { token }, auth: false }),
+    /** No auth: confirm a new account email; signs in (every other session ends). */
+    confirmEmailChange: (token: string) =>
+      request<AuthResponse>("/auth/email-change/confirm", { method: "POST", body: { token }, auth: false }).then(withToken),
+    /** No auth: the undo link from the old-address notice; signs in. */
+    revertEmailChange: (token: string) =>
+      request<AuthResponse>("/auth/email-change/revert", { method: "POST", body: { token }, auth: false }).then(withToken),
     usernameAvailable: (u: string, signal?: AbortSignal) =>
       request<{ available: boolean }>(
         `/auth/username-available?u=${encodeURIComponent(u)}`,
@@ -239,6 +245,10 @@ export const api = {
   /** Owner notification preferences. */
   setNotifications: (b: { submissions: boolean }) =>
     request<{ submissions: boolean }>("/me/notifications", { method: "PATCH", body: b }),
+  /** Sends a confirm link to the new address; nothing changes until it's used. */
+  requestEmailChange: (b: { new_email: string; password?: string }) =>
+    request<{ pending_email: string }>("/me/email", { method: "POST", body: b }),
+  cancelEmailChange: () => request<void>("/me/email/pending", { method: "DELETE" }),
   setPassword: (new_password: string) =>
     request<void>("/me/password", { method: "PATCH", body: { new_password } }),
   /** Payments (a): the creator's provider accounts. Keys are write-only. */

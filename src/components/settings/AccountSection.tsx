@@ -10,10 +10,11 @@ import { toast } from "@/components/ui/toast";
 import { api, ApiError } from "@/lib/api";
 import { qk, useLogout } from "@/lib/session";
 import type { MeResponse, User } from "@/lib/types";
+import { ChangeEmail } from "./ChangeEmail";
 import { Section } from "./section";
 
 /**
- * Email, sign-in methods and logout. A Google-only account (P2-8) can add a
+ * Email (and changing it), sign-in methods and logout. A Google-only account (P2-8) can add a
  * password here; changing an existing one isn't offered yet.
  */
 export function AccountSection({ user }: { user: User }) {
@@ -76,15 +77,14 @@ export function AccountSection({ user }: { user: User }) {
         ? { onSave: save, dirty: password.length > 0, saving, onReset: () => setPassword("") }
         : {})}
     >
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-sm font-medium">Email</p>
-          <p className="truncate text-sm text-muted">{user.email}</p>
-        </div>
-        <Button type="button" variant="secondary" size="sm" onClick={logout}>
-          Log out
-        </Button>
-      </div>
+      <ChangeEmail
+        user={user}
+        actions={
+          <Button type="button" variant="secondary" size="sm" onClick={logout}>
+            Log out
+          </Button>
+        }
+      />
 
       <div>
         <p className="text-sm font-medium">Sign-in methods</p>
