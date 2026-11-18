@@ -9,8 +9,9 @@ import { Button } from "./index";
  * While `dirty`, asks before the page is left: beforeunload for reloads/closing the tab, and an
  * in-app dialog for client-side link navigation (which never fires beforeunload). Render the
  * returned element once. `onSave` resolves true when saving worked; then the navigation proceeds.
+ * `onDiscard` runs when the user explicitly discards (e.g. to forget a stashed draft).
  */
-export function useLeaveGuard(dirty: boolean, onSave: () => Promise<boolean>) {
+export function useLeaveGuard(dirty: boolean, onSave: () => Promise<boolean>, onDiscard?: () => void) {
   const router = useRouter();
   const [target, setTarget] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -62,7 +63,16 @@ export function useLeaveGuard(dirty: boolean, onSave: () => Promise<boolean>) {
         <Button variant="secondary" size="sm" onClick={() => setTarget(null)} autoFocus>
           Keep editing
         </Button>
-        <Button variant="secondary" size="sm" onClick={() => target && go(target)} disabled={saving}>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            if (!target) return;
+            onDiscard?.();
+            go(target);
+          }}
+          disabled={saving}
+        >
           Discard changes
         </Button>
         <Button

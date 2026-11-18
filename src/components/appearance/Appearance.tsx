@@ -4,6 +4,7 @@ import { Eye, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLeaveGuard } from "@/components/ui/leave-guard";
+import { clearDraft, recoverDraft, stashDraft } from "@/lib/appearance/draft-store";
 import { PhonePreview } from "@/components/editor/preview/Preview";
 import { QrCard } from "@/components/qr";
 import { Group, SocialsEditor, ThemeEditor } from "@/components/theme";
@@ -64,7 +65,9 @@ export function Appearance() {
 function AppearanceInner({ profile, tabs: rawTabs, blocks }: { profile: Profile; tabs: Tab[]; blocks: Block[] }) {
   const update = useUpdateProfile();
   const saved = useMemo(() => fromProfile(profile), [profile]);
-  const [draft, setDraft] = useState<Draft>(saved);
+  // Back/Forward can't be intercepted (leave guard), so the draft survives in sessionStorage.
+  const [restored] = useState(() => recoverDraft(profile.id, saved));
+  const [draft, setDraft] = useState<Draft>(restored ?? saved);
   const [sheet, setSheet] = useState(false);
   const tabs = useMemo(() => [...rawTabs].sort(byPosition), [rawTabs]);
 
@@ -72,6 +75,11 @@ function AppearanceInner({ profile, tabs: rawTabs, blocks }: { profile: Profile;
   const socialsDirty =
     JSON.stringify(draft.socials) !== JSON.stringify(saved.socials) || draft.socials_position !== saved.socials_position;
   const dirty = themeDirty || socialsDirty;
+
+  useEffect(() => {
+    if (restored) toast.success("Restored your unsaved design changes. Save or discard them.");
+  }, [restored]);
+  useEffect(() => stashDraft(profile.id, saved, draft), [profile.id, saved, draft]);
 
   useEffect(() => {
     document.body.style.overflow = sheet ? "hidden" : "";
@@ -99,7 +107,8 @@ function AppearanceInner({ profile, tabs: rawTabs, blocks }: { profile: Profile;
     }
   };
   // Unsaved edits: ask before reloading/closing the tab and before in-app navigation (E2E #4).
-  const leaveGuard = useLeaveGuard(dirty, save);
+  // An explicit "Discard changes" also forgets the stashed draft (it would come back otherwise).
+  const leaveGuard = useLeaveGuard(dirty, save, () => clearDraft(profile.id));
 
   const uploadImage = async (file: File) => (await api.uploads.create(file)).url;
   const previewProfile: Profile = { ...profile, ...draft };
