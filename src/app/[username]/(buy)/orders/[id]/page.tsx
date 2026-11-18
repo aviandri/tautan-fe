@@ -59,7 +59,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
             <ul className="tb-list">
               {downloads.map((d) => (
                 <li key={d.index}>
-                  <a className="tb-dl" href={d.url} rel="noreferrer nofollow">
+                  <a className="tb-dl" href={safeHref(d.url)} rel="noreferrer nofollow">
                     <span>
                       <b>{d.name}</b>
                       <small>{d.file_name}</small>
