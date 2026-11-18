@@ -29,6 +29,7 @@ export const NAV = [
     label: "Audience",
     match: (p: string) => ["/dashboard/audience", "/dashboard/forms", "/dashboard/inbox"].some((x) => p.startsWith(x)),
   },
+  { href: "/dashboard/orders", label: "Orders", match: (p: string) => p.startsWith("/dashboard/orders") },
   { href: "/dashboard/settings", label: "Settings", match: (p: string) => p.startsWith("/dashboard/settings") },
 ] as const;
 
