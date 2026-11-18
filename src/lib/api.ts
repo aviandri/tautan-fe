@@ -236,6 +236,9 @@ export const api = {
   /** 202 {sent} or 200 {already_verified}; 429 rate_limited after 3/hour. */
   resendVerification: () =>
     request<{ sent?: boolean; already_verified?: boolean }>("/me/verification-email", { method: "POST" }),
+  /** Owner notification preferences. */
+  setNotifications: (b: { submissions: boolean }) =>
+    request<{ submissions: boolean }>("/me/notifications", { method: "PATCH", body: b }),
   setPassword: (new_password: string) =>
     request<void>("/me/password", { method: "PATCH", body: { new_password } }),
   /** Payments (a): the creator's provider accounts. Keys are write-only. */
