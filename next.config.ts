@@ -40,7 +40,25 @@ const nextConfig: NextConfig = {
   // Payments (b): order pages carry a capability token in ?t=; don't leak it in Referer or let
   // search engines keep it. Checkout pages aren't worth indexing either.
   async headers() {
+    // Security audit 2026-11 (L2/L3). Sent from Next so a Vercel deploy gets them too (the Caddyfile
+    // adds HSTS on the VPS). Signed-in and checkout screens can't be framed by other sites
+    // (clickjacking); public pages /[username] stay embeddable.
+    const noFrame = [
+      { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+    ];
+    const app = ["/", "/dashboard/:path*", "/onboarding/:path*", "/login", "/signup", "/forgot-password", "/reset-password", "/verify-email", "/confirm-email-change", "/revert-email-change", "/auth/:path*"];
     return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+        ],
+      },
+      ...app.map((source) => ({ source, headers: noFrame })),
+      { source: "/:username/checkout", headers: noFrame },
+      { source: "/:username/orders/:path*", headers: noFrame },
       { source: "/:username/orders/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }, { key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       { source: "/:username/checkout", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
     ];
