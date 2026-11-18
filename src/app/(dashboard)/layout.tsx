@@ -1,11 +1,13 @@
 "use client";
 
+import { VerifyEmailNotice } from "@/components/auth/VerifyEmailNotice";
 import { TopNav } from "@/components/dashboard/TopNav";
 import { Spinner } from "@/components/ui";
 import { Toaster } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { homeFor, useRequireSession } from "@/lib/session";
+import { isUnverified } from "@/lib/verify-email";
 import { Providers } from "../providers";
 import "../globals.css";
 
@@ -38,6 +40,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <div className={`flex min-h-dvh flex-col`} data-kartu-root>
       <TopNav profile={session.data.profile} />
+      {isUnverified(session.data.user) && <VerifyEmailNotice email={session.data.user.email} />}
       <main className="flex min-w-0 flex-1 flex-col">{children}</main>
       <Toaster />
     </div>

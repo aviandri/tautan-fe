@@ -80,6 +80,8 @@ export const UserSchema = z.object({
   /** P2-8: only GET /me sends these */
   has_password: z.boolean().optional(),
   identities: z.array(z.string()).optional(),
+  /** Unverified accounts can't publish an unpublished page (403 email_unverified). */
+  email_verified: z.boolean().optional(),
 });
 export type User = z.infer<typeof UserSchema>;
 
