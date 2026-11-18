@@ -209,7 +209,8 @@ export const api = {
     /** P2-8: which sign-in providers the API has configured. */
     providers: () => request<AuthProviders>("/auth/providers", { auth: false }),
     /** P2-8: a browser navigation target (not a fetch). The API redirects to Google. */
-    googleStartUrl: `${API_BASE}/auth/google/start`,
+    googleStartUrl: (username?: string | null) =>
+      `${API_BASE}/auth/google/start${username ? `?u=${encodeURIComponent(username)}` : ""}`,
     /** P2-8: redeem Google's code; the API checks state against its cookie. */
     googleCallback: (b: { code: string; state: string }) =>
       request<GoogleAuthResponse>("/auth/google/callback", { method: "POST", body: b, auth: false }).then(withToken),
@@ -221,6 +222,9 @@ export const api = {
   },
 
   me: () => request<MeResponse>("/me"),
+  /** P2-8: add a password to a Google-only account (409 password_already_set otherwise). */
+  setPassword: (new_password: string) =>
+    request<void>("/me/password", { method: "PATCH", body: { new_password } }),
 
   profile: {
     update: (patch: ProfilePatch) =>

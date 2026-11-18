@@ -7,6 +7,7 @@ import { GoogleButton } from "@/components/auth/GoogleButton";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { Alert, Button, Field, Input } from "@/components/ui";
 import { api, ApiError, USE_MOCK } from "@/lib/api";
+import { loginErrorMessage } from "@/lib/google-auth";
 import { safeNext, useAcceptAuth } from "@/lib/session";
 import { useRedirectIfSignedIn } from "@/lib/use-redirect-if-signed-in";
 
@@ -32,11 +33,9 @@ export function LoginForm() {
       router.replace(r.profile.onboarding && !r.profile.onboarding.completed ? "/onboarding" : safeNext(params.get("next")));
     } catch (err) {
       setError(
-        err instanceof ApiError && err.status === 401
-          ? "That email and password don't match."
-          : err instanceof ApiError
-            ? err.message
-            : "Something went wrong. Try again.",
+        err instanceof ApiError
+          ? loginErrorMessage(err.status, err.code, err.message)
+          : "Something went wrong. Try again.",
       );
       setSubmitting(false);
     }

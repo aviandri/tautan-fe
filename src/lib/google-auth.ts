@@ -82,10 +82,21 @@ export function takeNext(s: Store | null = store()): string | null {
 }
 
 /** New or unfinished accounts go to onboarding; others to `next` or the dashboard. */
+export const PASSWORD_REMOVED_LANDING = "/dashboard/settings?notice=password_removed#account";
+
 export function landingAfterGoogle(
-  r: { is_new_user?: boolean; profile: { onboarding?: { completed: boolean } | null } },
+  r: { is_new_user?: boolean; password_removed?: boolean; profile: { onboarding?: { completed: boolean } | null } },
   next: string | null,
 ): string {
   if (r.is_new_user || (r.profile.onboarding && !r.profile.onboarding.completed)) return "/onboarding";
+  // Explain why the old password stopped working, next to the form to add one.
+  if (r.password_removed) return PASSWORD_REMOVED_LANDING;
   return next ?? "/dashboard";
+}
+
+/** Login error copy; password_not_set means a Google-only account. */
+export function loginErrorMessage(status: number, code: string | undefined, fallback: string): string {
+  if (code === "password_not_set") return "This account signs in with Google. Use Continue with Google, then you can add a password in Settings.";
+  if (status === 401) return "That email and password don't match.";
+  return fallback;
 }

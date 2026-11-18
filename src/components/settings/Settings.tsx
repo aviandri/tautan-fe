@@ -5,14 +5,15 @@ import { useEffect, useRef, useState } from "react";
 import { UsernameStatusLine } from "@/components/auth/UsernameStatusLine";
 import { PUBLIC_HOST } from "@/components/brand";
 import { ImageField, TextField } from "@/components/editor/fields";
-import { Button, cx, Field, PrefixInput, Spinner, Switch } from "@/components/ui";
+import { cx, Field, PrefixInput, Spinner, Switch } from "@/components/ui";
 import { Section, sectionId, useSection } from "./section";
+import { AccountSection } from "./AccountSection";
 import { AnnouncementSection } from "./AnnouncementSection";
 import { toast } from "@/components/ui/toast";
 import { API_BASE, ApiError, assetUrl } from "@/lib/api";
 import { useUpdateProfile } from "@/lib/profile";
-import { useLogout, useSession } from "@/lib/session";
-import type { PageSettings, Profile, ProfilePatch } from "@/lib/types";
+import { useSession } from "@/lib/session";
+import type { PageSettings, Profile, ProfilePatch, User } from "@/lib/types";
 import { urlError } from "@/lib/url";
 import { compactSettings, LANGUAGES, settingsErrors } from "@/lib/settings";
 import { ToggleRow } from "@/components/editor/fields-extra";
@@ -47,12 +48,11 @@ function profileError(err: unknown): string {
 export function Settings() {
   const { data } = useSession();
   if (!data) return <Spinner />;
-  return <SettingsInner profile={data.profile} email={data.user.email} />;
+  return <SettingsInner profile={data.profile} user={data.user} />;
 }
 
-function SettingsInner({ profile, email }: { profile: Profile; email: string }) {
+function SettingsInner({ profile, user }: { profile: Profile; user: User }) {
   const update = useUpdateProfile();
-  const logout = useLogout();
   const [saving, setSaving] = useState<string | null>(null);
 
   const basics = useSection({
@@ -355,17 +355,7 @@ function SettingsInner({ profile, email }: { profile: Profile; email: string }) 
         />
       </Section>
 
-      <Section title="Account">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium">Email</p>
-            <p className="text-sm text-muted">{email}</p>
-          </div>
-          <Button variant="secondary" size="sm" onClick={logout}>
-            Log out
-          </Button>
-        </div>
-      </Section>
+      <AccountSection user={user} />
       </div>
     </div>
   );
