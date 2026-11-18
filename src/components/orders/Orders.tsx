@@ -8,7 +8,7 @@ import { Alert, Button, Card, cx, Spinner } from "@/components/ui";
 import { toast } from "@/components/ui/toast";
 import { downloadCsv } from "@/lib/api";
 import { errorMessage } from "@/lib/editor/queries";
-import { FILTERS, itemsSummary, ordersApi, PROVIDER_NAME, STATUS_LABEL, type Order, type OrderFilter, type OrderStatus } from "@/lib/orders";
+import { FILTERS, itemsSummary, needsShipping, ordersApi, PROVIDER_NAME, STATUS_LABEL, type Order, type OrderFilter, type OrderStatus } from "@/lib/orders";
 import { formatMoney, type Currency } from "@/lib/sell/money";
 import { relativeTime } from "@/lib/time";
 import { useMedia } from "@/lib/use-media";
@@ -104,7 +104,7 @@ export function Orders() {
 
       {!noneAtAll && (
         <div role="tablist" aria-label="Filter orders" className="flex flex-wrap gap-2.5">
-          {FILTERS.map((f) => (
+          {FILTERS.filter((f) => f.value !== "to_ship" || status === "to_ship" || (counts?.to_ship ?? 0) > 0).map((f) => (
             <button
               key={f.value}
               role="tab"
@@ -140,7 +140,7 @@ export function Orders() {
           </span>
           <p className="mt-3 text-[17px] font-bold">No orders yet</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
-            Connect a payment provider in Settings, then turn on &ldquo;Sell this file&rdquo; on a File card or pick Checkout on a Product card.
+            Connect a payment provider in Settings, then turn on &ldquo;Sell this file&rdquo; on a File card, or pick Checkout on a Product or Shop card.
           </p>
           <div className="mt-5 flex justify-center gap-2">
             <Link href="/dashboard/settings#payments" className="inline-flex h-[38px] items-center rounded-full bg-foreground px-4 text-sm font-semibold text-background">
@@ -211,7 +211,7 @@ function OrderRow({ o, selected, onSelect }: { o: Order; selected: boolean; onSe
           <span className="block truncate text-[13px] text-muted">
             <span className="font-mono">{o.code}</span>
             {o.mode === "sandbox" ? " · test" : ""}
-            <span className="sm:hidden"> · {STATUS_LABEL[o.status]}</span>
+            <span className="sm:hidden"> · {needsShipping(o) ? "To ship" : STATUS_LABEL[o.status]}</span>
           </span>
         </Link>
       </td>
@@ -219,6 +219,7 @@ function OrderRow({ o, selected, onSelect }: { o: Order; selected: boolean; onSe
       <td className={cx(cell, "whitespace-nowrap text-right font-semibold")}>{formatMoney(o.amount, o.currency)}</td>
       <td className={cx(cell, "hidden sm:table-cell")}>
         <OrderStatusBadge status={o.status} />
+        {needsShipping(o) && <span className="ml-2 inline-flex h-[26px] items-center rounded-full bg-butter px-2.5 text-[13px] font-semibold text-warn">To ship</span>}
         <span className="ml-2 hidden text-[12px] text-muted 2xl:inline">{PROVIDER_NAME[o.provider]}</span>
       </td>
       <td className={cx(cell, "hidden text-muted xl:table-cell", selected && "rounded-r-2xl")}>{relativeTime(o.created_at)}</td>

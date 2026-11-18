@@ -6,7 +6,8 @@ import { request } from "./api";
 import type { Currency } from "./sell/money";
 
 export type OrderStatus = "pending" | "paid" | "expired" | "failed" | "refunded";
-export type OrderFilter = "all" | OrderStatus;
+/** "to_ship" (payments c): paid orders with items still to ship */
+export type OrderFilter = "all" | OrderStatus | "to_ship";
 
 export interface OrderItem {
   block_id: string;
@@ -17,6 +18,19 @@ export interface OrderItem {
   unit_amount: number;
   quantity: number;
   file_name?: string;
+  /** payments (c): a physical shop item */
+  delivery?: "ship";
+}
+
+/** payments (c): the buyer's address; owner-only. */
+export interface ShippingAddress {
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+  postal_code: string;
+  country: string;
+  notes: string;
 }
 
 export interface Order {
@@ -36,6 +50,12 @@ export interface Order {
   expires_at: string;
   paid_at: string | null;
   refunded_at: string | null;
+  /** payments (c) */
+  shipping_fee: number;
+  shipping: ShippingAddress | null;
+  fulfilment: "unfulfilled" | "shipped" | null;
+  tracking: string;
+  shipped_at: string | null;
 }
 
 export interface OrdersPage {
@@ -66,12 +86,19 @@ function qs(p: Record<string, string | null | undefined>): string {
   return s ? `?${s}` : "";
 }
 
+/** The list/CSV query for a filter tab: "to_ship" is the fulfilment filter, the rest are statuses. */
+function filterParams(f: OrderFilter | undefined): Record<string, string | undefined> {
+  if (f === "to_ship") return { fulfilment: "unfulfilled" };
+  return { status: f === "all" ? undefined : f };
+}
+
 export const ordersApi = {
   list: (p: { status?: OrderFilter; q?: string; cursor?: string | null }) =>
-    request<OrdersPage>(`/orders${qs({ status: p.status === "all" ? undefined : p.status, q: p.q, cursor: p.cursor ?? undefined })}`),
+    request<OrdersPage>(`/orders${qs({ ...filterParams(p.status), q: p.q, cursor: p.cursor ?? undefined })}`),
   get: (id: string) => request<OrderDetail>(`/orders/${encodeURIComponent(id)}`),
   refresh: (id: string) => request<OrderDetail>(`/orders/${encodeURIComponent(id)}/refresh`, { method: "POST" }),
-  csvPath: (p: { status?: OrderFilter; q?: string }) => `/orders.csv${qs({ status: p.status === "all" ? undefined : p.status, q: p.q })}`,
+  csvPath: (p: { status?: OrderFilter; q?: string }) => `/orders.csv${qs({ ...filterParams(p.status), q: p.q })}`,
+  ship: (id: string, tracking: string) => request<OrderDetail>(`/orders/${encodeURIComponent(id)}/ship`, { method: "POST", body: { tracking } }),
 };
 
 export const STATUS_LABEL: Record<OrderStatus, string> = {
@@ -84,6 +111,7 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
 
 export const FILTERS: { value: OrderFilter; label: string }[] = [
   { value: "all", label: "All" },
+  { value: "to_ship", label: "To ship" },
   { value: "paid", label: "Paid" },
   { value: "pending", label: "Pending" },
   { value: "expired", label: "Expired" },
@@ -105,4 +133,16 @@ export function eventLabel(e: OrderEvent): string {
   const s = e.status as OrderStatus;
   const what = s in STATUS_LABEL ? STATUS_LABEL[s].toLowerCase() : "update";
   return `Provider reported ${what}${e.type ? ` · ${e.type}` : ""}`;
+}
+
+const COUNTRY: Record<string, string> = { ID: "Indonesia", MY: "Malaysia", SG: "Singapore", BN: "Brunei", PH: "Philippines", TH: "Thailand", VN: "Vietnam", TL: "Timor-Leste", AU: "Australia", JP: "Japan", KR: "South Korea", HK: "Hong Kong", TW: "Taiwan", NL: "Netherlands", GB: "United Kingdom", US: "United States" };
+
+/** The address as label lines, ready to copy onto a parcel. */
+export function addressLines(a: ShippingAddress): string[] {
+  return [a.name, a.phone, a.address, [a.city, a.postal_code].filter(Boolean).join(" "), COUNTRY[a.country] ?? a.country].filter(Boolean);
+}
+
+/** Paid and waiting to be shipped. */
+export function needsShipping(o: Pick<Order, "status" | "fulfilment">): boolean {
+  return o.status === "paid" && o.fulfilment === "unfulfilled";
 }
