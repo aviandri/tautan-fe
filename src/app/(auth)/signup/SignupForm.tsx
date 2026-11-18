@@ -75,7 +75,7 @@ export function SignupForm() {
         {withUsername ? "Your username becomes your page address. You can change it later." : "Email and a password for now. You choose your page address at the end."}
       </p>
 
-      <GoogleButton />
+      <GoogleButton username={withUsername ? username : null} />
 
       <form onSubmit={onSubmit} noValidate className="mt-7 flex flex-col gap-4">
         {formError && <Alert>{formError}</Alert>}

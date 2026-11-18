@@ -268,7 +268,8 @@ export const mockTransport: Transport = async (path, { method, body, token }) =>
     const { password: _pw, ...pubUser } = user;
     void _pw;
 
-    if (p === "/me") return ok({ user: pubUser, profile });
+    if (p === "/me") return ok({ user: { ...pubUser, has_password: true, identities: [] }, profile });
+    if (p === "/me/password" && method === "PATCH") return err(409, "password_already_set", "this account already has a password");
 
     if (p === "/profile" && method === "PATCH") {
       if (B.username && B.username !== profile.username && d.profiles.some((x) => x.username === B.username))

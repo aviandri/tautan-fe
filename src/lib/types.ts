@@ -77,6 +77,9 @@ export const UserSchema = z.object({
   id: z.string(),
   email: z.string(),
   created_at: z.string(),
+  /** P2-8: only GET /me sends these */
+  has_password: z.boolean().optional(),
+  identities: z.array(z.string()).optional(),
 });
 export type User = z.infer<typeof UserSchema>;
 
@@ -840,6 +843,8 @@ export interface AuthResponse {
 /** P2-8: POST /auth/google/callback answers like /auth/login plus is_new_user (201 when true). */
 export interface GoogleAuthResponse extends AuthResponse {
   is_new_user: boolean;
+  /** The first Google link removed an unverified password and ended other sessions. */
+  password_removed?: boolean;
 }
 /** P2-8: GET /auth/providers. Show a provider's button only when its flag is true. */
 export interface AuthProviders {

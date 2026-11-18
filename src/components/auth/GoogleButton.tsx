@@ -32,7 +32,16 @@ function GoogleMark() {
  * "Continue with Google" plus an "or" rule, rendered only when the API reports
  * Google as enabled (nothing while loading or when the check fails).
  */
-export function GoogleButton({ next, divider = true }: { next?: string | null; divider?: boolean }) {
+export function GoogleButton({
+  next,
+  username,
+  divider = true,
+}: {
+  next?: string | null;
+  /** signup?u=: the name typed on the landing page, suggested again in onboarding */
+  username?: string | null;
+  divider?: boolean;
+}) {
   const providers = useAuthProviders();
   const [leaving, setLeaving] = useState(false);
   // Coming back from Google with the Back button restores this page from the
@@ -55,7 +64,7 @@ export function GoogleButton({ next, divider = true }: { next?: string | null; d
           setLeaving(true);
           rememberNext(next ?? null);
           // A full navigation: the API sets its state cookie and redirects to Google.
-          window.location.assign(api.auth.googleStartUrl);
+          window.location.assign(api.auth.googleStartUrl(username));
         }}
       >
         {!leaving && <GoogleMark />}

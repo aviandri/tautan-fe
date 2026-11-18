@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { googleErrorMessage, landingAfterGoogle, parseCallbackParams, rememberNext, takeNext } from "./google-auth";
+import { googleErrorMessage, landingAfterGoogle, loginErrorMessage, parseCallbackParams, PASSWORD_REMOVED_LANDING, rememberNext, takeNext } from "./google-auth";
 
 function memStore() {
   const m = new Map<string, string>();
@@ -58,8 +58,20 @@ describe("landingAfterGoogle", () => {
     expect(landingAfterGoogle({ is_new_user: true, profile: done }, "/dashboard/x")).toBe("/onboarding");
     expect(landingAfterGoogle({ profile: { onboarding: { completed: false } } }, null)).toBe("/onboarding");
   });
+  it("explains a removed password in Settings, unless onboarding comes first", () => {
+    expect(landingAfterGoogle({ password_removed: true, profile: done }, "/dashboard/x")).toBe(PASSWORD_REMOVED_LANDING);
+    expect(landingAfterGoogle({ password_removed: true, profile: { onboarding: { completed: false } } }, null)).toBe("/onboarding");
+  });
   it("otherwise honours next", () => {
     expect(landingAfterGoogle({ is_new_user: false, profile: done }, "/dashboard/analytics")).toBe("/dashboard/analytics");
     expect(landingAfterGoogle({ profile: done }, null)).toBe("/dashboard");
+  });
+});
+
+describe("loginErrorMessage", () => {
+  it("points Google-only accounts at the Google button", () => {
+    expect(loginErrorMessage(401, "password_not_set", "x")).toMatch(/signs in with Google/);
+    expect(loginErrorMessage(401, "invalid_credentials", "x")).toMatch(/don't match/);
+    expect(loginErrorMessage(429, "rate_limited", "Slow down")).toBe("Slow down");
   });
 });
