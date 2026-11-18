@@ -3,10 +3,10 @@
 // email sign-up, contact form → owner notification); the owner checks Insights and Audience, sells a
 // file through the API's dev-only fake payment provider (buyer pays, downloads, gets a receipt; a
 // failed payment too; the owner sees the Orders page), then resets their password through the
-// emailed link. Runs against a live FE + BE (the BE must not run with APP_ENV=production).
+// emailed link. Runs against a live FE + BE started with PAYMENTS_FAKE=1 (dev-only; refused with APP_ENV=production).
 //
 //   cd e2e && npm install && npx playwright install chromium
-//   cd tautan-be && make dev 2>&1 | tee /tmp/tautan-be.log          # BE with the log mail driver
+//   cd tautan-be && PAYMENTS_FAKE=1 make dev 2>&1 | tee /tmp/tautan-be.log   # BE: log mail driver + fake payment provider
 //   BE_LOG=/tmp/tautan-be.log HEADED=1 SLOWMO=350 node journey.mjs  # watch it in a real browser window
 //   BE_LOG=/tmp/tautan-be.log node journey.mjs                      # headless
 //
@@ -120,6 +120,13 @@ const api = async (m, path, body) => {
   const t = await r.text(); let j; try { j = JSON.parse(t); } catch { j = t; }
   return { s: r.status, j };
 };
+// The payments section needs the backend's dev-only fake provider (PAYMENTS_FAKE=1); fail fast with a clear message.
+const provsAtStart = (await api('GET', '/payments/providers')).j;
+if (!provsAtStart.providers?.some((x) => x.provider === 'fake')) {
+  console.error('The backend doesn\'t offer the fake payment provider. Start it with PAYMENTS_FAKE=1 (and APP_ENV not production): PAYMENTS_FAKE=1 make dev');
+  await browser.close();
+  process.exit(2);
+}
 let me = (await api('GET', '/me')).j;
 ok('Signed up unverified, page saved as a draft', me.user?.email_verified === false && me.profile.is_published === false);
 const early = await api('PATCH', '/profile', { is_published: true });
