@@ -3,6 +3,7 @@
 import { Eye, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLeaveGuard } from "@/components/ui/leave-guard";
 import { PhonePreview } from "@/components/editor/preview/Preview";
 import { QrCard } from "@/components/qr";
 import { Group, SocialsEditor, ThemeEditor } from "@/components/theme";
@@ -72,14 +73,6 @@ function AppearanceInner({ profile, tabs: rawTabs, blocks }: { profile: Profile;
     JSON.stringify(draft.socials) !== JSON.stringify(saved.socials) || draft.socials_position !== saved.socials_position;
   const dirty = themeDirty || socialsDirty;
 
-  // Unsaved edits: ask before the tab closes. (In-app links are plain <Link>s; the save bar stays visible.)
-  useEffect(() => {
-    if (!dirty) return;
-    const h = (e: BeforeUnloadEvent) => e.preventDefault();
-    window.addEventListener("beforeunload", h);
-    return () => window.removeEventListener("beforeunload", h);
-  }, [dirty]);
-
   useEffect(() => {
     document.body.style.overflow = sheet ? "hidden" : "";
     return () => {
@@ -87,7 +80,7 @@ function AppearanceInner({ profile, tabs: rawTabs, blocks }: { profile: Profile;
     };
   }, [sheet]);
 
-  const save = async () => {
+  const save = async (): Promise<boolean> => {
     const patch: ProfilePatch = {};
     if (themeDirty) patch.theme = draft.theme;
     if (socialsDirty) {
@@ -99,10 +92,14 @@ function AppearanceInner({ profile, tabs: rawTabs, blocks }: { profile: Profile;
       const p = await update.mutateAsync(patch);
       setDraft(fromProfile(p));
       toast.success("Appearance saved");
+      return true;
     } catch (err) {
       toast.error(saveError(err));
+      return false;
     }
   };
+  // Unsaved edits: ask before reloading/closing the tab and before in-app navigation (E2E #4).
+  const leaveGuard = useLeaveGuard(dirty, save);
 
   const uploadImage = async (file: File) => (await api.uploads.create(file)).url;
   const previewProfile: Profile = { ...profile, ...draft };
@@ -117,7 +114,7 @@ function AppearanceInner({ profile, tabs: rawTabs, blocks }: { profile: Profile;
       <Button variant="secondary" size="sm" onClick={() => setDraft(saved)} disabled={update.isPending}>
         Discard
       </Button>
-      <Button variant="dark" size="sm" onClick={save} loading={update.isPending}>
+      <Button variant="dark" size="sm" onClick={() => void save()} loading={update.isPending}>
         Save design
       </Button>
     </div>
@@ -158,6 +155,7 @@ function AppearanceInner({ profile, tabs: rawTabs, blocks }: { profile: Profile;
         {dirty ? <div className="sticky bottom-5 w-full">{saveBar}</div> : null}
       </aside>
 
+      {leaveGuard}
       {/* below xl the save bar floats above the mobile nav, and a button opens the preview */}
       {dirty ? <div className="fixed inset-x-0 bottom-16 z-40 flex justify-center px-4 lg:bottom-6 xl:hidden"><div className="w-full max-w-md">{saveBar}</div></div> : null}
       <button
