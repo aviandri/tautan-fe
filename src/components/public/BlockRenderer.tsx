@@ -157,11 +157,11 @@ export function BlockList({ blocks, childrenOf, opts }: { blocks: Block[]; child
     <>
       {groupBlocks(blocks).map((it) => {
         if (it.kind === "group") {
-          const tiles = next ? new Map(it.blocks.map((b) => [b.id, surfaceClass(next(b.type))])) : null;
+          const tiles = next ? new Map(it.blocks.map((b) => [b.id, surfaceClass(next(b.type, !!b.locked))])) : null;
           return <LinkGroup key={`g-${it.blocks[0].id}`} layout={it.layout} blocks={it.blocks} env={opts.env} tileClass={tiles ? (b) => tiles.get(b.id) : undefined} />;
         }
         const card = <BlockRenderer key={it.block.id} block={it.block} childBlocks={childrenOf.get(it.block.id)} opts={opts} />;
-        const cls = next ? surfaceClass(next(it.block.type)) : undefined;
+        const cls = next ? surfaceClass(next(it.block.type, !!it.block.locked)) : undefined;
         return cls ? (
           <div key={it.block.id} className={cls}>
             {card}

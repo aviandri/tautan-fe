@@ -251,6 +251,10 @@ async function openCard(stub: HTMLElement, ctx: P3cdContext, body: UnlockBody) {
   const host = document.createElement("div");
   host.dataset.unlockToken = body.unlock_token;
   host.id = stub.id;
+  // The locked stub was rendered as a form card (no tp-sb, so its unlock button used the accent).
+  // Once open, a button-ish card (link, file, booking, folder) takes its palette surface again.
+  const type = (body.block as { type?: string } | null)?.type ?? "";
+  if (/\btp-s\d\b/.test(stub.parentElement?.className ?? "") && ["link", "file", "booking", "folder"].includes(type)) host.className = "tp-sb";
   stub.replaceWith(host);
   const m = await import("./unlock-render");
   m.renderUnlocked(host, body, ctx.username);
