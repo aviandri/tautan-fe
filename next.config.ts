@@ -32,6 +32,9 @@ function patchCssModules(rules: Rule[] | undefined) {
 }
 
 const nextConfig: NextConfig = {
+  // Self-hosted Docker image: NEXT_OUTPUT=standalone emits .next/standalone (server.js + only the
+  // node_modules it traces). Vercel and CI leave it unset and build the normal output.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   // Lets `next dev` and `next build` run side by side (e.g. NEXT_DIST_DIR=.next-dev pnpm dev).
   distDir: process.env.NEXT_DIST_DIR || ".next",
   webpack(config, { dev }) {

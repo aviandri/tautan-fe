@@ -8,6 +8,15 @@ export type PublicPageResult =
   | { kind: "moved"; to: string }
   | { kind: "missing" };
 
+/**
+ * Base URL for this server-side read. API_INTERNAL_URL (server-only, optional) lets a self-hosted
+ * FE reach the API over the private network (e.g. http://api:8080 in docker-compose) instead of
+ * going out through the public hostname, CDN and TLS. Browsers always use NEXT_PUBLIC_API_URL.
+ */
+const SERVER_API_BASE = process.env.API_INTERNAL_URL
+  ? `${process.env.API_INTERNAL_URL.replace(/\/$/, "")}/api/v1`
+  : API_BASE;
+
 /** Cache tag for one page; POST /api/revalidate (the BE's publish/edit webhook) calls revalidateTag on it. */
 export const profileTag = (username: string) => `profile:${username.toLowerCase()}`;
 
@@ -38,7 +47,7 @@ export async function getPublicPage(username: string): Promise<PublicPageResult>
       throw e;
     }
   }
-  const res = await fetch(`${API_BASE}/public/${encodeURIComponent(username)}`, {
+  const res = await fetch(`${SERVER_API_BASE}/public/${encodeURIComponent(username)}`, {
     redirect: "manual",
     headers: { Accept: "application/json" },
     // caching happens one level up (getPublicPageCached), around the whole result
