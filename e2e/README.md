@@ -52,4 +52,4 @@ Google sign-in stays off unless the backend has `GOOGLE_CLIENT_ID`, `GOOGLE_CLIE
 
 Screenshots land in `e2e/shots/preview-*.png`.
 
-Last run (2026-11-19, headless, local BE on main `19789a4` with `PAYMENTS_FAKE=1` + FE main with the public cart, fe#89): journey **67/67**, no errors. Without the flag it stops at the start with the PAYMENTS_FAKE message.
+Last run (2026-11-19, headless, local BE on main `19789a4` with `PAYMENTS_FAKE=1` + FE main `fc7e863` plus this branch): journey **67/67**, onboarding-preview **8/8**, no errors. Without the flag it stops at the start with the PAYMENTS_FAKE message.
