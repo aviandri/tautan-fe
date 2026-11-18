@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Alert, Button, Card, Spinner } from "@/components/ui";
 import { toast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
+import { drawToast } from "@/lib/giveaway-draw";
 import { errorMessage, useEditorData } from "@/lib/editor/queries";
 import { qk } from "@/lib/session";
 import { dateTimeFormat, relativeTime } from "@/lib/time";
@@ -56,13 +57,14 @@ function GiveawayRow({ block }: { block: BlockOf<"giveaway"> }) {
   const key = ["giveaway", block.id];
   const state = useQuery({ queryKey: key, queryFn: () => api.giveaways.get(block.id) });
   const [confirmRedraw, setConfirmRedraw] = useState(false);
+  const [notify, setNotify] = useState(true);
   const draw = useMutation({
-    mutationFn: () => api.giveaways.draw(block.id),
+    mutationFn: () => api.giveaways.draw(block.id, notify),
     onSuccess: (s) => {
       qc.setQueryData(key, s);
       qc.invalidateQueries({ queryKey: qk.editor }); // the card's public winner changed
       setConfirmRedraw(false);
-      toast.success(`Winner: ${s.winner?.name || s.winner?.email}`);
+      (notify && s.notified === false ? toast.error : toast.success)(drawToast(s, notify));
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -96,7 +98,7 @@ function GiveawayRow({ block }: { block: BlockOf<"giveaway"> }) {
               <p className="text-[12px] text-muted">
                 Drawn {relativeTime(winner.drawn_at)} · shown on your page as “{winner.display}”
                 <br />
-                Contact them by email to hand over the prize.
+                Arrange the prize with them by email.
               </p>
             </div>
           </div>
@@ -109,9 +111,15 @@ function GiveawayRow({ block }: { block: BlockOf<"giveaway"> }) {
               : entries === 0
                 ? "Nobody entered this giveaway."
                 : winner
-                  ? "Drawing again replaces the winner."
+                  ? "Drawing again replaces the winner. The previous winner isn't told."
                   : "Pick one entry at random. Each entry has the same chance."}
           </p>
+          {ended && entries > 0 && (
+            <label className="flex items-center gap-2 text-[13px]">
+              <input type="checkbox" className="size-4 accent-brand" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
+              Email the winner
+            </label>
+          )}
           {confirmRedraw ? (
             <span className="flex gap-1">
               <Button size="sm" loading={draw.isPending} onClick={() => draw.mutate()}>

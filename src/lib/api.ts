@@ -328,7 +328,9 @@ export const api = {
   },
   giveaways: {
     get: (blockId: string) => request<GiveawayState>(`/giveaways/${blockId}`),
-    draw: (blockId: string) => request<GiveawayState>(`/giveaways/${blockId}/draw`, { method: "POST" }),
+    /** `notify` (default true on the API): email the new winner. */
+    draw: (blockId: string, notify = true) =>
+      request<GiveawayState>(`/giveaways/${blockId}/draw`, { method: "POST", body: { notify } }),
   },
 
   uploads: {

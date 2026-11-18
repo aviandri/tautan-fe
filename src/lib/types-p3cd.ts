@@ -193,6 +193,8 @@ export interface GiveawayWinner {
 export interface GiveawayState {
   entries: number;
   winner: GiveawayWinner | null;
+  /** POST /draw only: whether the winner was emailed (confirmed owner, under the caps). */
+  notified?: boolean;
 }
 
 export const P3CD_SCHEMAS = {
