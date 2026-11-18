@@ -18,6 +18,8 @@ import { s } from "./cls";
  *   dialog[data-popup]  announcement popup, opened once unless dismissed
  *   data-share          share sheet (navigator.share, else a panel with a QR code)
  *   data-open-dialog    opens <dialog id=…> (shop product sheet); data-close-dialog closes it
+ *   data-cart-add       shop "Add to cart" (payments c): ./runtime-cart (lazy) keeps the cart in
+ *                       localStorage and shows the shop's [data-cart-bar]; without JS it's a checkout link
  *   data-wa-template    product WhatsApp link: re-composed with the chosen variant radios at click time
  *   data-slides         photo carousel; keeps its [data-slide-count] "n / total" in sync
  *   data-live-slot      events "Live now" badge: re-checked against data-live-end / data-next-start/-end
@@ -40,6 +42,9 @@ export interface RuntimeOptions {
 
 export function start(root: HTMLElement, { username, preview, onTab, ga4, pixel }: RuntimeOptions): () => void {
   const tabCb = { current: onTab };
+  // payments (c): shop carts. The module loads on the first "Add to cart", or when a cart was saved.
+  let cartMod: Promise<typeof import("./runtime-cart")> | null = null;
+  const loadCart = () => (cartMod ??= import("./runtime-cart"));
     const cleanups: (() => void)[] = [];
 
   if (!preview) {
@@ -68,6 +73,11 @@ export function start(root: HTMLElement, { username, preview, onTab, ga4, pixel 
     }
     if (!plain) return;
 
+    const add = t.closest<HTMLElement>("[data-cart-add]");
+    if (add && !preview) {
+      e.preventDefault();
+      return void loadCart().then((m) => m.add(add, username));
+    }
     const copy = t.closest<HTMLElement>("[data-copy]");
     if (copy) return void doCopy(copy);
     const embed = t.closest<HTMLElement>("[data-embed]");
@@ -168,6 +178,18 @@ export function start(root: HTMLElement, { username, preview, onTab, ga4, pixel 
   // polls this browser voted on today: show the voted state (only loads the module when there is one)
   if (!preview && [...root.querySelectorAll<HTMLElement>('form[data-x="poll"]')].some((f) => votedToday(localStore(), f.dataset.block!)))
     void loadP3cd().then((m) => m.restorePolls(root, ctx));
+
+  if (!preview) {
+    const ls = localStore();
+    const saved = (id?: string) => {
+      try {
+        return !!ls?.getItem(`tautan-cart:${username}:${id}`);
+      } catch {
+        return false;
+      }
+    };
+    if ([...root.querySelectorAll<HTMLElement>("[data-cart-bar]")].some((b) => saved(b.dataset.cartBar))) void loadCart().then((m) => m.restore(root, username));
+  }
 
   return () => cleanups.forEach((f) => f());
 }

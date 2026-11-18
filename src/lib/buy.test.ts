@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkoutErrorMessage, eligibleProviders, findPurchasable, lookupErrorMessage, shouldAutoRefresh } from "./buy";
+import { cartHref, cartLinesIn, checkoutErrorMessage, eligibleProviders, findPurchasable, lookupErrorMessage, parseCartQuery, providersFor, resolveCart, shippingFieldErrors, shouldAutoRefresh } from "./buy";
 import type { Block } from "./types";
 
 const base = { profile_id: "p", tab_id: "t", parent_id: null, position: 0, is_visible: true, created_at: "", updated_at: "" };
@@ -62,5 +62,86 @@ describe("shouldAutoRefresh", () => {
     expect(shouldAutoRefresh(o, Date.parse("2026-11-18T10:10:00Z"))).toBe(true);
     expect(shouldAutoRefresh(o, Date.parse("2026-11-18T10:20:00Z"))).toBe(false);
     expect(shouldAutoRefresh({ ...o, status: "paid" }, Date.parse("2026-11-18T09:00:00Z"))).toBe(false);
+  });
+});
+
+describe("shop cart (payments c)", () => {
+  const shop = {
+    id: "s1",
+    type: "shop",
+    data: {
+      shipping_fee: 2000000,
+      items: [
+        { id: "tee", name: "Tee", price: 15000000, images: [], variants: [{ name: "Size", options: ["S", "M"] }], action: { kind: "checkout", delivery: "ship" } },
+        { id: "zine", name: "Zine", price: 5000000, images: [], action: { kind: "checkout" } },
+        { id: "gone", name: "Gone", price: 100000, images: [], badge: "sold_out", action: { kind: "checkout", delivery: "ship" } },
+        { id: "wa", name: "WA", price: 100000, images: [], action: { kind: "whatsapp" } },
+        { id: "usd", name: "USD", price: 500, currency: "USD", images: [], action: { kind: "checkout" } },
+      ],
+    },
+  } as unknown as Block;
+
+  it("parses line.N.* params, bounded, and falls back to ?item=", () => {
+    const q = { "line.0.item": "tee", "line.0.qty": "3", "line.0.option.Size": "M", "line.2.item": "zine", "line.3.item": "<x>", "line.4.qty": "9", "line.5.item": "tee", "line.5.qty": "lots" };
+    expect(parseCartQuery(q)).toEqual([
+      { item: "tee", qty: 3, options: { Size: "M" } },
+      { item: "zine", qty: 1, options: {} },
+      { item: "tee", qty: 1, options: {} },
+    ]);
+    expect(parseCartQuery({ item: "zine" })).toEqual([{ item: "zine", qty: 1, options: {} }]);
+    expect(parseCartQuery({ "line.0.item": "tee", "line.0.option.Size": "x".repeat(31) })[0].options).toEqual({});
+  });
+
+  it("builds the cart link in the same shape", () => {
+    const href = cartHref("kopi", "s1", [{ item: "tee", qty: 2, options: { Size: "M" } }, { item: "zine", qty: 1, options: {} }]);
+    expect(href).toBe("/kopi/checkout?block=s1&line.0.item=tee&line.0.qty=2&line.0.option.Size=M&line.1.item=zine");
+    const back = Object.fromEntries(new URL(href, "https://x").searchParams);
+    expect(parseCartQuery(back)).toHaveLength(2);
+  });
+
+  it("prices from the card, merges lines, caps quantities and adds shipping once", () => {
+    const c = resolveCart([shop], "s1", [
+      { item: "tee", qty: 15, options: { Size: "M" } },
+      { item: "tee", qty: 9, options: { Size: "M" } },
+      { item: "zine", qty: 4, options: {} },
+      { item: "zine", qty: 1, options: {} },
+      { item: "gone", qty: 1, options: {} },
+      { item: "wa", qty: 1, options: {} },
+      { item: "usd", qty: 1, options: {} },
+    ])!;
+    expect(c.lines.map((l) => [l.item.id, l.qty])).toEqual([
+      ["tee", 20],
+      ["zine", 1],
+    ]);
+    expect(c.dropped).toBe(3);
+    expect(c.subtotal).toBe(20 * 15000000 + 5000000);
+    expect(c.total).toBe(c.subtotal + 2000000);
+    expect(c.ready).toBe(true);
+    expect(cartLinesIn(c)).toEqual([
+      { item: "tee", qty: 20, options: { Size: "M" } },
+      { item: "zine", qty: 1, options: {} },
+    ]);
+  });
+
+  it("flags a missing or unknown option and skips shipping for digital-only carts", () => {
+    const c = resolveCart([shop], "s1", [{ item: "tee", qty: 1, options: { Size: "XL" } }])!;
+    expect(c.ready).toBe(false);
+    expect(c.lines[0].problem).toBe("Choose a size");
+    const d = resolveCart([shop], "s1", [{ item: "zine", qty: 1, options: {} }])!;
+    expect(d.ships).toBe(false);
+    expect(d.total).toBe(5000000);
+    expect(resolveCart([shop], "nope", [])).toBeNull();
+  });
+
+  it("drops providers that can't take the total", () => {
+    const payments = { currencies: ["IDR"], providers: [{ provider: "midtrans" as const, currencies: ["IDR"] }, { provider: "stripe" as const, currencies: ["IDR", "USD"] }] };
+    expect(providersFor(payments, "IDR", 500000)).toEqual(["midtrans"]); // Rp 5.000: under Stripe's floor
+    expect(providersFor(payments, "IDR", 5000000)).toEqual(["midtrans", "stripe"]);
+    expect(providersFor(payments, "IDR", 50000)).toEqual([]); // Rp 500
+    expect(providersFor(payments, "USD", 50)).toEqual(["stripe"]);
+  });
+
+  it("only takes our own shipping field names from ?field=", () => {
+    expect([...shippingFieldErrors({ field: ["shipping.phone", "items[0].quantity", "shipping.evil<"] })]).toEqual(["phone"]);
   });
 });

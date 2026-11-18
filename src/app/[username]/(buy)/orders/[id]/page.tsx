@@ -39,6 +39,9 @@ export default async function OrderPage({ params, searchParams }: Props) {
   const cancelled = one(q.cancelled) === "1";
   const checkout = o.checkout_url ? safeHref(o.checkout_url) : undefined;
   const refresh = shouldAutoRefresh(o);
+  const ships = o.fulfilment != null;
+  // payments (c): a paid cart is done; forget it in this browser (the shop's runtime-cart key)
+  const cartKeys = o.status === "paid" ? [...new Set(o.items.map((it) => it.block_id).filter(Boolean))].map((b) => `tautan-cart:${username}:${b}`) : [];
 
   return (
     <main className="tb-wrap">
@@ -54,8 +57,26 @@ export default async function OrderPage({ params, searchParams }: Props) {
           <>
             <h1 className="tb-h1">Thanks{o.buyer_name ? `, ${o.buyer_name}` : ""}!</h1>
             <p className="tb-sub">
-              Your download is ready. The links below last 24 hours; come back to this page any time for fresh ones. We also emailed a receipt with this page&apos;s link to {o.buyer_email}.
+              {downloads.length
+                ? "Your download is ready. The links below last 24 hours; come back to this page any time for fresh ones."
+                : "Your order is confirmed."}{" "}
+              We also emailed a receipt with this page&apos;s link to {o.buyer_email}.
             </p>
+            {ships ? (
+              <div className="tb-ship">
+                {o.fulfilment === "shipped" ? (
+                  <>
+                    <b>Shipped</b>
+                    <span>{o.tracking ? <>Tracking number: <span className="tb-code">{o.tracking}</span></> : `${seller} has sent your order.`}</span>
+                  </>
+                ) : (
+                  <>
+                    <b>Preparing your order</b>
+                    <span>{seller} will ship it and email you when it&apos;s on its way.</span>
+                  </>
+                )}
+              </div>
+            ) : null}
             <ul className="tb-list">
               {downloads.map((d) => (
                 <li key={d.index}>
@@ -116,6 +137,12 @@ export default async function OrderPage({ params, searchParams }: Props) {
               <span>{money(it.unit_amount * it.quantity)}</span>
             </li>
           ))}
+          {ships ? (
+            <li className="tb-row">
+              <span>Shipping</span>
+              <span>{o.shipping_fee ? money(o.shipping_fee) : "Free"}</span>
+            </li>
+          ) : null}
           <li className="tb-row tb-total">
             <span>Total</span>
             <span>{money(o.amount)}</span>
@@ -125,6 +152,9 @@ export default async function OrderPage({ params, searchParams }: Props) {
           Order <span className="tb-code">{o.code}</span> · {o.buyer_email}
         </p>
       </div>
+      {cartKeys.length ? (
+        <script dangerouslySetInnerHTML={{ __html: `try{${JSON.stringify(cartKeys).replace(/</g, "\\u003c")}.forEach(function(k){localStorage.removeItem(k)})}catch(e){}` }} />
+      ) : null}
       <p className="tb-foot">
         Questions about your order? Contact {seller} and mention the order code.
         <br />
