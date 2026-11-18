@@ -104,7 +104,7 @@ export function FormResponses({ blockId }: { blockId: string }) {
                         return (
                           <td key={c.field_id} className={cx("max-w-[320px] px-4 py-3", a?.type === "textarea" ? "whitespace-pre-wrap break-words" : "break-words")}>
                             {a?.type === "email" && text ? (
-                              <a href={`mailto:${text}`} className="text-brand hover:underline">
+                              <a href={`mailto:${encodeURIComponent(text)}`} className="text-brand hover:underline">
                                 {text}
                               </a>
                             ) : text ? (
