@@ -68,7 +68,15 @@ export function LoginForm() {
             />
           )}
         </Field>
-        <PasswordField value={password} onChange={setPassword} autoComplete="current-password" />
+        <div className="flex flex-col gap-1.5">
+          <PasswordField value={password} onChange={setPassword} autoComplete="current-password" />
+          <Link
+            href={email.trim() ? `/forgot-password?email=${encodeURIComponent(email.trim())}` : "/forgot-password"}
+            className="self-end text-[13px] font-semibold text-ink-2 underline-offset-2 hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <Button type="submit" size="lg" loading={submitting} className="mt-1.5">
           Log in
         </Button>

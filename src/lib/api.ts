@@ -215,6 +215,12 @@ export const api = {
     /** P2-8: redeem Google's code; the API checks state against its cookie. */
     googleCallback: (b: { code: string; state: string }) =>
       request<GoogleAuthResponse>("/auth/google/callback", { method: "POST", body: b, auth: false }).then(withToken),
+    /** Always 202, whether or not the account exists. */
+    forgotPassword: (email: string) =>
+      request<{ accepted: boolean }>("/auth/password/forgot", { method: "POST", body: { email }, auth: false }),
+    /** Signs the user in (login shape) and ends every other session. */
+    resetPassword: (b: { token: string; new_password: string }) =>
+      request<AuthResponse>("/auth/password/reset", { method: "POST", body: b, auth: false }).then(withToken),
     usernameAvailable: (u: string, signal?: AbortSignal) =>
       request<{ available: boolean }>(
         `/auth/username-available?u=${encodeURIComponent(u)}`,
