@@ -48,9 +48,18 @@ export function FolderBlock({ block, children, env }: { block: BlockOf<"folder">
   );
 }
 
-export function FaqBlock({ block }: { block: BlockOf<"faq"> }) {
+function EmptyHint({ children }: { children: string }) {
+  return (
+    <div className={s.emptyCard} aria-hidden>
+      {children}
+    </div>
+  );
+}
+
+export function FaqBlock({ block, preview = false }: { block: BlockOf<"faq">; preview?: boolean }) {
   const items = (block.data.items ?? []).filter((i) => i.q?.trim());
-  if (!items.length) return null;
+  // public pages hide an empty card; the owner's preview shows where it will go
+  if (!items.length) return preview ? <EmptyHint>Add your first question</EmptyHint> : null;
   return (
     <div className={s.faq}>
       <BlockHead heading={block.data.heading} description={block.data.description} />
@@ -67,9 +76,9 @@ export function FaqBlock({ block }: { block: BlockOf<"faq"> }) {
   );
 }
 
-export function TestimonialBlock({ block }: { block: BlockOf<"testimonial"> }) {
+export function TestimonialBlock({ block, preview = false }: { block: BlockOf<"testimonial">; preview?: boolean }) {
   const items = (block.data.items ?? []).filter((i) => i.quote?.trim());
-  if (!items.length) return null;
+  if (!items.length) return preview ? <EmptyHint>Add a customer quote</EmptyHint> : null;
   return (
     <div className={s.testimonials}>
       <BlockHead heading={block.data.heading} description={block.data.description} />

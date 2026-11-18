@@ -1,8 +1,10 @@
 /**
  * P2-6 starter sections, by intent. Only block types whose starting data is
- * valid without user input, and no invented facts: headings, labels and, where a
- * card would otherwise render empty (FAQ, testimonials), one clearly-sample item
- * that tells the owner what to replace, so every ticked section shows on the page.
+ * valid without user input, and no invented facts: headings and labels only.
+ * List cards (FAQ, testimonials, social icons) start with no items. The public page
+ * renders nothing for them until the owner adds one, and the editor preview shows a
+ * dashed "Add your first …" hint in their place. Visitors never see owner instructions
+ * (E2E 2026-11-18 #3: sample items used to be published as real content).
  */
 import { FORM_PRESETS } from "../editor/block-meta";
 import type { BlockDataMap, BlockType, CreateBlockInput, OnboardingIntent } from "../types";
@@ -27,7 +29,7 @@ const socials = s("socials", "social_icons", "Social icons", "Your profiles in o
 const signup = (title: string) => s("signup", "email_signup", "Email signup", "Grow a list you own", () => ({ title, button_label: "Subscribe", placeholder: "you@example.com" }));
 const faq = s("faq", "faq", "FAQ", "Answer the questions you get every week", () => ({
   heading: "Good to know",
-  items: [{ q: "Add your first question", a: "Replace this with your answer. Tap the FAQ card in the editor to change or add questions." }],
+  items: [],
 }));
 
 export const STARTERS: Record<OnboardingIntent, Starter[]> = {
@@ -41,7 +43,7 @@ export const STARTERS: Record<OnboardingIntent, Starter[]> = {
     s("shop_heading", "heading", "Shop heading", "A title above your product links", () => ({ title: "Shop" })),
     s("reviews", "testimonial", "Testimonials", "Quotes from happy customers", () => ({
       heading: "What customers say",
-      items: [{ quote: "What customers say about you goes here. Replace it with a real quote.", author: "Customer name" }],
+      items: [],
     })),
     signup("Be first to hear about new drops"),
     faq,
