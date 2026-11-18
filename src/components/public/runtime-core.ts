@@ -1,5 +1,6 @@
 import { afterLoad, trackEvent } from "@/lib/track";
 import { fillTemplate, waLink } from "@/lib/sell/wa";
+import { localStore, votedToday } from "@/lib/visitor-id";
 import { s } from "./cls";
 
 /**
@@ -164,6 +165,9 @@ export function start(root: HTMLElement, { username, preview, onTab, ga4, pixel 
     root.removeEventListener("input", onInput);
   });
   if (root.querySelector("[data-x-lock]")) void loadP3cd().then((m) => m.restore(root, ctx));
+  // polls this browser voted on today: show the voted state (only loads the module when there is one)
+  if (!preview && [...root.querySelectorAll<HTMLElement>('form[data-x="poll"]')].some((f) => votedToday(localStore(), f.dataset.block!)))
+    void loadP3cd().then((m) => m.restorePolls(root, ctx));
 
   return () => cleanups.forEach((f) => f());
 }
