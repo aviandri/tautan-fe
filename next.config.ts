@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { relative } from "node:path";
 import type { NextConfig } from "next";
+import { contentSecurityPolicy } from "./src/lib/csp";
 
 /**
  * Production CSS-module class names as a short hash ("c" + 6 chars of sha1(path#class)) instead
@@ -52,6 +53,9 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
+          // Report-Only until the reports are clean; then rename the key to enforce (audit L3).
+          { key: "Content-Security-Policy-Report-Only", value: contentSecurityPolicy(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080", process.env.NODE_ENV !== "production") },
+          { key: "Reporting-Endpoints", value: 'csp="/api/csp-report"' },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
         ],
