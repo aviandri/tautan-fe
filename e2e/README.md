@@ -11,6 +11,11 @@ One script that walks the whole product against a running app:
   - A second attempt presses Fail and gets "not paid" with no download.
   - The owner's Orders API and page show both orders.
   - The fake provider is strictly opt-in: the backend needs `PAYMENTS_FAKE=1` and an `APP_ENV` other than `production`, and refuses to start with both set. Without the flag, the journey stops early with a clear message (tautan-be `docs/ENV.md`, `docs/SPEC.md` → "Dev-only `fake` payment provider").
+- The owner adds a shop with two shipped items (one with sizes), a downloadable zine and a Rp 15.000 shipping fee:
+  - A buyer adds the items to the cart (the same apron and size twice merges into quantity 2), and the cart bar shows the count and subtotal.
+  - On the cart review step, the buyer changes a quantity and presses Update, so the total includes shipping. Then Continue, enter email and shipping address, and pay on the test checkout page.
+  - The order page shows Paid, "Preparing your order", a Shipping line and the zine download. The cart is cleared in that browser.
+  - The owner sees the order under "to ship" with the address and marks it shipped with a tracking number (through the API; the dashboard button is a separate PR). The buyer gets the "has shipped" email, and the order page shows the tracking number.
 - Finally the owner resets their password through the emailed link: the new password works, the old one doesn't, and the link is single-use.
 
 Kept out of the app's package.json on purpose, so it doesn't touch the app's lockfile or bundle.
@@ -47,4 +52,4 @@ Google sign-in stays off unless the backend has `GOOGLE_CLIENT_ID`, `GOOGLE_CLIE
 
 Screenshots land in `e2e/shots/preview-*.png`.
 
-Last run (2026-11-19, headless, fresh local BE from tautan-be#47 with `PAYMENTS_FAKE=1` + FE from this branch, both on main with the cart): journey **57/57**, no errors. Without the flag it stops at the start with the PAYMENTS_FAKE message.
+Last run (2026-11-19, headless, local BE on main `19789a4` with `PAYMENTS_FAKE=1` + FE main `fc7e863` plus this branch): journey **67/67**, onboarding-preview **8/8**, no errors. Without the flag it stops at the start with the PAYMENTS_FAKE message.
